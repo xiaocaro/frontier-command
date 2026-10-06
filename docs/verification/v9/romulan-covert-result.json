@@ -1,0 +1,118 @@
+{
+  "time": 216.6,
+  "contacts": [
+    {
+      "x": 1121.498512855561,
+      "y": -1203.6684955406292,
+      "id": "returning-romulan",
+      "level": "TRACKED",
+      "strength": 12,
+      "lastSeen": 216,
+      "live": true,
+      "hostile": false,
+      "name": "Romulan Scout",
+      "factionId": "romulan",
+      "classId": "scout",
+      "hull": 80,
+      "shield": 65,
+      "velocity": {
+        "x": -2.169541937100803,
+        "y": 6.655305235910873
+      },
+      "resolved": false
+    }
+  ],
+  "siteContacts": [],
+  "knownEnemyLocations": [
+    {
+      "x": 1200,
+      "y": -1400,
+      "id": "romulan-base",
+      "name": "Romulan Border Command",
+      "label": "Romulan Border Command",
+      "kind": "base",
+      "owner": "romulan",
+      "siteId": null,
+      "stock": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 5000,
+      "maxHull": 5000,
+      "shield": 3000,
+      "maxShield": 3000,
+      "core": 0,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 0,
+      "capacity": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    }
+  ],
+  "follower": {
+    "x": 954.5000000000348,
+    "y": -1400,
+    "id": "veil",
+    "name": "USS VEIL / 幽影号",
+    "classId": "veil",
+    "factionId": "starfleet",
+    "hull": 70,
+    "shield": 45,
+    "core": 99.8,
+    "photon": 0,
+    "quantum": 0,
+    "modules": [],
+    "engines": 100,
+    "weapons": 100,
+    "status": "idle",
+    "current": null,
+    "queue": [],
+    "suspended": [],
+    "standing": {
+      "roe": "HOLD FIRE",
+      "retreatHull": 30,
+      "retreatShield": 15,
+      "retreatCore": 10,
+      "photonThreshold": 20,
+      "quantumThreshold": 20,
+      "maxPursuit": 150,
+      "allowNeutral": false,
+      "allowRomulan": false,
+      "autoEscort": false,
+      "respondDistress": false,
+      "protectCivilian": false,
+      "protectFreighter": false,
+      "protectColony": false,
+      "serviceWhenDocked": false
+    },
+    "path": [],
+    "heading": 0,
+    "cargo": {
+      "materials": 0,
+      "photon": 0,
+      "quantum": 0,
+      "specialFinds": 0
+    },
+    "passengers": 0,
+    "cooldowns": {},
+    "lastAttackerId": null,
+    "attackedAt": -1000,
+    "scanUntil": 0,
+    "cloak": "on",
+    "cloakUntil": 0,
+    "emergencyRetreat": null,
+    "tracking": null
+  }
+}

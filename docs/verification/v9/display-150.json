@@ -1,0 +1,291 @@
+{
+  "scale": 1.5,
+  "font": {
+    "fonts": {
+      "chineseRegular": [
+        {
+          "familyName": "Alibaba PuHuiTi LCARS",
+          "postScriptName": "AlibabaPuHuiTiLCARS-Regular",
+          "isCustomFont": true,
+          "glyphCount": 2
+        }
+      ],
+      "englishRegular": [
+        {
+          "familyName": "Antonio",
+          "postScriptName": "Antonio-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ],
+      "mixedBold": [
+        {
+          "familyName": "Antonio",
+          "postScriptName": "Antonio-Bold",
+          "isCustomFont": true,
+          "glyphCount": 17
+        },
+        {
+          "familyName": "Alibaba PuHuiTi LCARS",
+          "postScriptName": "AlibabaPuHuiTiLCARS-Bold",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    "inkMetrics": [
+      {
+        "weight": 400,
+        "enText": "FLEET DIRECTIVES",
+        "zhText": "舰队指令",
+        "topDifference": 0,
+        "bottomDifference": 0,
+        "heightDifference": 0
+      },
+      {
+        "weight": 400,
+        "enText": "PRIORITY COMMUNICATIONS",
+        "zhText": "优先通信",
+        "topDifference": 0,
+        "bottomDifference": 0,
+        "heightDifference": 0
+      },
+      {
+        "weight": 400,
+        "enText": "CONTEXT INSPECTOR",
+        "zhText": "对象详情",
+        "topDifference": 1,
+        "bottomDifference": 2,
+        "heightDifference": 1
+      },
+      {
+        "weight": 400,
+        "enText": "STEALTH RECONNAISSANCE",
+        "zhText": "隐形侦察",
+        "topDifference": 1,
+        "bottomDifference": 1,
+        "heightDifference": 0
+      },
+      {
+        "weight": 700,
+        "enText": "FLEET DIRECTIVES",
+        "zhText": "舰队指令",
+        "topDifference": 0,
+        "bottomDifference": 0,
+        "heightDifference": 0
+      },
+      {
+        "weight": 700,
+        "enText": "PRIORITY COMMUNICATIONS",
+        "zhText": "优先通信",
+        "topDifference": 0,
+        "bottomDifference": 0,
+        "heightDifference": 0
+      },
+      {
+        "weight": 700,
+        "enText": "CONTEXT INSPECTOR",
+        "zhText": "对象详情",
+        "topDifference": 1,
+        "bottomDifference": 1,
+        "heightDifference": 0
+      },
+      {
+        "weight": 700,
+        "enText": "STEALTH RECONNAISSANCE",
+        "zhText": "隐形侦察",
+        "topDifference": 1,
+        "bottomDifference": 1,
+        "heightDifference": 0
+      }
+    ],
+    "strokeMetrics": [
+      {
+        "weight": 400,
+        "en": {
+          "vertical": 10.8,
+          "horizontal": 8.364705882352942
+        },
+        "zh": {
+          "vertical": 9.988235294117649,
+          "horizontal": 8.949019607843137
+        },
+        "verticalDifference": 0.0751633986928103,
+        "horizontalDifference": 0.06985466479137359
+      },
+      {
+        "weight": 700,
+        "en": {
+          "vertical": 13.76470588235294,
+          "horizontal": 11.364705882352942
+        },
+        "zh": {
+          "vertical": 13.63921568627451,
+          "horizontal": 11.364705882352942
+        },
+        "verticalDifference": 0.009116809116809121,
+        "horizontalDifference": 0
+      }
+    ],
+    "synthesis": "none"
+  },
+  "bars": [
+    {
+      "title": "PRIORITY COMMUNICATIONS 优先通信",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "CONTEXT INSPECTOR 对象详情",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "NEXT STEP 下一步",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DAWN STARBASE / 曙光基地",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "FLEET DIRECTIVES 舰队指令",
+      "weight": "700",
+      "ends": [
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        },
+        {
+          "background": "rgb(234, 156, 114)",
+          "image": "none",
+          "borders": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

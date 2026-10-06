@@ -1,0 +1,267 @@
+@keyframes data-group-1 {
+  0%,
+  3.99% {
+    color: black;
+  }
+
+  4%,
+  45.99% {
+    color: var(--orange);
+  }
+
+  46%,
+  49.99% {
+    color: #fff;
+  }
+
+  50%,
+  63.99% {
+    color: var(--orange);
+  }
+
+  64%,
+  67.99% {
+    color: #fff;
+  }
+
+  68%,
+  100% {
+    color: var(--orange);
+  }
+}
+
+@keyframes data-group-1a {
+  0%,
+  4.99% {
+    color: black;
+  }
+
+  5%,
+  45.99% {
+    color: var(--orange);
+  }
+
+  46%,
+  49.99% {
+    color: #fff;
+  }
+
+  50%,
+  63.99% {
+    color: var(--orange);
+  }
+
+  64%,
+  67.99% {
+    color: #fff;
+  }
+
+  68%,
+  100% {
+    color: var(--orange);
+  }
+}
+
+@keyframes data-group-2 {
+  0%,
+  12.99% {
+    color: black;
+  }
+
+  13%,
+  49.99% {
+    color: var(--orange);
+  }
+
+  50%,
+  53.99% {
+    color: #fff;
+  }
+
+  54%,
+  67.99% {
+    color: var(--orange);
+  }
+
+  68%,
+  71.99% {
+    color: #fff;
+  }
+
+  72%,
+  100% {
+    color: var(--orange);
+  }
+}
+
+@keyframes data-group-2b {
+  0%,
+  14.99% {
+    color: black;
+  }
+
+  15%,
+  49.99% {
+    color: var(--orange);
+  }
+
+  50%,
+  53.99% {
+    color: #fff;
+  }
+
+  54%,
+  67.99% {
+    color: var(--orange);
+  }
+
+  68%,
+  71.99% {
+    color: #fff;
+  }
+
+  72%,
+  81.99% {
+    color: var(--orange);
+  }
+
+  82%,
+  100% {
+    color: #fff;
+  }
+}
+
+@keyframes data-group-3 {
+  0%,
+  26.99% {
+    color: black;
+  }
+
+  27%,
+  40.99% {
+    color: #fff;
+  }
+
+  41%,
+  53.99% {
+    color: var(--orange);
+  }
+
+  54%,
+  57.99% {
+    color: #fff;
+  }
+
+  58%,
+  71.99% {
+    color: var(--orange);
+  }
+
+  72%,
+  75.99% {
+    color: #fff;
+  }
+
+  76%,
+  100% {
+    color: var(--orange);
+  }
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-1 {
+  animation: data-group-1 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-2 {
+  animation: data-group-1a 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-3 {
+  animation: data-group-2 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-4 {
+  animation: data-group-2b 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-5 {
+  animation: data-group-3 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-6 {
+  animation: data-group-3 6000ms ease 200ms infinite;
+}
+
+html[data-motion='on'] .data-cascade-wrapper .dc-row-7 {
+  animation: data-group-3 6000ms ease 200ms infinite;
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes context-enter {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes priority-signal {
+  0%,
+  100% {
+    border-left-color: var(--red);
+  }
+  50% {
+    border-left-color: var(--almond-creme);
+  }
+}
+@keyframes communication-arrive {
+  from {
+    background: #cf4f4f66;
+  }
+  to {
+    background: transparent;
+  }
+}
+html[data-motion='on'] .management-drawer,
+html[data-motion='on'] .lcars-dialog {
+  animation: panel-enter 180ms ease-out;
+}
+html[data-motion='on'] .context-transition,
+html[data-motion='on'] .notification {
+  animation: context-enter 150ms ease-out;
+}
+html[data-motion='on'] .operation-chip.attention {
+  animation: priority-signal 3s ease-in-out infinite;
+}
+html[data-motion='on'] .comms-item.urgent {
+  animation: communication-arrive 900ms ease-out;
+}
+html[data-motion='reduced'] .management-drawer,
+html[data-motion='reduced'] .lcars-dialog,
+html[data-motion='reduced'] .context-transition,
+html[data-motion='reduced'] .notification {
+  animation: context-enter 100ms ease-out;
+}
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion='reduced'] * {
+  scroll-behavior: auto !important;
+}
+
+html[data-motion='on'] .selection-reticle {
+  animation: context-enter 140ms ease-out;
+}

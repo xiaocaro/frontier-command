@@ -1,0 +1,334 @@
+.lcars-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5em;
+  min-height: 40px;
+  min-width: 0;
+  padding: 0.5em 1.2em;
+  border: 0;
+  border-radius: 100vmax;
+  background: var(--african-violet);
+  color: var(--ink);
+  font-family: var(--latin-font);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  text-transform: uppercase;
+  transition: filter 100ms;
+  box-shadow: none;
+}
+.lcars-button:hover:not(:disabled) {
+  filter: brightness(115%);
+}
+.lcars-button:active:not(:disabled) {
+  filter: brightness(85%);
+}
+.lcars-button.secondary {
+  background: var(--bluey);
+}
+.lcars-button.danger {
+  background: var(--red);
+}
+.lcars-button.orange {
+  background: var(--orange);
+}
+.lcars-button[aria-pressed='true'] {
+  background: var(--almond-creme);
+}
+.lcars-button:disabled {
+  background: #655975;
+  color: #17101d;
+  opacity: 0.7;
+}
+.lcars-button.shape-flat {
+  border-radius: 0 100vmax 100vmax 0;
+  position: relative;
+  padding-left: 2.2em;
+}
+.lcars-button.shape-flat::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0.75em;
+  width: 0.3em;
+  background: var(--ink);
+}
+.lcars-button.shape-rail {
+  border-radius: 0;
+}
+.lcars-button.shape-text {
+  background: transparent;
+  color: var(--text);
+  border-radius: 0;
+  padding: 0.25em 0;
+  font-weight: 400;
+}
+.lcars-elbow {
+  background: var(--red);
+  min-height: var(--outer);
+  color: var(--ink);
+  text-align: right;
+  padding: var(--space);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.elbow-lower {
+  border-top-left-radius: var(--outer);
+}
+.elbow-upper {
+  border-bottom-left-radius: var(--outer);
+  background: var(--bluey);
+}
+.lcars-bar-panel {
+  display: flex;
+  width: 100%;
+  height: var(--bar);
+  flex: 0 0 var(--bar);
+}
+.lcars-bar-panel i {
+  display: block;
+  height: 100%;
+  border-right: var(--cut) solid var(--ink);
+}
+.lcars-bar-panel i:nth-child(1) {
+  width: 40%;
+  background: var(--bluey);
+}
+.lcars-bar-panel i:nth-child(2) {
+  width: 4%;
+  background: var(--orange);
+}
+.lcars-bar-panel i:nth-child(3) {
+  width: 17%;
+  background: var(--african-violet);
+}
+.lcars-bar-panel i:nth-child(4) {
+  flex: 1;
+  background: var(--african-violet);
+}
+.lcars-bar-panel i:nth-child(5) {
+  width: 4%;
+  border: 0;
+  background: var(--red);
+}
+.bar-lower i:nth-child(1),
+.bar-lower i:nth-child(3) {
+  background: var(--red);
+}
+.bar-lower i:nth-child(2),
+.bar-lower i:nth-child(5) {
+  background: var(--butterscotch);
+}
+.bar-lower i:nth-child(3) {
+  height: 50%;
+}
+.lcars-text-bar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.6em;
+  color: var(--barley);
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.lcars-text-bar::before,
+.lcars-text-bar::after {
+  content: '';
+  box-sizing: border-box;
+  height: 0.8em;
+  background: var(--butterscotch);
+  border: 0;
+}
+.lcars-text-bar::before {
+  flex: 0 0 1.5em;
+  border-radius: 0.4em 0 0 0.4em;
+}
+.lcars-text-bar::after {
+  flex: 1 0 1.8em;
+  border-radius: 0 0.4em 0.4em 0;
+}
+.lcars-text-bar > span {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.section-title {
+  min-width: 0;
+  letter-spacing: 0.025em;
+}
+.lcars-panel {
+  margin-block: 1.25em;
+}
+.lcars-panel > .lcars-text-bar {
+  margin-bottom: 1em;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  margin: 0.65em 0;
+  font-size: 1em;
+  color: var(--african-violet);
+}
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0.5em 0.75em;
+  border: 0;
+  border-left: 0.45em solid var(--bluey);
+  border-bottom: 0.18em solid var(--bluey);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--almond-creme);
+  font-family: var(--body-family);
+  font-size: 1em;
+}
+input:disabled,
+select:disabled {
+  opacity: 0.5;
+}
+option {
+  background: var(--ink);
+  color: var(--almond-creme);
+}
+input[type='checkbox'] {
+  appearance: none;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 3px solid var(--bluey);
+}
+input[type='checkbox']:checked {
+  border-color: var(--almond-creme);
+  background: var(--almond-creme);
+  box-shadow: inset 0 0 0 4px var(--ink);
+}
+input[type='range'] {
+  accent-color: var(--almond-creme);
+  border: 0;
+  padding: 0;
+}
+fieldset {
+  min-width: 0;
+  border: 0;
+  border-left: 0.55em solid var(--butterscotch);
+  border-bottom: 0.25em solid var(--butterscotch);
+  border-bottom-left-radius: 1.5em;
+  margin: 0.8em 0;
+  padding: 0.6em 1em 1em;
+}
+legend {
+  color: var(--barley);
+  font-weight: 700;
+  padding: 0 0.5em;
+}
+.inline-actions,
+.button-grid,
+.form-grid {
+  display: flex;
+  gap: 0.65em;
+  margin: 0.9em 0;
+}
+.inline-actions {
+  flex-wrap: wrap;
+}
+.button-grid,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.form-grid label {
+  margin: 0;
+  min-width: 0;
+}
+.check,
+.ship-option {
+  flex-direction: row;
+  align-items: center;
+}
+.ship-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+.ship-option small {
+  color: var(--muted);
+}
+.badge {
+  display: inline-block;
+  padding: 0.3em 1em;
+  border-radius: 0 100vmax 100vmax 0;
+  background: var(--african-violet);
+  color: var(--ink);
+  font-weight: 700;
+}
+.badge.danger {
+  background: var(--red);
+}
+.meter {
+  margin: 1.1em 0;
+}
+.meter span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5em;
+  color: var(--bluey);
+}
+.meter b {
+  color: var(--almond-creme);
+}
+progress {
+  appearance: none;
+  display: block;
+  border: 0;
+  width: 100%;
+  height: 0.65em;
+  min-height: 9px;
+  margin-top: 0.45em;
+  background: #211a29;
+}
+progress::-webkit-progress-bar {
+  background: #211a29;
+}
+progress::-webkit-progress-value {
+  background: var(--bluey);
+  mask-image: repeating-linear-gradient(to right, #000 0 15px, transparent 15px 19px);
+}
+dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 0.6em 0.75em;
+  margin: 1.2em 0;
+}
+dt {
+  color: var(--african-violet);
+}
+dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  color: var(--almond-creme);
+}
+.dl-row {
+  display: contents;
+}
+
+.lcars-button.almond {
+  background: var(--almond);
+}
+.lcars-button.almond[aria-pressed='true'] {
+  background: var(--almond-creme);
+}

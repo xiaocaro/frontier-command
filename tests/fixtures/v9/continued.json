@@ -1,0 +1,2473 @@
+{
+  "version": 9,
+  "tick": 4000,
+  "time": 400,
+  "seed": 48084666,
+  "initialSeed": 236807,
+  "paused": true,
+  "speed": 1,
+  "status": "active",
+  "pauseReasons": [],
+  "commander": {
+    "id": "commander",
+    "name": "Dawn Frontier Command",
+    "rank": "ADMIRAL"
+  },
+  "operators": [
+    {
+      "id": "ops-meridian",
+      "name": "USS MERIDIAN-1 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    },
+    {
+      "id": "ops-vigil",
+      "name": "USS VIGIL / 守望号 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    },
+    {
+      "id": "ops-verity",
+      "name": "USS VERITY / 明理号 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    },
+    {
+      "id": "ops-horizon",
+      "name": "USS HORIZON / 地平线号 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    },
+    {
+      "id": "ops-meridian-2",
+      "name": "USS MERIDIAN-2 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    },
+    {
+      "id": "ops-meridian-3",
+      "name": "USS MERIDIAN-3 · 值班指挥组",
+      "kind": "rules",
+      "availability": "available"
+    }
+  ],
+  "assignments": [
+    {
+      "operatorId": "ops-meridian",
+      "shipId": "meridian",
+      "since": 0
+    },
+    {
+      "operatorId": "ops-vigil",
+      "shipId": "vigil",
+      "since": 0
+    },
+    {
+      "operatorId": "ops-verity",
+      "shipId": "verity",
+      "since": 0
+    },
+    {
+      "operatorId": "ops-horizon",
+      "shipId": "horizon",
+      "since": 0
+    },
+    {
+      "operatorId": "ops-meridian-2",
+      "shipId": "meridian-2",
+      "since": 0
+    },
+    {
+      "operatorId": "ops-meridian-3",
+      "shipId": "meridian-3",
+      "since": 0
+    }
+  ],
+  "losses": [],
+  "ships": [
+    {
+      "x": -232.10731892594134,
+      "y": -1.305980651922661,
+      "id": "meridian",
+      "name": "USS MERIDIAN-1",
+      "classId": "antares",
+      "factionId": "starfleet",
+      "hull": 110,
+      "shield": 65,
+      "core": 75,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "docked",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 2.9776111509402536,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    },
+    {
+      "x": -228.00000643834588,
+      "y": 0.012430617832268936,
+      "id": "vigil",
+      "name": "USS VIGIL / 守望号",
+      "classId": "peregrine",
+      "factionId": "starfleet",
+      "hull": 85,
+      "shield": 90,
+      "core": 90,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [
+        "expandedCargo"
+      ],
+      "engines": 100,
+      "weapons": 100,
+      "status": "docked",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": -3.1405567685851765,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    },
+    {
+      "x": -3.622519155440506,
+      "y": -392.8671636098627,
+      "id": "verity",
+      "name": "USS VERITY / 明理号",
+      "classId": "constitution",
+      "factionId": "starfleet",
+      "hull": 200,
+      "shield": 170,
+      "core": 150,
+      "photon": 24,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "idle",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": -1.1008763986168604,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": 87.7,
+      "scanUntil": 89.7,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    },
+    {
+      "x": 282.9283658645121,
+      "y": -90.14289697752476,
+      "id": "horizon",
+      "name": "USS HORIZON / 地平线号",
+      "classId": "galaxy",
+      "factionId": "starfleet",
+      "hull": 380,
+      "shield": 330,
+      "core": 240,
+      "photon": 36,
+      "quantum": 12,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": {
+        "id": "directive-3",
+        "action": {
+          "type": "PATROL",
+          "targetId": "mine",
+          "duration": 400
+        },
+        "created": 0,
+        "phase": "starting",
+        "work": 320.7000000000044,
+        "moved": 1798.9937849873481,
+        "carried": 0,
+        "delivered": 0,
+        "reserved": {
+          "materials": 0,
+          "photon": 0,
+          "quantum": 0,
+          "specialFinds": 0
+        },
+        "paidCredits": 0,
+        "search": 0,
+        "note": "Patrol / 320 / 400",
+        "source": "admiral",
+        "groupOrderId": null,
+        "groupSlot": 0,
+        "groupTotal": 0,
+        "groupSpacing": 30,
+        "origin": {
+          "x": -198,
+          "y": 45
+        }
+      },
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [
+        {
+          "x": 288.874065289782,
+          "y": -61.76241097940839
+        }
+      ],
+      "heading": 1.3642834802925021,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    },
+    {
+      "x": -170,
+      "y": 45,
+      "id": "meridian-2",
+      "name": "USS MERIDIAN-2",
+      "classId": "antares",
+      "factionId": "starfleet",
+      "hull": 110,
+      "shield": 65,
+      "core": 75,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "idle",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 0,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    },
+    {
+      "x": -142,
+      "y": 45,
+      "id": "meridian-3",
+      "name": "USS MERIDIAN-3",
+      "classId": "antares",
+      "factionId": "starfleet",
+      "hull": 110,
+      "shield": 65,
+      "core": 75,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "idle",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 0,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null
+    }
+  ],
+  "enemies": [
+    {
+      "x": 467.6679245283013,
+      "y": -478.03773584905827,
+      "id": "orion-scout",
+      "name": "Orion Surveyor orion-scout",
+      "classId": "raider",
+      "factionId": "orion",
+      "hull": 95,
+      "shield": 55,
+      "core": 70,
+      "photon": 5,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": -1.0141970087846517,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "orion-base",
+      "role": "scout",
+      "intent": "retreat",
+      "targetId": null,
+      "destination": {
+        "x": 500,
+        "y": -530
+      },
+      "nextDecision": 400.3,
+      "visited": [],
+      "loot": 0,
+      "localReports": [
+        {
+          "x": 240,
+          "y": -80,
+          "id": "mine",
+          "observerId": "orion-scout",
+          "seenAt": 355.3,
+          "value": 2186.999999999998,
+          "defense": 1030,
+          "kind": "facility"
+        }
+      ],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 464.4981132075464,
+          "y": -472.9433962264167
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 204.1,
+        "checkedAt": 399.1,
+        "serial": 1
+      }
+    },
+    {
+      "x": 484.9916720637623,
+      "y": -504.0240478026635,
+      "id": "orion-raider-1",
+      "name": "Orion Raider orion-raider-1",
+      "classId": "raider",
+      "factionId": "orion",
+      "hull": 95,
+      "shield": 55,
+      "core": 70,
+      "photon": 5,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": -1.0468769791097303,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "orion-base",
+      "role": "raider",
+      "intent": "observe",
+      "targetId": null,
+      "destination": {
+        "x": 500,
+        "y": -530
+      },
+      "nextDecision": 400.1,
+      "visited": [],
+      "loot": 0,
+      "localReports": [],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 481.99000647651474,
+          "y": -498.8288573631962
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 0,
+        "checkedAt": 399.1,
+        "serial": 0
+      }
+    },
+    {
+      "x": 484.9916720637623,
+      "y": -504.0240478026635,
+      "id": "orion-raider-2",
+      "name": "Orion Raider orion-raider-2",
+      "classId": "raider",
+      "factionId": "orion",
+      "hull": 95,
+      "shield": 55,
+      "core": 70,
+      "photon": 5,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": -1.0468769791097303,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "orion-base",
+      "role": "raider",
+      "intent": "observe",
+      "targetId": null,
+      "destination": {
+        "x": 500,
+        "y": -530
+      },
+      "nextDecision": 400.1,
+      "visited": [],
+      "loot": 0,
+      "localReports": [],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 481.99000647651474,
+          "y": -498.8288573631962
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 0,
+        "checkedAt": 399.1,
+        "serial": 0
+      }
+    },
+    {
+      "x": 686.2367502120237,
+      "y": 114.7899433608042,
+      "id": "romulan-scout",
+      "name": "Romulan Scout",
+      "classId": "scout",
+      "factionId": "romulan",
+      "hull": 80,
+      "shield": 65,
+      "core": 99.8,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 1.7640078106427401,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "on",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "romulan-base",
+      "role": "scout",
+      "intent": "observe",
+      "targetId": null,
+      "destination": {
+        "x": 650,
+        "y": 300
+      },
+      "nextDecision": 400.1,
+      "visited": [
+        "0",
+        "1",
+        "2",
+        "0",
+        "1",
+        "2",
+        "0",
+        "1"
+      ],
+      "loot": 0,
+      "localReports": [],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 687.5808314567236,
+          "y": 107.9201947767841
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 0,
+        "checkedAt": 399.1,
+        "serial": 0
+      }
+    },
+    {
+      "x": 1180,
+      "y": 150,
+      "id": "romulan-reserve",
+      "name": "D’Deridex",
+      "classId": "dderidex",
+      "factionId": "romulan",
+      "hull": 350,
+      "shield": 290,
+      "core": 239.8,
+      "photon": 32,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 0,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "on",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "romulan-base",
+      "role": "warbird",
+      "intent": "docked",
+      "targetId": null,
+      "destination": {
+        "x": 1180,
+        "y": 150
+      },
+      "nextDecision": 409.9,
+      "visited": [],
+      "loot": 0,
+      "localReports": [],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 1180,
+          "y": 150
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 0,
+        "checkedAt": 399.1,
+        "serial": 0
+      }
+    },
+    {
+      "x": 900,
+      "y": 150,
+      "id": "romulan-warbird",
+      "name": "Valdore-type",
+      "classId": "valdore",
+      "factionId": "romulan",
+      "hull": 210,
+      "shield": 190,
+      "core": 174.8,
+      "photon": 20,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "active",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 0,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "on",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "romulan-base",
+      "role": "warbird",
+      "intent": "observe",
+      "targetId": null,
+      "destination": {
+        "x": 900,
+        "y": 150
+      },
+      "nextDecision": 400.1,
+      "visited": [],
+      "loot": 0,
+      "localReports": [],
+      "lastHostileAt": -1000,
+      "lastHostileTargetId": null,
+      "counterTracking": {
+        "position": {
+          "x": 900,
+          "y": 150
+        },
+        "watchers": {},
+        "evading": false,
+        "waypoints": [],
+        "lastSeen": 0,
+        "checkedAt": 399.1,
+        "serial": 0
+      }
+    }
+  ],
+  "sectors": [
+    {
+      "id": "sector:-1:0",
+      "q": -1,
+      "r": 0,
+      "systemIds": [
+        "sector:-1:0:system:0"
+      ],
+      "discovered": true
+    },
+    {
+      "id": "sector:0:0",
+      "q": 0,
+      "r": 0,
+      "systemIds": [
+        "sector:0:0:system:0",
+        "sector:0:0:system:1"
+      ],
+      "discovered": true
+    },
+    {
+      "id": "sector:1:0",
+      "q": 1,
+      "r": 0,
+      "systemIds": [
+        "sector:1:0:system:0"
+      ],
+      "discovered": true
+    },
+    {
+      "id": "sector:0:-1",
+      "q": 0,
+      "r": -1,
+      "systemIds": [
+        "sector:0:-1:system:0",
+        "sector:0:-1:system:1"
+      ],
+      "discovered": true
+    }
+  ],
+  "systems": [
+    {
+      "x": -340.60087545542046,
+      "y": 91.52091891970485,
+      "id": "sector:-1:0:system:0",
+      "name": "DF--1/0-A",
+      "sectorId": "sector:-1:0",
+      "discovered": true,
+      "survey": 1,
+      "bodyIds": [
+        "sector:-1:0:system:0:body:0"
+      ],
+      "starClass": "A"
+    },
+    {
+      "x": 43.844132660888135,
+      "y": 68.65571749163792,
+      "id": "sector:0:0:system:0",
+      "name": "DF-0/0-A",
+      "sectorId": "sector:0:0",
+      "discovered": true,
+      "survey": 1,
+      "bodyIds": [
+        "new-horizon-world",
+        "sector:0:0:system:0:body:1",
+        "sector:0:0:system:0:body:2",
+        "sector:0:0:system:0:body:3"
+      ],
+      "starClass": "giant"
+    },
+    {
+      "x": -8.872258441988379,
+      "y": -112.24479803815484,
+      "id": "sector:0:0:system:1",
+      "name": "DF-0/0-B",
+      "sectorId": "sector:0:0",
+      "discovered": true,
+      "survey": 1,
+      "bodyIds": [
+        "sector:0:0:system:1:body:0",
+        "sector:0:0:system:1:body:1"
+      ],
+      "starClass": "neutron"
+    },
+    {
+      "x": 491.02700607618317,
+      "y": 81.0273114591837,
+      "id": "sector:1:0:system:0",
+      "name": "DF-1/0-A",
+      "sectorId": "sector:1:0",
+      "discovered": true,
+      "survey": 1,
+      "bodyIds": [
+        "helios-deposit",
+        "sector:1:0:system:0:body:1",
+        "sector:1:0:system:0:body:2",
+        "sector:1:0:system:0:body:3",
+        "sector:1:0:system:0:body:4"
+      ],
+      "starClass": "F"
+    },
+    {
+      "x": -25.64527046168223,
+      "y": -530.0768789462745,
+      "id": "sector:0:-1:system:0",
+      "name": "DF-0/-1-A",
+      "sectorId": "sector:0:-1",
+      "discovered": true,
+      "survey": 2,
+      "bodyIds": [
+        "sector:0:-1:system:0:body:0",
+        "sector:0:-1:system:0:body:1"
+      ],
+      "starClass": "giant"
+    },
+    {
+      "x": 51.702359626069665,
+      "y": -266.1050637229346,
+      "id": "sector:0:-1:system:1",
+      "name": "DF-0/-1-B",
+      "sectorId": "sector:0:-1",
+      "discovered": true,
+      "survey": 2,
+      "bodyIds": [
+        "sector:0:-1:system:1:body:0",
+        "sector:0:-1:system:1:body:1",
+        "sector:0:-1:system:1:body:2"
+      ],
+      "starClass": "F"
+    }
+  ],
+  "bodies": [
+    {
+      "x": -474.5015823096037,
+      "y": -70.75214177370071,
+      "id": "sector:-1:0:system:0:body:0",
+      "name": "离子风暴 -1/0-0-0",
+      "systemId": "sector:-1:0:system:0",
+      "kind": "anomaly",
+      "category": "离子风暴",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.429556984314695,
+      "hazard": 0.7663074440788478,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 130,
+      "y": 140,
+      "id": "new-horizon-world",
+      "name": "New Horizon M-class",
+      "systemId": "sector:0:0:system:0",
+      "kind": "planet",
+      "category": "M-class 宜居世界",
+      "population": 0,
+      "survey": 2,
+      "habitable": true,
+      "remaining": 0,
+      "richness": 1.2,
+      "hazard": 0.25,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -114.67324629426003,
+      "y": 70.25379814207554,
+      "id": "sector:0:0:system:0:body:1",
+      "name": "气态巨行星 0/0-0-1",
+      "systemId": "sector:0:0:system:0",
+      "kind": "planet",
+      "category": "气态巨行星",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.7451620794832705,
+      "hazard": 0.5109865527669899,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 97.72584609687328,
+      "y": -10.483850687742233,
+      "id": "sector:0:0:system:0:body:2",
+      "name": "海洋世界 0/0-0-2",
+      "systemId": "sector:0:0:system:0",
+      "kind": "planet",
+      "category": "海洋世界",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.417393850116059,
+      "hazard": 0.12141915566287935,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -45.664083287119865,
+      "y": 27.30825811624527,
+      "id": "sector:0:0:system:0:body:3",
+      "name": "小行星带 0/0-0-3",
+      "systemId": "sector:0:0:system:0",
+      "kind": "belt",
+      "category": "小行星带",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.373236788297072,
+      "hazard": 0.39999350402038547,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -40.753854513168335,
+      "y": 105.85821978747845,
+      "id": "sector:0:0:system:1:body:0",
+      "name": "海洋世界 0/0-1-0",
+      "systemId": "sector:0:0:system:1",
+      "kind": "planet",
+      "category": "海洋世界",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 0.9136465794406831,
+      "hazard": 0.3381517137703486,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 140.72463490068913,
+      "y": 68.44982087612152,
+      "id": "sector:0:0:system:1:body:1",
+      "name": "岩石卫星 0/0-1-1",
+      "systemId": "sector:0:0:system:1",
+      "kind": "moon",
+      "category": "岩石卫星",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 0.8471556514967232,
+      "hazard": 0.2700615967111662,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 240,
+      "y": -80,
+      "id": "helios-deposit",
+      "name": "Helios 金属矿床",
+      "systemId": "sector:1:0:system:0",
+      "kind": "resource",
+      "category": "金属矿床",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 2336.399999999993,
+      "richness": 1.2,
+      "hazard": 0.25,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 319.8477055877447,
+      "y": -62.314807921648026,
+      "id": "sector:1:0:system:0:body:1",
+      "name": "气态巨行星 1/0-0-1",
+      "systemId": "sector:1:0:system:0",
+      "kind": "planet",
+      "category": "气态巨行星",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.3995011193212121,
+      "hazard": 0.34714999014511705,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 434.07686680555344,
+      "y": -47.7387348562479,
+      "id": "sector:1:0:system:0:body:2",
+      "name": "气态巨行星 1/0-0-2",
+      "systemId": "sector:1:0:system:0",
+      "kind": "planet",
+      "category": "气态巨行星",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 2.090835054311901,
+      "hazard": 0.3529808255680837,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 557.8406017273664,
+      "y": 103.1319959461689,
+      "id": "sector:1:0:system:0:body:3",
+      "name": "冰质卫星 1/0-0-3",
+      "systemId": "sector:1:0:system:0",
+      "kind": "moon",
+      "category": "冰质卫星",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.1422864604275673,
+      "hazard": 0.14461947239004075,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 290.91479524970055,
+      "y": 65.10475911200047,
+      "id": "sector:1:0:system:0:body:4",
+      "name": "小行星带 1/0-0-4",
+      "systemId": "sector:1:0:system:0",
+      "kind": "belt",
+      "category": "小行星带",
+      "population": 0,
+      "survey": 1,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.1143241107463835,
+      "hazard": 0.263514913439285,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -79.56610180437565,
+      "y": -410.0641770660877,
+      "id": "sector:0:-1:system:0:body:0",
+      "name": "晶体矿床 0/-1-0-0",
+      "systemId": "sector:0:-1:system:0",
+      "kind": "resource",
+      "category": "晶体矿床",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 2008,
+      "richness": 2.09316559843719,
+      "hazard": 0.3044323011371307,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 139.9596679955721,
+      "y": -358.08791905641556,
+      "id": "sector:0:-1:system:0:body:1",
+      "name": "古代遗迹 0/-1-0-1",
+      "systemId": "sector:0:-1:system:0",
+      "kind": "ruins",
+      "category": "古代遗迹",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.146575374016538,
+      "hazard": 0.2744417986785993,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -13.359465301036835,
+      "y": -368.4384570270777,
+      "id": "sector:0:-1:system:1:body:0",
+      "name": "海洋世界 0/-1-1-0",
+      "systemId": "sector:0:-1:system:1",
+      "kind": "planet",
+      "category": "海洋世界",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.456257052440196,
+      "hazard": 0.24094191489974037,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": 7.292823866009712,
+      "y": -436.81267887353897,
+      "id": "sector:0:-1:system:1:body:1",
+      "name": "气态巨行星 0/-1-1-1",
+      "systemId": "sector:0:-1:system:1",
+      "kind": "planet",
+      "category": "气态巨行星",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.2741740106139332,
+      "hazard": 0.24891467401292178,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    },
+    {
+      "x": -54.84979569911957,
+      "y": -300.64432568848133,
+      "id": "sector:0:-1:system:1:body:2",
+      "name": "离子风暴 0/-1-1-2",
+      "systemId": "sector:0:-1:system:1",
+      "kind": "anomaly",
+      "category": "离子风暴",
+      "population": 0,
+      "survey": 2,
+      "habitable": false,
+      "remaining": 0,
+      "richness": 1.0470474521629511,
+      "hazard": 0.4583757346728817,
+      "hidden": false,
+      "specialClaimed": false,
+      "discovered": true
+    }
+  ],
+  "locations": [
+    {
+      "x": -240,
+      "y": 0,
+      "id": "base",
+      "name": "DAWN STARBASE / 曙光基地",
+      "label": "DAWN STARBASE / 曙光基地",
+      "kind": "base",
+      "owner": "starfleet",
+      "siteId": null,
+      "stock": {
+        "materials": 334,
+        "photon": 90,
+        "quantum": 20,
+        "specialFinds": 0
+      },
+      "hull": 5000,
+      "maxHull": 5000,
+      "shield": 3000,
+      "maxShield": 3000,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 4.799999999999999,
+      "capacity": {
+        "materials": 6000,
+        "photon": 500,
+        "quantum": 200,
+        "specialFinds": 50
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    },
+    {
+      "x": 130,
+      "y": 140,
+      "id": "colony",
+      "name": "NEW HORIZON / 新曙殖民地",
+      "label": "NEW HORIZON / 新曙殖民地",
+      "kind": "colony",
+      "owner": "starfleet",
+      "siteId": "new-horizon-world",
+      "stock": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 1100,
+      "maxHull": 1100,
+      "shield": 650,
+      "maxShield": 650,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 4.799999999999999,
+      "capacity": {
+        "materials": 300,
+        "photon": 40,
+        "quantum": 10,
+        "specialFinds": 20
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": {
+        "population": 1004.0060006563215,
+        "housing": 1500,
+        "stability": 75,
+        "morale": 75,
+        "security": 75,
+        "industry": 50,
+        "science": 50,
+        "commanderId": "commander-colony",
+        "nextCandidate": 480,
+        "contamination": 0,
+        "quarantine": false,
+        "development": null
+      }
+    },
+    {
+      "x": 240,
+      "y": -80,
+      "id": "mine",
+      "name": "HELIOS MINE / 赫利俄斯矿场",
+      "label": "HELIOS MINE / 赫利俄斯矿场",
+      "kind": "mine",
+      "owner": "starfleet",
+      "siteId": "helios-deposit",
+      "stock": {
+        "materials": 504.59999999999945,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 650,
+      "maxHull": 650,
+      "shield": 380,
+      "maxShield": 380,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 4.799999999999999,
+      "capacity": {
+        "materials": 3000,
+        "photon": 30,
+        "quantum": 10,
+        "specialFinds": 10
+      },
+      "storageFull": false,
+      "extracted": 663.599999999999,
+      "colony": null
+    },
+    {
+      "x": 260,
+      "y": 180,
+      "id": "outpost",
+      "name": "BEACON OUTPOST / 信标前哨",
+      "label": "BEACON OUTPOST / 信标前哨",
+      "kind": "outpost",
+      "owner": "starfleet",
+      "siteId": null,
+      "stock": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 800,
+      "maxHull": 800,
+      "shield": 500,
+      "maxShield": 500,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 4.799999999999999,
+      "capacity": {
+        "materials": 250,
+        "photon": 60,
+        "quantum": 20,
+        "specialFinds": 10
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    },
+    {
+      "x": 500,
+      "y": -530,
+      "id": "orion-base",
+      "name": "Orion Hideout",
+      "label": "Orion Hideout",
+      "kind": "outpost",
+      "owner": "orion",
+      "siteId": null,
+      "stock": {
+        "materials": 15,
+        "photon": 12,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 800,
+      "maxHull": 800,
+      "shield": 500,
+      "maxShield": 500,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": false,
+      "production": 0,
+      "capacity": {
+        "materials": 250,
+        "photon": 60,
+        "quantum": 20,
+        "specialFinds": 10
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    },
+    {
+      "x": 1180,
+      "y": 150,
+      "id": "romulan-base",
+      "name": "Romulan Border Command",
+      "label": "Romulan Border Command",
+      "kind": "base",
+      "owner": "romulan",
+      "siteId": null,
+      "stock": {
+        "materials": 40,
+        "photon": 60,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 5000,
+      "maxHull": 5000,
+      "shield": 3000,
+      "maxShield": 3000,
+      "core": 300,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": false,
+      "production": 0,
+      "capacity": {
+        "materials": 6000,
+        "photon": 500,
+        "quantum": 200,
+        "specialFinds": 50
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    }
+  ],
+  "projects": [],
+  "jobs": [],
+  "wrecks": [],
+  "intel": [
+    {
+      "x": 462.86148393544056,
+      "y": -131.01333497640803,
+      "id": "orion-scout",
+      "level": "TRACKED",
+      "strength": 12,
+      "lastSeen": 221,
+      "live": false,
+      "hostile": false,
+      "name": "Orion Surveyor orion-scout",
+      "factionId": "orion",
+      "classId": "raider",
+      "hull": 95,
+      "shield": 55,
+      "velocity": {
+        "x": 0.556088733422655,
+        "y": -5.974174865247917
+      },
+      "resolved": false
+    }
+  ],
+  "factions": {
+    "orion": {
+      "reports": [
+        {
+          "x": 240,
+          "y": -80,
+          "id": "mine",
+          "observerId": "orion-scout",
+          "seenAt": 355.3,
+          "value": 2186.999999999998,
+          "defense": 1030,
+          "kind": "facility"
+        }
+      ],
+      "credits": 40,
+      "production": 0,
+      "losses": [],
+      "stance": "observe",
+      "pressure": 3.0818578899999975
+    },
+    "romulan": {
+      "reports": [],
+      "credits": 150,
+      "production": 0,
+      "losses": [],
+      "stance": "observe",
+      "pressure": 0
+    }
+  },
+  "siteIntel": [],
+  "recoveredVeil": false,
+  "contactAlerts": [
+    {
+      "contactId": "orion-scout",
+      "lastAlertAt": 204,
+      "hostileAlerted": false
+    }
+  ],
+  "dismissedMarkerIds": [],
+  "tension": 0,
+  "resources": {
+    "credits": 1810.3371265219887
+  },
+  "upgrades": {
+    "shipyard": 0,
+    "armory": 0,
+    "sensors": 0,
+    "logistics": 0,
+    "defense": 0
+  },
+  "groups": [],
+  "personnel": [
+    {
+      "id": "commander-colony",
+      "name": "Commander 陈星",
+      "originId": "colony",
+      "career": "commander",
+      "experience": 39.980000000000615,
+      "skills": {
+        "battle": 20,
+        "science": 30,
+        "diplomacy": 40,
+        "logistics": 35,
+        "security": 40,
+        "commander": 60
+      },
+      "status": "assigned",
+      "training": 90,
+      "locationId": "colony",
+      "posting": {
+        "type": "colony",
+        "id": "colony"
+      }
+    },
+    {
+      "id": "personnel-11",
+      "name": "Cadet 11",
+      "originId": "colony",
+      "career": "science",
+      "experience": 0,
+      "skills": {
+        "battle": 25,
+        "science": 35,
+        "diplomacy": 25,
+        "logistics": 30,
+        "security": 25,
+        "commander": 25
+      },
+      "status": "candidate",
+      "training": 0,
+      "locationId": "colony",
+      "posting": null
+    }
+  ],
+  "events": [
+    {
+      "id": "event-7",
+      "kind": "wormhole",
+      "subjectId": "wormhole:0:0",
+      "created": 1,
+      "deadline": 241,
+      "stage": "reported",
+      "evidence": "DAWN PASSAGE / 曙光通道探测到通道，需要确认稳定性",
+      "choice": null,
+      "work": 0,
+      "population": 0,
+      "carrierId": null,
+      "targetId": null,
+      "assetIds": [],
+      "followUpId": null,
+      "outcome": ""
+    },
+    {
+      "id": "event-8",
+      "kind": "discovery",
+      "subjectId": "sector:0:-1:system:0:body:1",
+      "created": 88,
+      "deadline": 328,
+      "stage": "reported",
+      "evidence": "古代遗迹 0/-1-0-1已完成近距调查，需要科学研究",
+      "choice": null,
+      "work": 0,
+      "population": 0,
+      "carrierId": null,
+      "targetId": null,
+      "assetIds": [],
+      "followUpId": null,
+      "outcome": ""
+    },
+    {
+      "id": "event-9",
+      "kind": "wormhole",
+      "subjectId": "wormhole:0:-1",
+      "created": 88,
+      "deadline": 328,
+      "stage": "reported",
+      "evidence": "亚空间通道 0/-1探测到通道，需要确认稳定性",
+      "choice": null,
+      "work": 0,
+      "population": 0,
+      "carrierId": null,
+      "targetId": null,
+      "assetIds": [],
+      "followUpId": null,
+      "outcome": ""
+    }
+  ],
+  "wormholes": [
+    {
+      "x": 90,
+      "y": -80,
+      "id": "wormhole:0:0",
+      "name": "DAWN PASSAGE / 曙光通道",
+      "sectorId": "sector:0:0",
+      "discovered": true,
+      "surveyed": false,
+      "exit": {
+        "x": 90,
+        "y": 4720
+      },
+      "exitSector": {
+        "q": 0,
+        "r": 12
+      },
+      "stability": 1,
+      "stable": true,
+      "transits": 0
+    },
+    {
+      "x": 90,
+      "y": -480,
+      "id": "wormhole:0:-1",
+      "name": "亚空间通道 0/-1",
+      "sectorId": "sector:0:-1",
+      "discovered": true,
+      "surveyed": false,
+      "exit": {
+        "x": 90,
+        "y": 5120
+      },
+      "exitSector": {
+        "q": 0,
+        "r": 13
+      },
+      "stability": 0.8239417924894952,
+      "stable": true,
+      "transits": 0
+    }
+  ],
+  "trade": {
+    "stock": {
+      "materials": 400,
+      "photon": 60,
+      "quantum": 10,
+      "specialFinds": 0
+    },
+    "credits": 2000,
+    "capacity": {
+      "materials": 1000,
+      "photon": 300,
+      "quantum": 100,
+      "specialFinds": 50
+    },
+    "depot": {
+      "x": -640,
+      "y": -140
+    },
+    "orders": []
+  },
+  "civilians": [
+    {
+      "x": -640,
+      "y": -140,
+      "id": "federation-carrier",
+      "name": "SS FEDERATION EXCHANGE",
+      "classId": "antares",
+      "factionId": "starfleet",
+      "hull": 110,
+      "shield": 65,
+      "core": 75,
+      "photon": 0,
+      "quantum": 0,
+      "modules": [],
+      "engines": 100,
+      "weapons": 100,
+      "status": "docked",
+      "current": null,
+      "queue": [],
+      "suspended": [],
+      "standing": {
+        "roe": "RETURN FIRE",
+        "retreatHull": 30,
+        "retreatShield": 15,
+        "retreatCore": 10,
+        "photonThreshold": 20,
+        "quantumThreshold": 20,
+        "maxPursuit": 150,
+        "allowNeutral": false,
+        "allowRomulan": false,
+        "autoEscort": false,
+        "respondDistress": false,
+        "protectCivilian": false,
+        "protectFreighter": false,
+        "protectColony": false,
+        "serviceWhenDocked": false
+      },
+      "path": [],
+      "heading": 0,
+      "cargo": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "passengers": 0,
+      "cooldowns": {},
+      "lastAttackerId": null,
+      "attackedAt": -1000,
+      "scanUntil": 0,
+      "cloak": "off",
+      "cloakUntil": 0,
+      "emergencyRetreat": null,
+      "tracking": null,
+      "homeId": "exchange",
+      "orderId": null,
+      "phase": "idle",
+      "work": 0
+    }
+  ],
+  "communications": [
+    {
+      "id": 1,
+      "time": 0,
+      "priority": "high",
+      "text": "ADMIRAL：六舰待命。向 UNKNOWN SPACE 测绘，矿场已有材料等待运回；新曙殖民地提供 Credits 收益，矿场满仓时需要运输材料。",
+      "read": false,
+      "entityId": "mine",
+      "category": "request"
+    },
+    {
+      "id": 2,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS VERITY / 明理号 / REPLACE / EXPLORE",
+      "read": false,
+      "entityId": "verity",
+      "category": "report"
+    },
+    {
+      "id": 3,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS MERIDIAN-1 / REPLACE / HAUL",
+      "read": false,
+      "entityId": "meridian",
+      "category": "report"
+    },
+    {
+      "id": 4,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS HORIZON / 地平线号 / REPLACE / PATROL",
+      "read": false,
+      "entityId": "horizon",
+      "category": "report"
+    },
+    {
+      "id": 5,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / REPLACE / MOVE",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 6,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / QUEUE / DOCK",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 7,
+      "time": 0,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / MOVE",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 8,
+      "time": 1,
+      "priority": "normal",
+      "text": "Wormhole 调查：DAWN PASSAGE / 曙光通道探测到通道，需要确认稳定性",
+      "read": false,
+      "entityId": "event-7",
+      "category": "report"
+    },
+    {
+      "id": 9,
+      "time": 8.5,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 10,
+      "time": 68.8,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 11,
+      "time": 87.7,
+      "priority": "normal",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-A，永久星图已更新",
+      "read": false,
+      "entityId": "sector:0:-1:system:0",
+      "category": "report"
+    },
+    {
+      "id": 12,
+      "time": 87.7,
+      "priority": "normal",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-B，永久星图已更新",
+      "read": false,
+      "entityId": "sector:0:-1:system:1",
+      "category": "report"
+    },
+    {
+      "id": 13,
+      "time": 87.7,
+      "priority": "normal",
+      "text": "新 Sector 0/-1 已进入永久星图",
+      "read": false,
+      "entityId": "sector:0:-1",
+      "category": "report"
+    },
+    {
+      "id": 14,
+      "time": 87.7,
+      "priority": "normal",
+      "text": "USS VERITY / 明理号 / EXPLORE / 实际生成 2 个 Star System；可选择资源点与行星继续调查",
+      "read": false,
+      "entityId": "verity",
+      "category": "report"
+    },
+    {
+      "id": 15,
+      "time": 88,
+      "priority": "normal",
+      "text": "科学发现：古代遗迹 0/-1-0-1已完成近距调查，需要科学研究",
+      "read": false,
+      "entityId": "event-8",
+      "category": "report"
+    },
+    {
+      "id": 16,
+      "time": 88,
+      "priority": "normal",
+      "text": "Wormhole 调查：亚空间通道 0/-1探测到通道，需要确认稳定性",
+      "read": false,
+      "entityId": "event-9",
+      "category": "report"
+    },
+    {
+      "id": 17,
+      "time": 98.1,
+      "priority": "normal",
+      "text": "USS MERIDIAN-1 装载 279 materials；真实航线启用",
+      "read": false,
+      "entityId": "meridian",
+      "category": "report"
+    },
+    {
+      "id": 18,
+      "time": 100,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / REFIT",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 19,
+      "time": 120,
+      "priority": "normal",
+      "text": "NEW HORIZON / 新曙殖民地 Commander 推荐候选人 Cadet 11",
+      "read": false,
+      "entityId": "personnel-11",
+      "category": "report"
+    },
+    {
+      "id": 20,
+      "time": 124,
+      "priority": "urgent",
+      "text": "发现外部舰船接触：未知舰船，请 Admiral 处置后手动继续",
+      "read": false,
+      "entityId": "orion-scout",
+      "category": "threat"
+    },
+    {
+      "id": 21,
+      "time": 144.2,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 安装 Expanded Cargo",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 22,
+      "time": 144.2,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / REFIT / 模块能力已改变下一轮活动",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 23,
+      "time": 144.3,
+      "priority": "normal",
+      "text": "USS VIGIL / 守望号 / DOCK / 停靠；货物保留",
+      "read": false,
+      "entityId": "vigil",
+      "category": "report"
+    },
+    {
+      "id": 24,
+      "time": 185.7,
+      "priority": "normal",
+      "text": "USS MERIDIAN-1 实际交付 279 / 279 materials 至 DAWN STARBASE / 曙光基地",
+      "read": false,
+      "entityId": "base",
+      "category": "report"
+    },
+    {
+      "id": 25,
+      "time": 185.7,
+      "priority": "normal",
+      "text": "USS MERIDIAN-1 / HAUL / 交付完成",
+      "read": false,
+      "entityId": "meridian",
+      "category": "report"
+    },
+    {
+      "id": 26,
+      "time": 204,
+      "priority": "urgent",
+      "text": "发现外部舰船接触：Orion Surveyor orion-scout，请 Admiral 处置后手动继续",
+      "read": false,
+      "entityId": "orion-scout",
+      "category": "threat"
+    }
+  ],
+  "logs": [
+    {
+      "id": 1,
+      "time": 0,
+      "level": "info",
+      "text": "USS VERITY / 明理号 / REPLACE / EXPLORE"
+    },
+    {
+      "id": 2,
+      "time": 0,
+      "level": "info",
+      "text": "USS MERIDIAN-1 / REPLACE / HAUL"
+    },
+    {
+      "id": 3,
+      "time": 0,
+      "level": "info",
+      "text": "USS HORIZON / 地平线号 / REPLACE / PATROL"
+    },
+    {
+      "id": 4,
+      "time": 0,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / REPLACE / MOVE"
+    },
+    {
+      "id": 5,
+      "time": 0,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / QUEUE / DOCK"
+    },
+    {
+      "id": 6,
+      "time": 0,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / MOVE"
+    },
+    {
+      "id": 7,
+      "time": 1,
+      "level": "info",
+      "text": "Wormhole 调查：DAWN PASSAGE / 曙光通道探测到通道，需要确认稳定性"
+    },
+    {
+      "id": 8,
+      "time": 8.5,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标"
+    },
+    {
+      "id": 9,
+      "time": 68.8,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标"
+    },
+    {
+      "id": 10,
+      "time": 87.7,
+      "level": "info",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-A，永久星图已更新"
+    },
+    {
+      "id": 11,
+      "time": 87.7,
+      "level": "info",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-B，永久星图已更新"
+    },
+    {
+      "id": 12,
+      "time": 87.7,
+      "level": "info",
+      "text": "新 Sector 0/-1 已进入永久星图"
+    },
+    {
+      "id": 13,
+      "time": 87.7,
+      "level": "info",
+      "text": "USS VERITY / 明理号 / EXPLORE / 实际生成 2 个 Star System；可选择资源点与行星继续调查"
+    },
+    {
+      "id": 14,
+      "time": 88,
+      "level": "info",
+      "text": "科学发现：古代遗迹 0/-1-0-1已完成近距调查，需要科学研究"
+    },
+    {
+      "id": 15,
+      "time": 88,
+      "level": "info",
+      "text": "Wormhole 调查：亚空间通道 0/-1探测到通道，需要确认稳定性"
+    },
+    {
+      "id": 16,
+      "time": 98.1,
+      "level": "info",
+      "text": "USS MERIDIAN-1 装载 279 materials；真实航线启用"
+    },
+    {
+      "id": 17,
+      "time": 100,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / REFIT"
+    },
+    {
+      "id": 18,
+      "time": 120,
+      "level": "info",
+      "text": "NEW HORIZON / 新曙殖民地 Commander 推荐候选人 Cadet 11"
+    },
+    {
+      "id": 19,
+      "time": 124,
+      "level": "danger",
+      "text": "发现外部舰船接触：未知舰船，请 Admiral 处置后手动继续"
+    },
+    {
+      "id": 20,
+      "time": 144.2,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 安装 Expanded Cargo"
+    },
+    {
+      "id": 21,
+      "time": 144.2,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / REFIT / 模块能力已改变下一轮活动"
+    },
+    {
+      "id": 22,
+      "time": 144.3,
+      "level": "info",
+      "text": "USS VIGIL / 守望号 / DOCK / 停靠；货物保留"
+    },
+    {
+      "id": 23,
+      "time": 185.7,
+      "level": "info",
+      "text": "USS MERIDIAN-1 实际交付 279 / 279 materials 至 DAWN STARBASE / 曙光基地"
+    },
+    {
+      "id": 24,
+      "time": 185.7,
+      "level": "info",
+      "text": "USS MERIDIAN-1 / HAUL / 交付完成"
+    },
+    {
+      "id": 25,
+      "time": 204,
+      "level": "danger",
+      "text": "发现外部舰船接触：Orion Surveyor orion-scout，请 Admiral 处置后手动继续"
+    }
+  ],
+  "history": [
+    {
+      "id": 1,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS VERITY / 明理号 / REPLACE / EXPLORE",
+      "entityId": "verity"
+    },
+    {
+      "id": 2,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS MERIDIAN-1 / REPLACE / HAUL",
+      "entityId": "meridian"
+    },
+    {
+      "id": 3,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS HORIZON / 地平线号 / REPLACE / PATROL",
+      "entityId": "horizon"
+    },
+    {
+      "id": 4,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS VIGIL / 守望号 / REPLACE / MOVE",
+      "entityId": "vigil"
+    },
+    {
+      "id": 5,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS VIGIL / 守望号 / QUEUE / DOCK",
+      "entityId": "vigil"
+    },
+    {
+      "id": 6,
+      "time": 0,
+      "kind": "directive",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / MOVE",
+      "entityId": "vigil"
+    },
+    {
+      "id": 7,
+      "time": 1,
+      "kind": "event",
+      "text": "Wormhole 调查：DAWN PASSAGE / 曙光通道探测到通道，需要确认稳定性",
+      "entityId": "event-7"
+    },
+    {
+      "id": 8,
+      "time": 8.5,
+      "kind": "action",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标",
+      "entityId": "vigil"
+    },
+    {
+      "id": 9,
+      "time": 68.8,
+      "kind": "action",
+      "text": "USS VIGIL / 守望号 / MOVE / 抵达坐标",
+      "entityId": "vigil"
+    },
+    {
+      "id": 10,
+      "time": 87.7,
+      "kind": "discovery",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-A，永久星图已更新",
+      "entityId": "sector:0:-1:system:0"
+    },
+    {
+      "id": 11,
+      "time": 87.7,
+      "kind": "discovery",
+      "text": "USS VERITY / 明理号 发现 DF-0/-1-B，永久星图已更新",
+      "entityId": "sector:0:-1:system:1"
+    },
+    {
+      "id": 12,
+      "time": 87.7,
+      "kind": "discovery",
+      "text": "新 Sector 0/-1 已进入永久星图",
+      "entityId": "sector:0:-1"
+    },
+    {
+      "id": 13,
+      "time": 87.7,
+      "kind": "action",
+      "text": "USS VERITY / 明理号 / EXPLORE / 实际生成 2 个 Star System；可选择资源点与行星继续调查",
+      "entityId": "verity"
+    },
+    {
+      "id": 14,
+      "time": 88,
+      "kind": "event",
+      "text": "科学发现：古代遗迹 0/-1-0-1已完成近距调查，需要科学研究",
+      "entityId": "event-8"
+    },
+    {
+      "id": 15,
+      "time": 88,
+      "kind": "event",
+      "text": "Wormhole 调查：亚空间通道 0/-1探测到通道，需要确认稳定性",
+      "entityId": "event-9"
+    },
+    {
+      "id": 16,
+      "time": 98.1,
+      "kind": "cargo",
+      "text": "USS MERIDIAN-1 装载 279 materials；真实航线启用",
+      "entityId": "meridian"
+    },
+    {
+      "id": 17,
+      "time": 100,
+      "kind": "directive",
+      "text": "USS VIGIL / 守望号 / INTERRUPT / REFIT",
+      "entityId": "vigil"
+    },
+    {
+      "id": 18,
+      "time": 120,
+      "kind": "candidate",
+      "text": "NEW HORIZON / 新曙殖民地 Commander 推荐候选人 Cadet 11",
+      "entityId": "personnel-11"
+    },
+    {
+      "id": 19,
+      "time": 144.2,
+      "kind": "growth",
+      "text": "USS VIGIL / 守望号 安装 Expanded Cargo",
+      "entityId": "vigil"
+    },
+    {
+      "id": 20,
+      "time": 144.2,
+      "kind": "action",
+      "text": "USS VIGIL / 守望号 / REFIT / 模块能力已改变下一轮活动",
+      "entityId": "vigil"
+    },
+    {
+      "id": 21,
+      "time": 144.3,
+      "kind": "action",
+      "text": "USS VIGIL / 守望号 / DOCK / 停靠；货物保留",
+      "entityId": "vigil"
+    },
+    {
+      "id": 22,
+      "time": 185.7,
+      "kind": "cargo",
+      "text": "USS MERIDIAN-1 实际交付 279 / 279 materials 至 DAWN STARBASE / 曙光基地",
+      "entityId": "base"
+    },
+    {
+      "id": 23,
+      "time": 185.7,
+      "kind": "action",
+      "text": "USS MERIDIAN-1 / HAUL / 交付完成",
+      "entityId": "meridian"
+    }
+  ],
+  "beams": [],
+  "nextId": 12,
+  "nextLog": 26,
+  "nextComms": 27,
+  "nextHistory": 24
+}

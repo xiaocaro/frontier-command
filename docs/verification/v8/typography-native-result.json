@@ -1,0 +1,68 @@
+{
+  "checkedAt": "2026-10-05T12:36:16.232Z",
+  "results": [
+    {
+      "scale": 1.25,
+      "visible": true,
+      "offline": true,
+      "fonts": [
+        {
+          "familyName": "Antonio",
+          "postScriptName": "Antonio-Bold",
+          "isCustomFont": true,
+          "glyphCount": 17
+        },
+        {
+          "familyName": "Alibaba PuHuiTi LCARS",
+          "postScriptName": "AlibabaPuHuiTiLCARS-Bold",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ],
+      "normalFleetNames": true,
+      "errors": []
+    },
+    {
+      "scale": 1.5,
+      "visible": true,
+      "offline": true,
+      "fonts": [
+        {
+          "familyName": "Antonio",
+          "postScriptName": "Antonio-Bold",
+          "isCustomFont": true,
+          "glyphCount": 17
+        },
+        {
+          "familyName": "Alibaba PuHuiTi LCARS",
+          "postScriptName": "AlibabaPuHuiTiLCARS-Bold",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ],
+      "normalFleetNames": true,
+      "errors": []
+    },
+    {
+      "scale": 2,
+      "visible": true,
+      "offline": true,
+      "fonts": [
+        {
+          "familyName": "Antonio",
+          "postScriptName": "Antonio-Bold",
+          "isCustomFont": true,
+          "glyphCount": 17
+        },
+        {
+          "familyName": "Alibaba PuHuiTi LCARS",
+          "postScriptName": "AlibabaPuHuiTiLCARS-Bold",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ],
+      "normalFleetNames": true,
+      "errors": []
+    }
+  ]
+}

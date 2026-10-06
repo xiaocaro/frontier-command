@@ -1,0 +1,118 @@
+{
+  "time": 232.4,
+  "contacts": [
+    {
+      "x": 1068.6847252541274,
+      "y": -1240.6546180433943,
+      "id": "returning-orion",
+      "level": "TRACKED",
+      "strength": 12,
+      "lastSeen": 232,
+      "live": true,
+      "hostile": false,
+      "name": "Orion Surveyor returning-orion",
+      "factionId": "orion",
+      "classId": "raider",
+      "hull": 95,
+      "shield": 55,
+      "velocity": {
+        "x": -3.5414977126401936,
+        "y": 4.843324679532088
+      },
+      "resolved": false
+    }
+  ],
+  "siteContacts": [],
+  "knownEnemyLocations": [
+    {
+      "x": 1200,
+      "y": -1400,
+      "id": "orion-base",
+      "name": "Orion Hideout",
+      "label": "Orion Hideout",
+      "kind": "outpost",
+      "owner": "orion",
+      "siteId": null,
+      "stock": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "hull": 800,
+      "maxHull": 800,
+      "shield": 500,
+      "maxShield": 500,
+      "core": 0,
+      "attackedAt": -1000,
+      "lastAttackerId": null,
+      "cooldown": 0,
+      "distress": false,
+      "discovered": true,
+      "production": 0,
+      "capacity": {
+        "materials": 0,
+        "photon": 0,
+        "quantum": 0,
+        "specialFinds": 0
+      },
+      "storageFull": false,
+      "extracted": 0,
+      "colony": null
+    }
+  ],
+  "follower": {
+    "x": 954.1999999999898,
+    "y": -1400,
+    "id": "veil",
+    "name": "USS VEIL / 幽影号",
+    "classId": "veil",
+    "factionId": "starfleet",
+    "hull": 70,
+    "shield": 45,
+    "core": 99.8,
+    "photon": 0,
+    "quantum": 0,
+    "modules": [],
+    "engines": 100,
+    "weapons": 100,
+    "status": "idle",
+    "current": null,
+    "queue": [],
+    "suspended": [],
+    "standing": {
+      "roe": "HOLD FIRE",
+      "retreatHull": 30,
+      "retreatShield": 15,
+      "retreatCore": 10,
+      "photonThreshold": 20,
+      "quantumThreshold": 20,
+      "maxPursuit": 150,
+      "allowNeutral": false,
+      "allowRomulan": false,
+      "autoEscort": false,
+      "respondDistress": false,
+      "protectCivilian": false,
+      "protectFreighter": false,
+      "protectColony": false,
+      "serviceWhenDocked": false
+    },
+    "path": [],
+    "heading": 0,
+    "cargo": {
+      "materials": 0,
+      "photon": 0,
+      "quantum": 0,
+      "specialFinds": 0
+    },
+    "passengers": 0,
+    "cooldowns": {},
+    "lastAttackerId": null,
+    "attackedAt": -1000,
+    "scanUntil": 0,
+    "cloak": "on",
+    "cloakUntil": 0,
+    "emergencyRetreat": null,
+    "tracking": null
+  }
+}

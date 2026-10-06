@@ -1,0 +1,170 @@
+/* LCARS-26 Classic by Jim Robertus / TheLCARS.com.
+   Source dimensions: rail 240, bar 28, outer elbow 160, inner elbow 60.
+   One shared unit scales these dimensions together, including the black cuts. */
+@font-face {
+  font-family: Antonio;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('../../../assets/lcars-26/assets/Antonio-Regular.woff2') format('woff2'),
+    url('../../../assets/lcars-26/assets/Antonio-Regular.woff') format('woff');
+}
+@font-face {
+  font-family: Antonio;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url('../../../assets/lcars-26/assets/Antonio-Bold.woff2') format('woff2'),
+    url('../../../assets/lcars-26/assets/Antonio-Bold.woff') format('woff');
+}
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-weight: 400;
+  font-display: swap;
+  /* Both optical faces come from the supplied Medium. Their ink bounds and
+     strokes match Antonio; separate static faces prevent synthetic bold. */
+  src: url('../../../../fonts/AlibabaPuHuiTi-LCARS-Regular.ttf') format('truetype');
+  unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FE10-FE6F, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  font-weight: 700;
+  font-display: swap;
+  src: url('../../../../fonts/AlibabaPuHuiTi-LCARS-Bold.ttf') format('truetype');
+  unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FE10-FE6F, U+FF00-FFEF;
+}
+:root {
+  font-size: calc(1.125rem * var(--text-scale, 1));
+  color-scheme: dark;
+  font-synthesis: none;
+  --african-violet: #baa4e5;
+  --almond: #d29b7f;
+  --almond-creme: #fcc19f;
+  --barley: #edb378;
+  --bluey: #8899ff;
+  --butterscotch: #ea9c72;
+  --orange: #eb943a;
+  --red: #cf4f4f;
+  --subdued-sienna: #c47d69;
+  --ink: #000;
+  --text: var(--african-violet);
+  --muted: #b6a8c6;
+  --lcars-unit: clamp(12px, 0.92vw, 26.4px);
+  --rail: clamp(220px, 14vw, 360px);
+  --bar: calc(var(--lcars-unit) * 1.2727);
+  --outer: calc(var(--lcars-unit) * 7.2727);
+  --inner: calc(var(--lcars-unit) * 2.7273);
+  --cut: calc(var(--lcars-unit) * 0.35);
+  --divider: calc(var(--lcars-unit) * 0.5);
+  --space: clamp(10px, 0.9vw, 24px);
+  --inspector: clamp(280px, 18vw, 470px);
+  --header: clamp(166px, 21vh, 280px);
+  --footer: clamp(78px, 9vh, 128px);
+  --body-font: 1rem;
+  --latin-font: Antonio, 'Alibaba PuHuiTi', sans-serif;
+  --body-family: var(--latin-font);
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--latin-font);
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body,
+#root,
+.lcars-root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--ink);
+  font-size: var(--body-font);
+  line-height: 1.5;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--almond-creme);
+  outline-offset: 3px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0 0 1em;
+}
+h1 {
+  font-weight: 400;
+  line-height: 1;
+}
+h2 {
+  color: var(--almond-creme);
+  font-size: 1.615rem;
+  font-weight: 400;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+h3 {
+  margin-top: 1.4em;
+  color: var(--african-violet);
+  font-weight: 400;
+  font-size: 1.25em;
+  text-transform: uppercase;
+  border-bottom: var(--cut) solid var(--african-violet);
+  padding-bottom: 0.5em;
+}
+p {
+  line-height: 1.65;
+}
+small {
+  font-size: 0.82em;
+}
+b,
+strong {
+  font-weight: 700;
+}
+.muted {
+  color: var(--muted);
+}
+.warning {
+  color: var(--almond-creme);
+}
+.danger-text {
+  color: var(--red);
+}
+.wide {
+  width: 100%;
+}
+::selection {
+  background: var(--orange);
+  color: var(--ink);
+}
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--african-violet);
+}
+::-webkit-scrollbar-track {
+  background: var(--ink);
+}

@@ -1,0 +1,38 @@
+{
+  "verifiedAt": "2026-10-05T16:26:32.340743+00:00",
+  "worldVersion": 9,
+  "baseline": "49f5660",
+  "unit": {
+    "files": 11,
+    "passed": 159,
+    "failed": 0
+  },
+  "electron": {
+    "startTime": "2026-10-05T16:13:19.187Z",
+    "duration": 721955.705,
+    "expected": 30,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "normalWorld": {
+    "seed": 236807,
+    "complete": true,
+    "pageErrors": []
+  },
+  "fonts": {
+    "125": {
+      "maximumInkEdgeDifferencePx": 2,
+      "maximumStrokeDifference": 0.0751633986928103
+    },
+    "150": {
+      "maximumInkEdgeDifferencePx": 2,
+      "maximumStrokeDifference": 0.0751633986928103
+    },
+    "200": {
+      "maximumInkEdgeDifferencePx": 2,
+      "maximumStrokeDifference": 0.0751633986928103
+    }
+  },
+  "build": "passed"
+}

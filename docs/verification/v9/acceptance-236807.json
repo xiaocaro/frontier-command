@@ -1,0 +1,147 @@
+{
+  "seed": 236807,
+  "version": 9,
+  "complete": true,
+  "isolatedUserData": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\frontier-v9-acceptance-aXd61c",
+  "steps": [
+    {
+      "name": "start",
+      "time": 0,
+      "version": 9,
+      "ships": [
+        {
+          "id": "meridian",
+          "x": -282,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "vigil",
+          "x": -254,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "verity",
+          "x": -226,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "horizon",
+          "x": -198,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-2",
+          "x": -170,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-3",
+          "x": -142,
+          "y": 45,
+          "cloak": "off"
+        }
+      ],
+      "knownEnemyLocations": []
+    },
+    {
+      "name": "idle",
+      "time": 84.8,
+      "version": 9,
+      "ships": [
+        {
+          "id": "meridian",
+          "x": -282,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "vigil",
+          "x": -182.45528806808144,
+          "y": -114.52537119954815,
+          "cloak": "off"
+        },
+        {
+          "id": "verity",
+          "x": -226,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "horizon",
+          "x": -198,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-2",
+          "x": -170,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-3",
+          "x": -142,
+          "y": 45,
+          "cloak": "off"
+        }
+      ],
+      "knownEnemyLocations": []
+    },
+    {
+      "name": "veil",
+      "time": 198.4,
+      "version": 9,
+      "ships": [
+        {
+          "id": "meridian",
+          "x": -282,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "vigil",
+          "x": -182.45528806808144,
+          "y": -114.52537119954815,
+          "cloak": "off"
+        },
+        {
+          "id": "verity",
+          "x": 43.1898088913156,
+          "y": 4827.663439549974,
+          "cloak": "off"
+        },
+        {
+          "id": "horizon",
+          "x": -198,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-2",
+          "x": -170,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "meridian-3",
+          "x": -142,
+          "y": 45,
+          "cloak": "off"
+        },
+        {
+          "id": "veil",
+          "x": 40,
+          "y": 4835,
+          "cloak": "on"
+        }
+      ],
+      "knownEnemyLocations": []
+    }
+  ],
+  "errors": []
+}

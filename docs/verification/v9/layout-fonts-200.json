@@ -1,0 +1,4069 @@
+{
+  "nav": [
+    {
+      "english": "SECTOR",
+      "chinese": "星区",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "FLEET",
+      "chinese": "舰队",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "OPERATIONS",
+      "chinese": "行动",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "PERSONNEL",
+      "chinese": "人员",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "STARBASE",
+      "chinese": "基地",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "COLONIES",
+      "chinese": "殖民地",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    },
+    {
+      "english": "ARCHIVE",
+      "chinese": "档案",
+      "sameSize": true,
+      "sameLine": true,
+      "ordered": true,
+      "overflow": false
+    }
+  ],
+  "fonts": {
+    "chineseRegular": [
+      {
+        "familyName": "Alibaba PuHuiTi LCARS",
+        "postScriptName": "AlibabaPuHuiTiLCARS-Regular",
+        "isCustomFont": true,
+        "glyphCount": 2
+      }
+    ],
+    "englishRegular": [
+      {
+        "familyName": "Antonio",
+        "postScriptName": "Antonio-Regular",
+        "isCustomFont": true,
+        "glyphCount": 6
+      }
+    ],
+    "mixedBold": [
+      {
+        "familyName": "Antonio",
+        "postScriptName": "Antonio-Bold",
+        "isCustomFont": true,
+        "glyphCount": 17
+      },
+      {
+        "familyName": "Alibaba PuHuiTi LCARS",
+        "postScriptName": "AlibabaPuHuiTiLCARS-Bold",
+        "isCustomFont": true,
+        "glyphCount": 4
+      }
+    ]
+  },
+  "inkMetrics": [
+    {
+      "weight": 400,
+      "enText": "FLEET DIRECTIVES",
+      "zhText": "舰队指令",
+      "topDifference": 0,
+      "bottomDifference": 0,
+      "heightDifference": 0
+    },
+    {
+      "weight": 400,
+      "enText": "PRIORITY COMMUNICATIONS",
+      "zhText": "优先通信",
+      "topDifference": 0,
+      "bottomDifference": 0,
+      "heightDifference": 0
+    },
+    {
+      "weight": 400,
+      "enText": "CONTEXT INSPECTOR",
+      "zhText": "对象详情",
+      "topDifference": 1,
+      "bottomDifference": 2,
+      "heightDifference": 1
+    },
+    {
+      "weight": 400,
+      "enText": "STEALTH RECONNAISSANCE",
+      "zhText": "隐形侦察",
+      "topDifference": 1,
+      "bottomDifference": 1,
+      "heightDifference": 0
+    },
+    {
+      "weight": 700,
+      "enText": "FLEET DIRECTIVES",
+      "zhText": "舰队指令",
+      "topDifference": 0,
+      "bottomDifference": 0,
+      "heightDifference": 0
+    },
+    {
+      "weight": 700,
+      "enText": "PRIORITY COMMUNICATIONS",
+      "zhText": "优先通信",
+      "topDifference": 0,
+      "bottomDifference": 0,
+      "heightDifference": 0
+    },
+    {
+      "weight": 700,
+      "enText": "CONTEXT INSPECTOR",
+      "zhText": "对象详情",
+      "topDifference": 1,
+      "bottomDifference": 1,
+      "heightDifference": 0
+    },
+    {
+      "weight": 700,
+      "enText": "STEALTH RECONNAISSANCE",
+      "zhText": "隐形侦察",
+      "topDifference": 1,
+      "bottomDifference": 1,
+      "heightDifference": 0
+    }
+  ],
+  "strokeMetrics": [
+    {
+      "weight": 400,
+      "en": {
+        "vertical": 10.8,
+        "horizontal": 8.364705882352942
+      },
+      "zh": {
+        "vertical": 9.988235294117649,
+        "horizontal": 8.949019607843137
+      },
+      "verticalDifference": 0.0751633986928103,
+      "horizontalDifference": 0.06985466479137359
+    },
+    {
+      "weight": 700,
+      "en": {
+        "vertical": 13.76470588235294,
+        "horizontal": 11.364705882352942
+      },
+      "zh": {
+        "vertical": 13.63921568627451,
+        "horizontal": 11.364705882352942
+      },
+      "verticalDifference": 0.009116809116809121,
+      "horizontalDifference": 0
+    }
+  ],
+  "synthesis": "none",
+  "titleBars": {
+    "sector": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "fleet": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET / COMMAND RECORDS 舰队 / 指挥记录",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET / TASK GROUPS 舰队与编队",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREATE TASK GROUP 创建编队",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "OPERATIONS": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "OPERATIONS / COMMAND RECORDS 行动 / 指挥记录",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PERSISTENT WORLD EVENTS 持续世界事件",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "WORLD OPPORTUNITIES 世界机会与当前原因",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "PERSONNEL": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PERSONNEL / COMMAND RECORDS 人员 / 指挥记录",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PERSONNEL / CADET TRAINING 人员与 Cadet 培养",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / COMMAND 曙光基地 / 指挥",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/COMMAND": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / COMMAND 曙光基地 / 指挥",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/SHIPYARD": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / SHIPYARD 曙光基地 / 船坞",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/DRYDOCK": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / DRYDOCK 曙光基地 / 维修坞",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/ARMORY": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / ARMORY 曙光基地 / 军械库",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "INDUSTRY / PHYSICAL OUTPUT 工业 / 实物产出",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/ENGINEERING": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / ENGINEERING 曙光基地 / 工程",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "INDUSTRY / PHYSICAL OUTPUT 工业 / 实物产出",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/LOGISTICS": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / LOGISTICS 曙光基地 / 物流",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Federation Exchange 实物贸易",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "ACTUAL BASE INVENTORY 基地实物库存",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "INDUSTRY / PHYSICAL OUTPUT 工业 / 实物产出",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/SENSOR CONTROL": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / SENSOR CONTROL 曙光基地 / 传感器控制",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "STARBASE/DEFENSE GRID": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / DEFENSE GRID 曙光基地 / 防御网络",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CREDITS 380 / MATERIALS 70 预算 380 / 材料 70",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "SHIPYARD / INDUSTRY QUEUE 船坞 / 工业队列",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "COLONIES": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "COLONIES / COMMAND RECORDS 殖民地 / 指挥记录",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FRONTIER / COLONIES / MINES / OUTPOSTS 边疆 / 殖民地 / 矿场 / 前哨",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONSTRUCTION PROJECTS 建设项目",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "ARCHIVE": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "ARCHIVE / COMMAND RECORDS 档案 / 指挥记录",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PERMANENT LOSSES / 0 永久损失 / 0",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "TIMELINES 时间线",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PERSISTENT FRONTIER HISTORY / 0 持久边疆历史 / 0",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "NEXT STEP 下一步",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DAWN STARBASE / 曙光基地",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "PHYSICAL STORAGE 实际仓储 / 运行中",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ],
+    "directives": [
+      {
+        "title": "PRIORITY COMMUNICATIONS 优先通信",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CONTEXT INSPECTOR 对象详情",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "USS MERIDIAN-1",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "DIRECTIVES / QUEUE / SUSPENDED 当前指令 / 队列 / 挂起指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "CARGO 货舱 / 0 / 600",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "MODULES 模块 / 0 / 2",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "STANDING ORDERS 常备命令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET DIRECTIVES 舰队指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "ADMIRAL DIRECTIVE 舰队司令指令",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "INTENT / FINAL COMMAND AUTHORITY 指挥意图 / 最终指挥权",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "FLEET / ALL OWNED VESSELS 舰队 / 全部己方舰船",
+        "weight": "700",
+        "ends": [
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          },
+          {
+            "background": "rgb(234, 156, 114)",
+            "image": "none",
+            "borders": [
+              "0px",
+              "0px",
+              "0px",
+              "0px"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

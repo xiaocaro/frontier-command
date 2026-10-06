@@ -1,0 +1,44 @@
+[
+  {
+    "style": "Regular",
+    "weight": 400,
+    "source": "AlibabaPuHuiTi-3-65-Medium.ttf",
+    "verticalScale": 0.9425555250891143,
+    "baselineOffset": 102.2672744721689,
+    "growthRadius": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "strokes": {
+      "vertical": {
+        "target": 101.05705261230469,
+        "actual": 93.90625
+      },
+      "horizontal": {
+        "target": 82.45468139648438,
+        "actual": 87.00927734375
+      }
+    }
+  },
+  {
+    "style": "Bold",
+    "weight": 700,
+    "source": "AlibabaPuHuiTi-3-65-Medium.ttf",
+    "verticalScale": 0.911403740254012,
+    "baselineOffset": 113.09429279811256,
+    "growthRadius": {
+      "x": 18.44890594482422,
+      "y": 15.571627616882324
+    },
+    "strokes": {
+      "vertical": {
+        "target": 130.80406188964844,
+        "actual": 129.8857421875
+      },
+      "horizontal": {
+        "target": 112.24746704101562,
+        "actual": 111.82470703125
+      }
+    }
+  }
+]
