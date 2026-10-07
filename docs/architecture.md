@@ -1,5 +1,9 @@
 # Architecture
 
+> **当前存档版本：`CURRENT_SAVE_VERSION = 10`**（`src/engine/saves.ts:5`；schema 字面量 `version: z.literal(10)` 见 `src/engine/save-schema.ts:133`）。
+> v9 仅作为**迁移输入**存在（`migrateV9`），v8 及更早一律拒绝；v9 的校验契约已冻结在 `src/engine/legacy-v9/`，不得修改。
+> 下文按 “v9 Implementation” / “v10 production…” 分段叙述历史演进，阅读时请以上述当前版本为准，不要据分段推断现行版本。
+
 ## Authority
 
 Electron main owns the only authoritative `SimulationEngine`.

@@ -6,7 +6,9 @@
 
 https://join.geek-tech.club/problems2/agent-mmo-game
 
-关键边界：LV1至少三种机制不同的任务，真人实际操作为加分项；LV2建立成长反馈；LV3才要求模型驱动Agent及其互动。单人可以采用简单表现，现场有两分钟以内视频和试玩demo。本项目按LV1制作。
+关键边界：LV1至少三种机制不同的任务，真人实际操作为加分项；LV2建立成长反馈；LV3才要求模型驱动Agent及其互动。单人可以采用简单表现，现场有两分钟以内视频和试玩demo。
+
+> **更正（2026-10-07）**：此处原写“本项目按LV1制作”，已过时。项目实际已完成 **Lv1 + Lv2**（`README.md` 声明 “Lv1 + Lv2 / v10”，两条成长线见 `src/engine/definitions/progression.ts`），**Lv3 尚未开始**。本文件其余部分为立项时的资料阅读记录，保留原样。
 
 ## LCARS 页面
 
