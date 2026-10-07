@@ -421,7 +421,11 @@ CLAUDE.md §8 / §14 列出的 `00-baseline.md` … `CODEX_TASKS.md`、`CLAUDE_T
 | `README.md` / `docs/worldbuilding.md` | 世界规则、资源、势力、事件 | 供 Agent 的目标空间参考 |
 | `docs/verification/mine-accidents/README.md` | 当前准确的自验基线数字（13 文件 / 184 项） | 取代 `acceptance.md` 的过时数字 |
 
-**不建议直接作为设计输入**：`docs/verification.md`（锚点提交不存在）、`docs/verification-v5.md`（历史）、`docs/acceptance.md:7` 的 E2E 结论（C2 未仲裁）。
+**不建议直接作为设计输入**：`docs/verification-v5.md`（历史版本记录）。
+
+> **更正（2026-10-07，本文件 §4 订正后）**：此处原列三项，其中两项已不成立——
+> `docs/verification.md` 已加基线标注；`docs/acceptance.md:7` 的 E2E 结论已在 C2 仲裁后订正为 34/36 并注明失败定性。两份文档现在**可以**作为设计输入，但应以订正后的内容为准。
+> 另见本目录 `00-baseline.md` / `00-code-map.md` / `00-test-baseline.md`（Prompt 0 choice1 产物），它们是从本审计蒸馏/扩展而来的正式基线。
 
 ---
 
