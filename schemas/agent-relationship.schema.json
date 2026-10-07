@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-relationship.schema.json",
+  "title": "AgentRelationship",
+  "description": "Agent 对另一个 Agent 的关系。Agent.md §13/§14。影响 team-up 倾向与 Agent-Agent 互动结果（MVP 的 ESCORT 请求）。对应 docs/lv3/02-domain-model.md §6。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["targetAgentId", "value", "trust", "cooperation"],
+  "properties": {
+    "targetAgentId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "关系指向的另一个 Agent。不得等于自身 Agent.id。"
+    },
+    "value": {
+      "type": "number",
+      "minimum": -100,
+      "maximum": 100,
+      "description": "总体好感。-60 以下时 Agent.md §14 预期更可能 REJECT 组队。"
+    },
+    "trust": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "对对方可靠性的信任。与 value 分开：可能喜欢但不够信任其能力。"
+    },
+    "cooperation": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "历史协作顺畅度。TeamFit 决策项的输入之一。"
+    }
+  }
+}

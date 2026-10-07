@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-promise.schema.json",
+  "title": "AgentPromise",
+  "description": "Admiral 对 Agent 的承诺。Agent.md §18/§19。MVP EVT-07 Path A 与 EVT-09 Path A 的核心验证对象：兑现则 trust/loyalty/morale/goalProgress 上升，打破则 trust/loyalty 下降、stress 上升。对应 docs/lv3/02-domain-model.md §7。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "from", "to", "type", "description", "status", "createdAt", "resolvedAt", "fulfills"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "from": {
+      "type": "string",
+      "const": "admiral",
+      "description": "承诺方。MVP 仅支持 Admiral 发起承诺。"
+    },
+    "to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "受诺的 Agent.id。"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["reward", "equipment", "research", "leadership", "rest"],
+      "description": "Agent.md §18 的五类。EVT-07 的 Deep Scan 权限属 research/equipment。"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "人类可读的承诺文本，进提示词。"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "fulfilled", "broken"]
+    },
+    "createdAt": { "type": "number" },
+    "resolvedAt": {
+      "type": ["number", "null"],
+      "description": "新增字段（Agent.md §18 未定义）。结算时刻，便于审计与 §59 测试断言。pending 时为 null。"
+    },
+    "fulfills": {
+      "description": "新增字段（Agent.md §18 未定义）。机器可判定的兑现条件。没有它则 status 永远停在 pending，§19 的 trust 增减无法触发。",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "key"],
+          "properties": {
+            "kind": { "const": "grant-module" },
+            "key": {
+              "type": "string",
+              "enum": ["deepScan", "longRangeSensors", "precisionTargeting", "reinforcedShields", "expandedCargo"],
+              "description": "对应既有 ModuleId（src/engine/types.ts:10-15）。引擎在既有 REFIT 命令完成时自动判定兑现。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "key"],
+          "properties": {
+            "kind": { "const": "grant-upgrade" },
+            "key": {
+              "type": "string",
+              "enum": ["shipyard", "armory", "sensors", "logistics", "defense"],
+              "description": "对应既有 UpgradeId（src/engine/types.ts:16）。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "grant-rest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "amount"],
+          "properties": {
+            "kind": { "const": "grant-credits" },
+            "amount": { "type": "number", "minimum": 0 }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-message.schema.json",
+  "title": "AgentMessage",
+  "description": "Admiral 与 Agent 之间、以及 Agent 与 Agent 之间的一条双向消息。Agent.md §36-§43。与既有 Communication（src/engine/types.ts:411-419，单向世界事件流）语义不同：本类型需要 from/to/read/payload。Agent 的对外发言同时产生一条 Communication，使既有 UI 零改动即可显示。对应 docs/lv3/02-domain-model.md §12。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "at", "from", "to", "kind", "text", "payload", "read"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "at": {
+      "type": "number",
+      "description": "模拟时间（游戏分钟）。"
+    },
+    "from": {
+      "type": "string",
+      "minLength": 1,
+      "description": "'admiral' 或某个 Agent.id。"
+    },
+    "to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "'admiral' 或某个 Agent.id。"
+    },
+    "kind": {
+      "type": "string",
+      "description": "消息类别。前六类对应 Agent.md §36 的 Admiral 互动；team-* 对应 §43 的 Agent-Agent 互动。",
+      "enum": [
+        "command",
+        "ask",
+        "negotiate",
+        "promise",
+        "encourage",
+        "override",
+        "team-request",
+        "team-reply",
+        "report"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "面向玩家 / Agent 的自然语言。"
+    },
+    "payload": {
+      "description": "结构化部分。按 kind 判别。",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "description": "kind === 'promise'：承诺内容，指向 AgentPromise。",
+          "additionalProperties": false,
+          "required": ["promiseId"],
+          "properties": { "promiseId": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "description": "kind === 'override'：记录被强制执行的既有指令。Override 改变 Agent 意愿，**不绕过引擎验证**（Agent.md §55 Rule 7）。",
+          "additionalProperties": false,
+          "required": ["directiveActionType"],
+          "properties": {
+            "directiveActionType": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "description": "kind === 'team-request' / 'team-reply'：Agent-Agent 组队。MVP 用既有 ESCORT 表达（src/engine/types.ts:233）。",
+          "additionalProperties": false,
+          "required": ["requestingAgentId", "accept"],
+          "properties": {
+            "requestingAgentId": { "type": "string", "minLength": 1 },
+            "accept": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "description": "kind === 'negotiate'：反报价条件。Agent.md §39。",
+          "additionalProperties": false,
+          "required": ["requestType"],
+          "properties": {
+            "requestType": {
+              "type": "string",
+              "enum": ["teammate", "equipment", "reward", "rest", "extension"]
+            },
+            "targetAgentId": { "type": "string", "minLength": 1 },
+            "value": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "read": {
+      "type": "boolean",
+      "description": "Agent 是否已处理。未读消息进入下一次 AgentObservation.pendingMessages。"
+    }
+  }
+}

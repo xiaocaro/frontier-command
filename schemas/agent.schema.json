@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent.schema.json",
+  "title": "Agent",
+  "description": "Lv3 Agent 聚合根。Agent.md §2/§4/§5/§6/§7/§8。与 Ship 是两个实体：Agent 拥有目标、人格、记忆、关系；Ship 拥有物理状态。绑定关系复用既有 Assignment（src/engine/types.ts:388-392），本类型不重复表达。持久化决策见 docs/lv3/02-persistence-strategy.md（v11）。对应 docs/lv3/02-domain-model.md §1-§4。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "career",
+    "personality",
+    "state",
+    "goal",
+    "relationships",
+    "memories",
+    "promises",
+    "nextDecisionAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "稳定标识，形如 'agent-<n>'，沿用既有 WorldState.nextId 分配方式。与玩家改名解耦（既有 renamedEntityIds 原则）。"
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "career": {
+      "type": "string",
+      "description": "Agent.md §8。MVP 使用四个明显不同的职业，对应四个初始 Agent。",
+      "enum": ["explorer", "scientist", "tactical", "logistics"]
+    },
+    "personality": { "$ref": "#/$defs/personality" },
+    "state": { "$ref": "#/$defs/state" },
+    "goal": { "$ref": "#/$defs/goal" },
+    "relationships": {
+      "type": "array",
+      "items": { "$ref": "agent-relationship.schema.json" },
+      "description": "指向其他 Agent 的关系。规模等于 Agent 总数减一。"
+    },
+    "memories": {
+      "type": "array",
+      "items": { "$ref": "agent-memory.schema.json" },
+      "maxItems": 40,
+      "description": "有界（提案上限 40）。超限按 weight 升序淘汰，淘汰必须确定性，否则会破坏同 seed 重放断言（tests/architecture.test.ts:39-60）。"
+    },
+    "promises": {
+      "type": "array",
+      "items": { "$ref": "agent-promise.schema.json" },
+      "maxItems": 20,
+      "description": "有界（提案上限 20）。只保留 pending 与最近 N 条已解决。"
+    },
+    "nextDecisionAt": {
+      "type": "number",
+      "description": "下次可决策的模拟时间。类比既有 Enemy.nextDecision（src/engine/types.ts:298）。**必须持久化**——否则读档后所有 Agent 会同时触发决策。"
+    }
+  },
+  "$defs": {
+    "personality": {
+      "type": "object",
+      "description": "Agent.md §5。相对稳定，0-100。五个维度共同解释『为什么两个能力相近的 Agent 会做出不同选择』。",
+      "additionalProperties": false,
+      "required": ["riskTolerance", "curiosity", "loyalty", "cooperation", "ambition"],
+      "properties": {
+        "riskTolerance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "0 = 极度保守，50 = 普通，100 = 极度冒险。DecisionScore 的 RiskDiscomfort 项输入。"
+        },
+        "curiosity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "探索未知的兴趣。"
+        },
+        "loyalty": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "对公司 / Admiral 的忠诚倾向（性格层面，与可变的 state.loyaltyToCompany 区分）。"
+        },
+        "cooperation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "与其他 Agent 合作的倾向。TeamFit 项输入。"
+        },
+        "ambition": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "追求晋升、能力、成就与个人发展的程度。"
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "description": "Agent.md §4/§6，相对 §4 收窄：删去 currentLocation（可派生）、skills（MVP Defer）、currentAssignment（改用既有 Assignment）。这些量随游戏变化，必须持久化。",
+      "additionalProperties": false,
+      "required": [
+        "fatigue",
+        "stress",
+        "morale",
+        "trustInAdmiral",
+        "loyaltyToCompany",
+        "experience",
+        "reputation",
+        "goalProgress"
+      ],
+      "properties": {
+        "fatigue": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Agent.md §21 分档：0-39 正常 / 40-69 疲劳 / 70-84 严重疲劳 / 85-100 强制休息。"
+        },
+        "stress": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Override 使其 +10（§42）。"
+        },
+        "morale": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Override 使其 -5（§42）；Promise 兑现使其上升（§19）。"
+        },
+        "trustInAdmiral": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "与 loyaltyToCompany **必须分开**（Agent.md §20）：可能仍然忠诚但已不相信 Admiral。"
+        },
+        "loyaltyToCompany": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "是否愿意继续为公司工作。Quit 系统（§47，MVP 延后）的输入之一。"
+        },
+        "experience": { "type": "number", "minimum": 0 },
+        "reputation": { "type": "number", "minimum": 0 },
+        "goalProgress": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "冗余于 goal.progress，便于快速读取与持久化断言。"
+        }
+      }
+    },
+    "goal": {
+      "type": "object",
+      "description": "Agent.md §7，简化版：以 goalKind 枚举取代 conditions 条件求值器（后者属 §52 排除的复杂系统）。§48 的 goal progress 本质是由事件驱动的数值增减，kind 足以支撑 GoalAlignment 计算。",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "progress", "priority"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "人类可读，进提示词。"
+        },
+        "kind": {
+          "type": "string",
+          "description": "供机器判定目标对齐。对应 Agent.md §9-§12 四个初始 Agent 各自的诉求。",
+          "enum": ["discovery", "research", "command", "logistics"]
+        },
+        "progress": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Agent.md §48：发现异常 +10、完成 Deep Scan +15、发现重大线索 +30、被强制停止调查 0 或负。"
+        },
+        "priority": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-memory.schema.json",
+  "title": "AgentMemory",
+  "description": "Lv3 Agent 的一条记忆。三类判别联合：episodic / social / promise。必须有界（提案上限 40 条，按 weight 升序淘汰），且检索必须确定性（按 tags 匹配 + weight 排序），不得引入语义搜索。对应 docs/lv3/02-domain-model.md §5。",
+  "oneOf": [
+    { "$ref": "#/$defs/episodic" },
+    { "$ref": "#/$defs/social" },
+    { "$ref": "#/$defs/promise" }
+  ],
+  "$defs": {
+    "memoryTag": {
+      "type": "string",
+      "description": "供确定性检索的标签。'admiral-override' 与 'promise-broken' 是 MVP EVT-07/EVT-09 的核心验证标签。",
+      "enum": [
+        "admiral-override",
+        "promise-kept",
+        "promise-broken",
+        "mission-success",
+        "mission-failure",
+        "discovery",
+        "team-up",
+        "conflict",
+        "near-death",
+        "risk-taken"
+      ]
+    },
+    "weight": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "影响提示词排序与淘汰优先级。越高越不容易被淘汰。"
+    },
+    "episodic": {
+      "type": "object",
+      "description": "重要事件记忆。Agent.md §16。",
+      "additionalProperties": false,
+      "required": ["kind", "id", "at", "text", "tags", "weight"],
+      "properties": {
+        "kind": { "const": "episodic" },
+        "id": { "type": "string", "minLength": 1 },
+        "at": {
+          "type": "number",
+          "description": "模拟时间（游戏分钟），与 WorldState.time 同一时基。"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 400,
+          "description": "进提示词的一句话。必须由引擎结算结果生成，不得直接采用 LLM 的 reason 字段（reason 不是事实来源）。"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/memoryTag" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "weight": { "$ref": "#/$defs/weight" },
+        "subjectId": {
+          "type": ["string", "null"],
+          "description": "相关实体 ID（事件 / 舰船 / 地点 / 天体）。"
+        }
+      }
+    },
+    "social": {
+      "type": "object",
+      "description": "对其他 Agent 的认知。Agent.md §17。影响 trust / team-up / recommendation / conflict / negotiation。",
+      "additionalProperties": false,
+      "required": ["kind", "id", "at", "aboutAgentId", "text", "weight"],
+      "properties": {
+        "kind": { "const": "social" },
+        "id": { "type": "string", "minLength": 1 },
+        "at": { "type": "number" },
+        "aboutAgentId": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "maxLength": 400 },
+        "weight": { "$ref": "#/$defs/weight" }
+      }
+    },
+    "promise": {
+      "type": "object",
+      "description": "与某条 AgentPromise 关联的记忆。Agent.md §18。",
+      "additionalProperties": false,
+      "required": ["kind", "id", "promiseId", "at", "text", "weight"],
+      "properties": {
+        "kind": { "const": "promise" },
+        "id": { "type": "string", "minLength": 1 },
+        "promiseId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "指向 agent-promise.schema.json 定义的 AgentPromise.id。"
+        },
+        "at": { "type": "number" },
+        "text": { "type": "string", "maxLength": 400 },
+        "weight": { "$ref": "#/$defs/weight" }
+      }
+    }
+  }
+}

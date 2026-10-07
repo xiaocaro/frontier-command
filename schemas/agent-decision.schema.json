@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-decision.schema.json",
+  "title": "AgentDecision",
+  "description": "LLM（或确定性 fallback）输出的结构化决策。Agent.md §24/§57。**必须**是结构化 JSON，禁止自由文本作为唯一输出。本 schema 是 LLM 输出契约与 Zod runtime contract 的共同来源。对应 docs/lv3/02-domain-model.md §11 与 docs/lv3/02-llm-boundary.md §5。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "reason", "promptVersion", "observationTick", "provider"],
+  "properties": {
+    "intent": {
+      "type": "string",
+      "description": "高层意图。Agent.md §23。LLM 决定『我想做什么』；Engine 决定『这件事能不能发生』。",
+      "enum": ["act", "wait", "request", "invite", "respond", "rest", "quit"]
+    },
+    "choiceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "intent === 'act' 时必填。必须能在 AgentObservation.availableActions 的 id 中找到；找不到即拒绝（Agent.md §55 Rule 3）。LLM **不得**自行构造 Action 参数（§28）。"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 600,
+      "description": "Agent 自述的理由。进记忆说明与调试日志。**不是事实来源**——真正的结果以引擎结算为准，记忆文本不得直接取自本字段。"
+    },
+    "say": {
+      "type": "string",
+      "maxLength": 600,
+      "description": "面向玩家的自然语言。写入 AgentMessage 并同时产生一条既有 Communication，使既有 UI 通信流零改动即可显示。"
+    },
+    "request": {
+      "type": "object",
+      "description": "intent === 'request' 时使用。Agent.md §38/§39。",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["teammate", "equipment", "reward", "rest", "extension"]
+        },
+        "targetAgentId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "type === 'teammate' 时的目标 Agent。MVP EVT-03 的唯一 Agent-Agent 互动。"
+        },
+        "value": { "type": "number" }
+      }
+    },
+    "promptVersion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "产生本决策的提示词版本（CLAUDE.md §7 要求提示词版本化）。写日志以便回溯。"
+    },
+    "observationTick": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "本决策所依据的 Observation 的 tick。用于 stale 检测：若决策返回时世界已推进过多则丢弃，且**不 fallback**（基于旧观测算出的分数同样是错的）。"
+    },
+    "provider": {
+      "type": "string",
+      "description": "决策来源。确定性 fallback 与 LLM 路径必须产生同一种结构，仅本字段不同——这使 Agent.md §59 的测试可在无网络条件下运行。",
+      "enum": ["llm", "deterministic"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "intent": { "const": "act" } },
+        "required": ["intent"]
+      },
+      "then": { "required": ["choiceId"] }
+    },
+    {
+      "if": {
+        "properties": { "intent": { "const": "request" } },
+        "required": ["intent"]
+      },
+      "then": { "required": ["request"] }
+    }
+  ]
+}

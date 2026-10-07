@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier-command.local/schemas/agent-action-candidate.schema.json",
+  "title": "AgentActionCandidate",
+  "description": "一个可供 Agent 选择的候选动作。Agent.md §27/§28。取代不可靠的 legalActions（src/engine/projection.ts:212-226 为硬编码，漏 12 个可执行动作又列出 3 个受约束动作）。LLM 只回 choiceId，由引擎侧据此解析出已构造好的 Action，从而消除参数幻觉、非法目标与越权。对应 docs/lv3/02-domain-model.md §10。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "label", "action", "risk", "reward", "goalKinds", "requirements"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "choiceId。稳定且可读，例如 'explore:0/12'、'survey:<bodyId>'、'escort:<shipId>'、'accept' / 'reject' / 'counteroffer'。由引擎侧生成，LLM 只能选取不得构造。"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "人类可读标签，进提示词。"
+    },
+    "action": {
+      "type": "object",
+      "description": "已经构造好的既有 Action（src/engine/types.ts:210-240）。必须能通过既有 actionSchema（src/engine/commands.ts:25-78）与 validateAction（src/engine/command-system.ts:34-148）。Lv3 不新增 Action 种类。",
+      "minProperties": 1,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "既有 Action 判别字段。完整枚举见 src/engine/types.ts:210-240。",
+          "enum": [
+            "MOVE",
+            "EXPLORE",
+            "SURVEY",
+            "RETURN",
+            "ASSIST_EVENT",
+            "TRANSIT",
+            "CAPTURE",
+            "HAIL",
+            "HAUL",
+            "ATTACK",
+            "DISABLE",
+            "DRIVE_OFF",
+            "INTERCEPT",
+            "SHADOW",
+            "ESCORT",
+            "PATROL",
+            "RETREAT",
+            "DOCK",
+            "REPAIR",
+            "REARM",
+            "REFIT",
+            "UNLOAD",
+            "RECOVER"
+          ]
+        }
+      }
+    },
+    "risk": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "风险评估。由既有 routeEstimate（src/engine/navigation.ts:170）与目标区域威胁度合成。供 DecisionScore 的 RiskDiscomfort 项。"
+    },
+    "reward": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "收益评估。由既有 opportunities（src/engine/projection.ts:10-58）语义映射。供 RewardAttractiveness 项。"
+    },
+    "goalKinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["discovery", "research", "command", "logistics"]
+      },
+      "uniqueItems": true,
+      "description": "与此候选对齐的目标类型。供 GoalAlignment 与 SkillFit 项。"
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 120 },
+      "description": "人类可读的硬性前置（如「需要 Deep Scan 模块」）。仅供参考与提示词，**不作为合法性判据**——合法性由 validateAction 决定。"
+    }
+  }
+}
