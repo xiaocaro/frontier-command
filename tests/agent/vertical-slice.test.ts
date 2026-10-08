@@ -32,6 +32,7 @@ import {
   agentRuntime,
   agentShipOf,
   engineMessenger,
+  engineSubmitter,
   observationFor,
   offerMission,
   operatorOf,
@@ -556,6 +557,68 @@ describe('P3-00 the host frame is what closes the loop', () => {
         outcome: 'success',
       },
     ]);
+  });
+});
+
+describe('P3-03 the Agent-Agent team-up is real game state (EVT-03)', () => {
+  /** What `AgentHost.frame` does with a frame's settlement facts, for tests that skip the host. */
+  const drainFacts = (engine: SimulationEngine) => {
+    for (const event of engine.pendingEvents.splice(0))
+      if (event.type === 'agentEvent') engine.dispatchCommand({ type: 'agentEvent', event: event.event });
+  };
+
+  it('accepting moves both relationships, then the escort is really submitted', () => {
+    const engine = quietEngine();
+    const tactical = agentByCareer(engine, 'tactical');
+    const tacticalShip = agentShipOf(engine, tactical);
+    // `physicalCandidates` caps the escort list (`CANDIDATE_CAPS.escort`), so pair with a ship that is
+    // actually on the menu rather than assuming one is.
+    const peerOf = (shipId: string) => {
+      const assignment = engine.state.assignments.find((a) => a.shipId === shipId);
+      return engine.state.operators.find((o) => o.id === assignment?.operatorId)?.agentId ?? null;
+    };
+    const peerShip = observationFor(engine, tactical.id)
+      .availableActions.filter((c) => c.id.startsWith('escort:'))
+      .map((c) => c.id.slice('escort:'.length))
+      .find((shipId) => {
+        const peer = peerOf(shipId);
+        return peer !== null && peer !== tactical.id;
+      });
+    expect(peerShip).toBeDefined();
+    const explorer = { id: peerOf(peerShip!)! };
+    requestTeamUp(engine, explorer.id, tactical.id);
+
+    // 1. The social answer — one decision beat.
+    const answerTo = observationFor(engine, tactical.id);
+    expect(
+      applyFor(
+        engine,
+        answerTo,
+        decisionFor(answerTo, { intent: 'respond', choiceId: 'team-accept:' + explorer.id }),
+      ),
+    ).toEqual({ status: 'replied', to: explorer.id, kind: 'team-reply' });
+
+    // The reply emits a settlement fact (the engine decided what the answer was); the host applies it.
+    drainFacts(engine);
+    const regard = (from: string, to: string) =>
+      agentById(engine, from).relationships.find((r) => r.targetAgentId === to)!;
+    expect(regard(explorer.id, tactical.id).value).toBe(10);
+    expect(regard(tactical.id, explorer.id).value).toBe(10);
+
+    // 2. A separate decision beat submits the physical half. `escort:<shipId>` is an existing
+    //    candidate and `validateAction` accepts it, so this is a normal `act` — nothing new.
+    const escort = observationFor(engine, tactical.id);
+    const candidate = escort.availableActions.find((option) => option.id === 'escort:' + peerShip);
+    expect(candidate).toBeDefined();
+    const runtime = agentRuntime(silent(), undefined, engineSubmitter(engine), engineMessenger(engine));
+    expect(runtime.applyDecision(escort, decisionFor(escort, { intent: 'act', choiceId: candidate!.id }))).toEqual(
+      { status: 'submitted', choiceId: candidate!.id },
+    );
+
+    const ship = engine.state.ships.find((s) => s.id === tacticalShip)!;
+    expect(ship.current?.action).toEqual({ type: 'ESCORT', targetId: peerShip });
+    // It is the Agent's own directive, not the Admiral's — which is why it does not settle a mission.
+    expect(ship.current?.source).toBe('standing');
   });
 });
 
