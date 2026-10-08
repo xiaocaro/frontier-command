@@ -247,8 +247,21 @@ tests/architecture.test.ts:39-60                          ← 必须继续通过
 | SC-1 | ✅ **完成**（2026-10-08） | `electron/agent/scheduler.ts`、`tests/agent/scheduler.test.ts`（18 用例，`S-1…S-11` + `C-17` 全覆盖） |
 | SC-2 | ✅ **完成**（2026-10-08） | 5 个引擎文件共 **+44 行、0 删除**（纯追加，约束 ⑤ 满足）；`tests/agent/triggers.test.ts`（10 用例） |
 | SC-3 | ✅ **完成**（2026-10-08） | **新增 `electron/agent-host.ts`**（见下方偏离说明）、`main.ts` 接线、`tests/agent/host.test.ts`（14 用例） |
-| SC-4 | ⬜ 未开始 | 决策提交（选项 B） |
+| SC-4 | ✅ **完成**（2026-10-08） | `runtime.ts` 的 `applyDecision` + `ActionSubmitter`、`scheduler.ts` 的 drain/提交前 stale 复核、`agent-host.ts` 绑定端口；`tests/agent/submission.test.ts`（7 用例）+ `scheduler.test.ts` 追加 2 例 |
 | SC-5 | ⬜ 未开始 | 阶段文档 |
+
+**SC-4 的三个设计决定**（批准文件未规定，实现时定，均可被测试固定）：
+
+1. **`requestDecision` 与 `applyDecision` 拆成两个入口**，而不是让 `requestDecision` 顺手提交。
+   P1/P2 有一条断言「问一次决策不得改动世界」（`boundary.test.ts` B-10）；把提交塞进 `requestDecision`
+   会直接推翻它。拆开之后，前半段保持纯函数语义，后半段是唯一让决策变成动作的地方（§4.7）。
+2. **提交走注入的 `ActionSubmitter`，而不是 `AgentControllerPort` 本身。** 端口是绑定到 operator 的，
+   把它注入进来就意味着 `runtime.ts` 要写出 `submitAction` 这个名字——而 B-2 **禁止整个 agent 层**
+   出现该名字。注入一个函数让**宿主**去绑定，于是 B-2 **一行都不用放宽**：
+   `submitAction` / `controllerPort` 只出现在 `electron/agent-host.ts`（新增断言 B-13 固定这一点）。
+3. **提交前重做 stale 复核**（§4.7 要求）。运行时只对「它拿到的那份观测」判过新旧，说不清「问」与
+   「答」之间隔了多久。模型耗时以秒计，16× 下就是上百游戏分钟，超过 `STALE_TICK_LIMIT`。
+   复核放在 `scheduler.drain`（那里才有当前世界时间），过期则**丢弃且不提交**。
 
 **SC-3 的两处计划偏离（CLAUDE.md §9 要求说明）**：
 
