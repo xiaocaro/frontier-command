@@ -19,6 +19,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isSocialChoiceId } from '../../src/engine/agent/actions';
 import type { AgentMessage, AgentObservation } from '../../src/engine/agent/types';
 import type { DecisionRequest, JsonSchema } from './model-client';
 import { DEFAULT_DECISION_TIMEOUT_MS } from './model-client';
@@ -30,7 +31,7 @@ export type PromptFileName = (typeof PROMPT_FILES)[number];
 const VERSION_PATTERN = /prompt_version:\s*([A-Za-z0-9._-]+)/;
 
 export interface PromptTemplates {
-  /** The agreed `prompt_version` across every file (e.g. `agent-v1`). */
+  /** The agreed `prompt_version` across every file (e.g. `agent-v2`). */
   version: string;
   system: string;
   decision: string;
@@ -292,6 +293,19 @@ export function renderSituation(observation: AgentObservation): string {
           candidate.id +
           '：' +
           candidate.label +
+          // Which `intent` this option is legal under, said where the choice is made.
+          //
+          // This line exists because of a live failure, not a theory: the menu mixes two kinds of
+          // option and they are **not** interchangeable. A physical option (`explore:0/-1`) is
+          // chosen with `act`; a social one (`accept`, `team-accept:<id>`) is chosen with `respond`,
+          // and `validateDecisionShape` rejects `act` + a social id outright — `act` means "submit
+          // this Action to the engine", and a social option is not an Action
+          // (src/engine/agent/decision.ts). Nothing in the menu used to say so, and a real DeepSeek
+          // call answered `{"intent":"act","choiceId":"accept"}` — a defensible reading of the old
+          // wording, and a rejected decision. Stating the pairing per candidate removes the
+          // ambiguity at the point of decision instead of asking the model to cross-reference a rule.
+          '｜intent：' +
+          (isSocialChoiceId(candidate.id) ? 'respond' : 'act') +
           '｜风险 ' +
           num(candidate.risk) +
           '｜回报 ' +

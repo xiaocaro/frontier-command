@@ -12,6 +12,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { MockModelClient } from '../../electron/agent/mock-client';
+import { AGENT_PROMPT_VERSION } from '../../src/engine/agent/decision';
 import { SimulationEngine } from '../../src/engine/engine';
 import type { AgentCareer, AgentDecision } from '../../src/engine/types';
 import {
@@ -103,7 +104,7 @@ describe('L-2 the same observation and the same recording give the same decision
   it('stamps every recorded step with the world it was formed against', async () => {
     for (const step of await playOpening()) {
       expect(step.decision.observationTick).toBe(0);
-      expect(step.decision.promptVersion).toBe('agent-v1');
+      expect(step.decision.promptVersion).toBe(AGENT_PROMPT_VERSION);
       expect(step.outcome).toBe('provider');
       expect(step.providerFailure).toBeNull();
     }

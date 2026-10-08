@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "promptVersion": "agent-v1",
+  "promptVersion": "agent-v2",
   "note": "录制决策库：P1 Decision Runtime 的 fixture。键为 docs/lv3/01-mvp-scenario.md 的事件编号（EVT-07/EVT-09 带 variant）。数组顺序即 rule 顺序。这不是 MVP 剧情脚本——Runtime 不认识 scenario，测试把某条录制喂给 provider，Runtime 只负责校验与降级。",
   "tokens": {
     "#first:<prefix>": "AgentObservation.availableActions 中第一个以该前缀开头的 id",
@@ -117,7 +117,7 @@
     "invalid-json": { "kind": "text", "text": "{\"intent\": \"act\", \"reason\":" },
     "schema-mismatch": {
       "kind": "text",
-      "text": "{\"intent\":\"act\",\"reason\":\"忘了给 choiceId\",\"promptVersion\":\"agent-v1\",\"observationTick\":0,\"provider\":\"llm\"}"
+      "text": "{\"intent\":\"act\",\"reason\":\"忘了给 choiceId\",\"promptVersion\":\"agent-v2\",\"observationTick\":0,\"provider\":\"llm\"}"
     },
     "invalid-choice-id": {
       "kind": "decision",

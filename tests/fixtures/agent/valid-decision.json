@@ -3,7 +3,7 @@
   "choiceId": "explore:0/-1",
   "reason": "边疆测绘符合我的目标，风险在可接受范围内。",
   "say": "我去看看那片未知空域。",
-  "promptVersion": "agent-v1",
+  "promptVersion": "agent-v2",
   "observationTick": 1200,
   "provider": "llm"
 }

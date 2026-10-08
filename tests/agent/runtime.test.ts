@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { MockModelClient } from '../../electron/agent/mock-client';
 import { scoringAgent } from '../../electron/agent/runtime';
 import type { ModelClient } from '../../electron/agent/model-client';
-import { STALE_TICK_LIMIT } from '../../src/engine/agent/decision';
+import { AGENT_PROMPT_VERSION, STALE_TICK_LIMIT } from '../../src/engine/agent/decision';
 import { decisionScore } from '../../src/engine/agent/score';
 import { episodicMemory } from '../../src/engine/agent/memory';
 import { agentDecisionSchema } from '../../src/engine/agent/schemas';
@@ -77,7 +77,7 @@ describe('the happy path is the pipeline, end to end', () => {
     expect(outcome.decision.choiceId).toBe('counteroffer');
     expect(outcome.decision.provider).toBe('llm');
     expect(outcome.decision.observationTick).toBe(observation.tick);
-    expect(outcome.decision.promptVersion).toBe('agent-v1');
+    expect(outcome.decision.promptVersion).toBe(AGENT_PROMPT_VERSION);
     expect(outcome.trace.outcome).toBe('provider');
     expect(outcome.trace.fallbackUsed).toBe(false);
     expect(outcome.trace.providerFailure).toBeNull();

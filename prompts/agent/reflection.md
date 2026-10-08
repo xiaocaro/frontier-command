@@ -1,4 +1,4 @@
-<!-- prompt_version: agent-v1 -->
+<!-- prompt_version: agent-v2 -->
 
 # 事后自述（可选）
 

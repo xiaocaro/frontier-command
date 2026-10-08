@@ -33,6 +33,7 @@ import {
 import { MockModelClient } from '../../electron/agent/mock-client';
 import { buildDecisionRequest, loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
 import type { DecisionRequest } from '../../electron/agent/model-client';
+import { AGENT_PROMPT_VERSION } from '../../src/engine/agent/decision';
 import { agentDecisionSchema } from '../../src/engine/agent/schemas';
 import type { AgentObservation } from '../../src/engine/types';
 import {
@@ -286,7 +287,7 @@ describe('L-7/L-9/L-10 the answer is turned into an AgentDecision or a classifie
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.decision.observationTick).toBe(observation.tick);
-    expect(result.decision.promptVersion).toBe('agent-v1');
+    expect(result.decision.promptVersion).toBe(AGENT_PROMPT_VERSION);
     expect(result.decision.provider).toBe('llm');
   });
 
@@ -668,7 +669,7 @@ describe('the provider is isolated from the world', () => {
     const client = new OpenAiCompatibleModelClient(config({ model: 'deepseek-reasoner' }), {});
     expect(client.id).toBe('deepseek');
     expect(client.model).toBe('deepseek-reasoner');
-    expect(client.promptVersion).toBe('agent-v1');
+    expect(client.promptVersion).toBe(AGENT_PROMPT_VERSION);
   });
 });
 

@@ -18,6 +18,8 @@ import {
   createDeepSeekClient,
   describeDeepSeekConfig,
   deepSeekConfigFromEnv,
+  type FetchLike,
+  type ResponseLike,
 } from '../../electron/agent/openai-compatible';
 import { buildDecisionRequest, loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
 import { agentDecisionSchema } from '../../src/engine/agent/schemas';
@@ -43,9 +45,24 @@ live('the live DeepSeek provider (requires DEEPSEEK_API_KEY)', () => {
         schema: loadDecisionSchema(REPO_ROOT),
       });
 
+      // The provider deliberately keeps the model's raw text out of its result — it is untrusted
+      // input and a leak vector. But a live check that reports "rejected" without saying what was
+      // rejected is not diagnosable, so the raw body is captured *here*, through the injected
+      // transport, and never leaves the test.
+      const rawBodies: string[] = [];
+      const realFetch = globalThis.fetch as unknown as FetchLike;
+      const diagnosticFetch: FetchLike = async (url, init) => {
+        const response = await realFetch(url, init);
+        const body = await response.text();
+        rawBodies.push(body);
+        const replay: ResponseLike = { ok: response.ok, status: response.status, text: async () => body };
+        return replay;
+      };
+
       const attempts: unknown[] = [];
       const client = createDeepSeekClient(process.env, {
         onAttempt: (trace) => attempts.push(trace),
+        fetch: diagnosticFetch,
       })!;
       expect(client).not.toBeNull();
       // No key may appear in anything we retain.
@@ -54,6 +71,22 @@ live('the live DeepSeek provider (requires DEEPSEEK_API_KEY)', () => {
       const result = await client.decide(request);
       expect(JSON.stringify(result)).not.toContain(config!.apiKey);
       expect(JSON.stringify(attempts)).not.toContain(config!.apiKey);
+
+      // A live check that only reports "passed" is worthless — it passes on a classified failure
+      // too. So it says what it saw. Vitest prints this; it carries no credential.
+      console.log(
+        '[live] %s/%s attempts=%d latency=%dms outcome=%s',
+        client.id,
+        client.model,
+        attempts.length,
+        result.latencyMs,
+        result.ok ? 'ok:' + result.decision.intent : 'fail:' + result.error,
+      );
+      if (result.ok) console.log('[live] decision=' + JSON.stringify(result.decision));
+      else
+        console.log(
+          '[live] raw response body=' + (rawBodies[0] ?? '<none>').slice(0, 1200),
+        );
 
       if (!result.ok) {
         // A refusal to answer is an acceptable outcome — the point is that it is *classified*, and

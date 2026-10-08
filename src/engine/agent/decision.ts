@@ -25,7 +25,7 @@ import type { Agent, AgentActionCandidate, AgentDecision, AgentObservation } fro
  * prompt files under `prompts/agent/`; this constant is the single place that names the version
  * until then, and `AgentDecision.promptVersion` must always equal it (CLAUDE.md §7).
  */
-export const AGENT_PROMPT_VERSION = 'agent-v1';
+export const AGENT_PROMPT_VERSION = 'agent-v2';
 
 /** The six failure classes the provider layer reports (docs/lv3/03-api-contract.md §4.4). */
 export type ModelError =

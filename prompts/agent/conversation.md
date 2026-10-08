@@ -1,4 +1,4 @@
-<!-- prompt_version: agent-v1 -->
+<!-- prompt_version: agent-v2 -->
 
 # 对话（ASK / NEGOTIATE）
 
