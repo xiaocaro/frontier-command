@@ -246,9 +246,22 @@ tests/architecture.test.ts:39-60                          ← 必须继续通过
 | --- | --- | --- |
 | SC-1 | ✅ **完成**（2026-10-08） | `electron/agent/scheduler.ts`、`tests/agent/scheduler.test.ts`（18 用例，`S-1…S-11` + `C-17` 全覆盖） |
 | SC-2 | ✅ **完成**（2026-10-08） | 5 个引擎文件共 **+44 行、0 删除**（纯追加，约束 ⑤ 满足）；`tests/agent/triggers.test.ts`（10 用例） |
-| SC-3 | ⬜ 未开始（**需先定 `C-30`**） | `main.ts` 接线 + world 适配器 |
+| SC-3 | ✅ **完成**（2026-10-08） | **新增 `electron/agent-host.ts`**（见下方偏离说明）、`main.ts` 接线、`tests/agent/host.test.ts`（14 用例） |
 | SC-4 | ⬜ 未开始 | 决策提交（选项 B） |
 | SC-5 | ⬜ 未开始 | 阶段文档 |
+
+**SC-3 的两处计划偏离（CLAUDE.md §9 要求说明）**：
+
+1. **新增 `electron/agent-host.ts`**（§4.1 的 CREATE 表原本没有它，§4.2 只说「`main.ts` 接线」）。
+   理由：适配器是**唯一**必须同时认识引擎与 Agent 层的模块，而 `electron/agent/**` 被 B-2 禁止出现
+   `SimulationEngine`。把它写进 `main.ts` 会让「窗口 / IPC / 自动存档的生命周期」与「Agent 接线」混在
+   一个文件里（`main.ts` 已 208 行）。放在紧邻 `electron/agent/` 之外，既保住 B-2 的规则，又把引擎依赖
+   收进一个具名文件，且该文件**不 import electron**，因此可被 vitest 直接驱动（`tests/agent/host.test.ts`）。
+2. **`C-30` 的处置**：新增 `agent-request` 的 `toAgentId`（见 `KNOWN_ISSUES.md` `C-30`，已决议落地）。
+
+**SC-3 新增的接线断言**（`boundary.test.ts`）：P1 的「`main.ts` 不得 import `./agent`」断言已被本阶段
+**反转**（本阶段正是它等待的后继），改为断言：接线存在、`pump()` 在**自己的** `try/catch` 内（`N-9`）、
+且**从未被 `await`**（CLAUDE.md §2.4）。
 
 SC-1 落地时新增一条**计划外的澄清**：`SchedulerWorld.agentsForTrigger` 由**适配器**实现寻址
 （§13.5），因此调度器本身不含任何引擎知识；`SC-3` 需在 `main.ts` 侧把 `SimulationEngine` 适配成
