@@ -51,7 +51,7 @@
 
 ---
 
-## 2. ⚠️ 阶段边界决策（**需你确认后才能开工**）
+## 2. 阶段边界决策（**已决议：选项 B**，见 §13）
 
 批准文件对「choiceId 解析 → `submitAction` 提交流程」的归属**互相矛盾**。这是本阶段唯一的开放设计问题。
 
@@ -333,11 +333,116 @@ npm test / npm run build 全绿；git diff --check 空                        �
 
 ---
 
-## 12. 开工前需要你确认的一件事
+## 12. 开工前的确认项（**已决议**）
 
-**§2 的选项 A 还是 B。**
+§2 的选项 A / B —— **2026-10-08 决议：选 B**（一并接入提交，闭合成环）。记录见 §13。
 
-推荐 **B**（闭合成环，P3 保持原范围）。若选 A，本阶段将交付一套**通过全部用例但无可见玩法**的调度器，
-且 `C-17` 的检测在 P3 之前没有真实对象——这不是缺陷，但请在知情下选择。
+---
 
-确认后我会按 §6 的卡顺序开工（SC-1 → SC-2 → SC-3 →〔SC-4〕→ SC-5），每张卡后跑 §7.2 的门禁。
+## 13. 开工决议与设计澄清（2026-10-08）
+
+### 13.1 边界：选项 B
+
+本阶段一并接入 `choiceId` 解析 → `ControllerPort.submitAction`。P3 保持 §3.4 的原定范围。
+`SC-4` 进入施工范围。
+
+### 13.2 澄清一：`nextDecisionAt` 是调度器**唯一**允许写的 `WorldState` 字段，且只在 `pump()` 里写
+
+设计文档在这里互相矛盾，必须在开工前定死：
+
+| 来源 | 原文 |
+| --- | --- |
+| `03-api-contract.md` §4.6 | 调度器「变更权限：**无**——只改自己的队列，**绝不触碰 `WorldState`**」 |
+| `03-api-contract.md` §4.6 硬约束 | `pump()` **不 `await`** |
+| `03-implementation-plan.md` §8.3 | 「promise 的 `.then` **只改调度器自己的队列**，**绝不触碰 `WorldState`**」 |
+| `03-implementation-plan.md` §8.4 | 「冷却：**决策结束后** `agent.nextDecisionAt = state.time + RULES.agentDecisionInterval`」 |
+
+§8.4 要求推进 `nextDecisionAt`，而 `Agent.nextDecisionAt` 就在 `WorldState` 里（`schemas.ts:195`）；
+且 `S-9`/`S-10` 要求它被推进、被持久化、读档后恢复。四者不能同时字面成立。
+
+**决议**：
+
+1. `nextDecisionAt` **是调度器的记账字段**，不是物理世界状态。§4.6 的「绝不触碰 `WorldState`」
+   读作「不改任何**游戏**状态」（舰船、资源、指令、决策）；在 `Agent` 记录上推进一个节拍戳，
+   是为了让它随存档持久化（`02-persistence-strategy.md`：不持久化则读档后全员同时触发）。
+2. **只在 `pump()` 内推进**（同步、宿主线程），**绝不**在异步 `.then` 里推进。
+   这样 §8.3 的「`.then` 只改自己的队列」与 §8.4 的「决策结束后推进」同时成立：
+   `.then` 把 `Pending` 标记为已解决，`pump()` 在下一帧排空它时同步推进 `nextDecisionAt`。
+3. **写入范围收窄到这一个字段**：`scheduler.ts` 中除 `Agent.nextDecisionAt` 外，
+   不得出现任何对 `engine.state` 的赋值。测试以静态断言固定（字段级 grep）。
+
+### 13.3 澄清二：优先级判定 = 触发类型 + 分数档
+
+`02-decision-flow.md` §3.4 的优先级表按**触发类型**划分，而 `Agent.md` §46 / §3.5 的 fallback 阈值按
+**分数档**划分（`scoreBand` 返回 `accept` / `consult-llm` / `request` / `reject`，其中
+**`consult-llm` 恰为 45–69**，即「需要判断力」的区间）。两者如何合并未规定。
+
+**决议**——两层，先看类型，类型为低再看分数：
+
+```text
+高优先级触发类型                        → 走 LLM
+低优先级触发类型 且 scoreBand === 'consult-llm' → 走 LLM
+低优先级触发类型 且 其它档位             → 确定性 fallback，provider 零调用
+```
+
+- **高**：`admiral-message`、`agent-request`、`world-event`、`danger`、`directive-failed`、
+  `promise-changed`、`high-value-opportunity` —— 对应 §3.4 的「新合约 / Agent 冲突 / 邀请 / 重大事件 / 承诺破裂」。
+- **低**：`ship-idle`、`directive-completed`、`no-decision-for`（时间节拍兜底）。
+
+**为什么低优先级仍要过一遍分数档**：`§3.4` 说「低优先级用确定性规则**即可**」，而 §3.5 的 45–69 档
+恰恰是确定性规则**给不出安全答案**的区间（该档的 fallback 刻意落到 `wait`）。若低优先级一律不看分数，
+则「一次常规指令完成后恰好进入需要判断的境地」将永远得不到 LLM 的判断。
+这条规则的代价可控：绝大多数 tick 的分数不在 45–69，`S-3` 的「provider 零调用」仍然成立且可测。
+
+### 13.4 澄清三：「不调模型」的确定性分支如何产生（**不新增第二套 fallback**）
+
+调度器需要一条「不调模型、直接给确定性答案」的路径，但 P2 明令**禁止第二套 fallback**
+（`06-deepseek-runtime-status.md` §5.1/§17）。批准文件也没说这条路径长什么样。
+
+**决议**：给 `DecisionRuntime.requestDecision` 追加**可选参数**
+`options?: { skipProvider?: boolean; reason?: string }`；`skipProvider` 时直接进入**同一个**私有
+`fallBack`、调用**同一个** `fallbackDecision`。于是仍然只有一份 fallback 实现、一种 trace 形状，
+且事后可区分：
+
+| 情形 | `trace.outcome` | `trace.providerFailure` |
+| --- | --- | --- |
+| provider 失败后降级 | `'fallback'` | 六类错误之一 |
+| **调度器判定不值得调模型**（本澄清） | `'fallback'` | **`null`** |
+| 观测过期 | `'discarded'` | `'stale'` |
+
+`fallBack` 的 `failure` 形参因此放宽为 `ModelError | ValidationError | null`——这正是
+`DecisionTrace.providerFailure` 本来就允许的类型。
+
+### 13.5 澄清四：`AgentTrigger` 不携带目标 Agent，解析放在 world 适配器
+
+`AgentTrigger` 的变体**不足以让调度器知道该叫醒谁**（实测）：
+
+| 变体 | 携带 | 调度器需要的 |
+| --- | --- | --- |
+| `ship-idle` / `directive-completed` / `directive-failed` | `shipId` | 该舰的 operator → Agent |
+| `admiral-message` | `messageId` | **消息的收件人**（需查 `agentMessages`） |
+| `agent-request` | `fromAgentId`（**发送方**） | **收件人**——而 §3.3 要的正是「A 请求 B ⇒ 触发 **B** 决策」，变体里根本没有 B |
+| `danger` / `world-event` | `contactId` / `eventId` | 世界级事件，**影响所有 Agent** |
+| `no-decision-for` | — | 调度器自己生成 |
+
+**决议**：解析不属于调度器。world 适配器提供
+`agentsForTrigger(trigger): string[]`，由**引擎侧**决定寻址（它是唯一知道 ship↔operator、
+message↔收件人 的地方）；世界级变体广播给全体。调度器只消费 `agentId`，因此可用假 world 完全单测。
+
+**未改 `AgentTrigger` 的形状**：它是 P0 已批准的类型，且改它会让 P1-05 的发射点复杂化。
+`agent-request` 的收件人由适配器从消息记录里查得。若将来认为该变体应自带收件人，
+需作为一次**显式的合同变更**提出（CLAUDE.md §15），不在本阶段顺手改。
+
+### 13.6 澄清五：触发与冷却的关系
+
+`§3.3` 写「冷却期内**不重触发**」，`§3.2` 又写触发是**第一层**机制。两者在「高优先级事件在冷却期内到达」时冲突。
+
+**决议**：
+
+| 情形 | 行为 |
+| --- | --- |
+| 低优先级触发落在冷却期内 | **合并**进一个待处理标记，冷却到期后触发一次（`S-2` 即测此） |
+| 高优先级触发落在冷却期内 | **穿透冷却**触发（但不穿透单飞）——否则一次 Admiral 命令最多要等一个 `agentDecisionInterval` |
+| 冷却到期且无任何触发 | 按时间节拍兜底触发一次（`§3.2` 第二层） |
+
+高优先级穿透是 `§3.4` 优先级表能产生实际后果的前提；低优先级合并是 `S-2` 可断言的前提。
