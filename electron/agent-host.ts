@@ -26,7 +26,7 @@ import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
 import { createDeepSeekClient } from './agent/openai-compatible';
-import { DecisionRuntime, type DecisionTrace } from './agent/runtime';
+import { DecisionRuntime, type ActionSubmitter, type DecisionTrace } from './agent/runtime';
 
 /** The ship an Agent commands, via the existing operator/assignment binding. */
 function shipOfAgent(w: WorldState, agentId: string): string | null {
@@ -107,6 +107,21 @@ export function schedulerWorld(engine: SimulationEngine): SchedulerWorld {
   };
 }
 
+/**
+ * The runtime's route to the engine.
+ *
+ * Bound through the Agent's **own** operator port, so a submitted Action is attributed to that
+ * Agent rather than to the commander — the renderer's commands default to `'commander'`, and an
+ * Agent must never be able to act with those powers (`KNOWN_ISSUES.md` `N-3`). This is also the
+ * only module that names the engine's command seam; the agent layer never does.
+ */
+function submitterFor(engine: SimulationEngine): ActionSubmitter {
+  return {
+    submit: (action, observation) =>
+      engine.controllerPort(observation.operatorId).submitAction(action),
+  };
+}
+
 /** Every trigger in a frame's events. */
 export function agentTriggersOf(events: readonly SimulationEvent[]): AgentTrigger[] {
   const triggers: AgentTrigger[] = [];
@@ -135,6 +150,7 @@ export class AgentHost {
       client,
       prompts: loadPromptTemplates(options.root),
       schema: loadDecisionSchema(options.root),
+      submitter: submitterFor(engine),
       ...(options.onTrace ? { onTrace: options.onTrace } : {}),
     });
     this.scheduler = new AgentScheduler({ world: schedulerWorld(engine), runtime });

@@ -28,10 +28,15 @@
  * (`writeBeat`), and lets the tests drive all eleven scheduler cases from a fake world with a fake
  * clock — no Electron, no `SimulationEngine`, no network (`S-11`).
  */
-import { evaluate } from '../../src/engine/agent/decision';
+import { STALE_TICK_LIMIT, evaluate } from '../../src/engine/agent/decision';
 import { RULES } from '../../src/engine/definitions/rules';
 import type { AgentObservation, AgentTrigger } from '../../src/engine/agent/types';
-import { scoringAgent, type DecisionOutcome, type DecisionRuntime } from './runtime';
+import {
+  scoringAgent,
+  type DecisionOutcome,
+  type DecisionRuntime,
+  type SubmissionOutcome,
+} from './runtime';
 
 /**
  * Which triggers are worth a model call (docs/lv3/02-decision-flow.md §3.4).
@@ -126,6 +131,8 @@ export interface SchedulerOptions {
   callsPerMinute?: number;
   /** Called once per decision, when it is drained. Observability and tests. */
   onDecision?: (agentId: string, outcome: DecisionOutcome) => void;
+  /** Called when a decision was applied — submitted, or refused by the engine. */
+  onApplied?: (agentId: string, submission: SubmissionOutcome) => void;
 }
 
 export class AgentScheduler {
@@ -133,6 +140,7 @@ export class AgentScheduler {
   private readonly runtime: DecisionRuntime;
   private readonly callsPerMinute: number;
   private readonly onDecision: ((agentId: string, outcome: DecisionOutcome) => void) | undefined;
+  private readonly onApplied: ((agentId: string, submission: SubmissionOutcome) => void) | undefined;
 
   private readonly pending = new Map<string, PendingDecision>();
   private readonly markers = new Map<string, Marker>();
@@ -149,6 +157,7 @@ export class AgentScheduler {
     this.runtime = options.runtime;
     this.callsPerMinute = options.callsPerMinute ?? 1;
     this.onDecision = options.onDecision;
+    this.onApplied = options.onApplied;
   }
 
   /**
@@ -260,8 +269,38 @@ export class AgentScheduler {
         this.world.log('Agent ' + agentId + ' 的决策失败：' + decision.failure, 'warning');
         continue;
       }
-      if (decision.outcome !== null && this.onDecision) this.onDecision(agentId, decision.outcome);
+      if (decision.outcome === null) continue;
+
+      if (decision.outcome.status === 'decided') this.apply(decision, now);
+      if (this.onDecision) this.onDecision(agentId, decision.outcome);
     }
+  }
+
+  /**
+   * The pre-submit staleness re-check (`03-api-contract.md` §4.7).
+   *
+   * The runtime already judged the answer against the observation it was formed from, but that says
+   * nothing about the gap between asking and answering. The model took real time — seconds — and at
+   * 16× that is a hundred game minutes, which is more than `STALE_TICK_LIMIT`. Acting on an answer
+   * formed against a world that has since moved is exactly the mistake the stale rule exists to
+   * prevent, so it is checked again here, against the world as it is *now*.
+   */
+  private apply(decision: PendingDecision, now: number): void {
+    if (decision.outcome?.status !== 'decided') return;
+    const ageTicks = (now - decision.observation.time) * 10;
+    if (ageTicks > STALE_TICK_LIMIT) {
+      this.world.log(
+        'Agent ' + decision.agentId + ' 的决策已过期（' + ageTicks + ' tick），不予提交。',
+        'info',
+      );
+      return;
+    }
+    const submission = this.runtime.applyDecision(decision.observation, decision.outcome.decision);
+    if (this.onApplied) this.onApplied(decision.agentId, submission);
+    if (submission.status === 'declined')
+      // The engine refused — a busy ship, a failed rule, a missing permission. The Agent does not
+      // retry: the directive is gone, and the next beat will re-observe and try again.
+      this.world.log('Agent ' + decision.agentId + ' 的动作被引擎拒绝：' + submission.reason, 'info');
   }
 
   /**

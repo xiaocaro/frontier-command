@@ -14,15 +14,27 @@
  * validated AgentDecision  ·  or the deterministic fallback
  * ```
  *
- * What it does **not** do — each of these is a later stage, and doing any of them here would put a
- * second authority next to the engine's:
+ * Two entry points, split on purpose:
  *
  * ```text
- * does not resolve a choiceId into an Action     ← P3
- * does not call ControllerPort.submitAction      ← P3
- * does not touch WorldState or SimulationEngine  ← never (Rule 1)
- * does not decide *when* to ask                  ← the scheduler (P3)
+ * requestDecision(observation)   → a validated AgentDecision. Pure: starts nothing, changes nothing.
+ * applyDecision(observation, d)  → resolve the choiceId and hand the Action to the engine.
  * ```
+ *
+ * The split is what lets every P1/P2 test keep asserting that asking for a decision leaves the world
+ * untouched, while `applyDecision` is the one place a decision becomes a physical act. What it still
+ * does **not** do:
+ *
+ * ```text
+ * does not touch WorldState or SimulationEngine  ← never (Rule 1); it needs no reference to either
+ * does not decide *when* to ask                  ← the scheduler
+ * does not invent a target or a parameter        ← resolves the choiceId to the option the engine
+ *                                                  already offered, and nothing else (Rule 3)
+ * ```
+ *
+ * It reaches the engine through an injected `ActionSubmitter` rather than a controller port, so this
+ * module never names the command seam — the host binds it. That is what keeps the agent layer free
+ * of any engine reference (see `tests/agent/boundary.test.ts`).
  *
  * Failures are values, never exceptions. A provider that times out, returns malformed JSON, invents
  * a `choiceId`, or throws outright produces the same thing: a deterministic decision in the same
@@ -36,6 +48,7 @@ import {
   type ValidationError,
 } from '../../src/engine/agent/decision';
 import type { Agent, AgentDecision, AgentObservation } from '../../src/engine/agent/types';
+import type { Action, CommandResult } from '../../src/engine/types';
 import type { JsonSchema, ModelClient, ModelError, ModelResult } from './model-client';
 import { buildDecisionRequest, type PromptTemplates } from './prompt';
 
@@ -91,10 +104,44 @@ export type DecisionOutcome =
   | { status: 'decided'; decision: AgentDecision; trace: DecisionTrace }
   | { status: 'discarded'; error: ValidationError; trace: DecisionTrace };
 
+/**
+ * The runtime's one route to the engine (docs/lv3/03-api-contract.md §4.7).
+ *
+ * Deliberately a single method rather than the controller port itself: the port is bound to an
+ * operator, and binding it here would mean this module naming the engine's command seam. The host
+ * binds both, so the agent layer keeps its "no engine reference at all" property intact.
+ */
+export interface ActionSubmitter {
+  /**
+   * Submit an Action on behalf of the Agent whose observation this is. Returns the engine's own
+   * verdict — `validateAction`, the busy-ship rule and the permission gate all live behind it, and
+   * a refusal is a value, not an exception.
+   */
+  submit(action: Action, observation: AgentObservation): CommandResult;
+}
+
+/**
+ * What became of a decision once it was applied. Reported rather than assumed: an Agent whose
+ * action the engine refused has learned something, and the log should be able to say so.
+ */
+export type SubmissionOutcome =
+  | { status: 'submitted'; choiceId: string }
+  /** The engine said no — busy ship, failed `validateAction`, or insufficient permission. */
+  | { status: 'declined'; choiceId: string; reason: string }
+  /** `intent !== 'act'`. Nothing physical was attempted, which is the common case. */
+  | { status: 'not-an-action'; intent: AgentDecision['intent'] }
+  /** The choiceId is not on the menu. Unreachable after validation; kept as a value, not a throw. */
+  | { status: 'unresolved'; choiceId: string };
+
 export interface DecisionRuntimeOptions {
   client: ModelClient;
   prompts: PromptTemplates;
   schema: JsonSchema;
+  /**
+   * Required, so that "decisions are never applied" cannot happen by omission. A test that only
+   * wants the decision half passes a submitter that records and declines.
+   */
+  submitter: ActionSubmitter;
   timeoutMs?: number;
   /** Injected so trace ids are reproducible. Defaults to `agentId@tick`. */
   nextDecisionId?: (observation: AgentObservation) => string;
@@ -105,6 +152,7 @@ export class DecisionRuntime {
   private readonly client: ModelClient;
   private readonly prompts: PromptTemplates;
   private readonly schema: JsonSchema;
+  private readonly submitter: ActionSubmitter;
   private readonly timeoutMs: number | undefined;
   private readonly nextDecisionId: (observation: AgentObservation) => string;
   private readonly onTrace: ((trace: DecisionTrace) => void) | undefined;
@@ -113,6 +161,7 @@ export class DecisionRuntime {
     this.client = options.client;
     this.prompts = options.prompts;
     this.schema = options.schema;
+    this.submitter = options.submitter;
     this.timeoutMs = options.timeoutMs;
     this.nextDecisionId =
       options.nextDecisionId ?? ((observation) => observation.agentId + '@' + observation.tick);
@@ -208,6 +257,29 @@ export class DecisionRuntime {
       result.error,
       thrown === null ? 'provider 未给出可用决策。' : 'provider 抛出异常：' + thrown,
     );
+  }
+
+  /**
+   * Turn a validated decision into a physical act — the only place that happens.
+   *
+   * The `choiceId` is resolved against the options the engine already offered, so the Action
+   * submitted is one the engine itself constructed; the model never supplied a target, a coordinate
+   * or a parameter, and there is no path here that invents one (Rule 3 / Rule 6). Anything that is
+   * not an `act` is not an action to submit — `respond`, `wait`, `request` and the rest are speech
+   * and intent, and they end here rather than being dressed up as a ship order.
+   *
+   * Synchronous, and it never throws: the engine's own verdict comes back as a value.
+   */
+  applyDecision(observation: AgentObservation, decision: AgentDecision): SubmissionOutcome {
+    if (decision.intent !== 'act') return { status: 'not-an-action', intent: decision.intent };
+    const choiceId = decision.choiceId;
+    if (choiceId === undefined) return { status: 'unresolved', choiceId: '' };
+    const candidate = observation.availableActions.find((option) => option.id === choiceId);
+    if (!candidate) return { status: 'unresolved', choiceId };
+    const result = this.submitter.submit(candidate.action, observation);
+    return result.ok
+      ? { status: 'submitted', choiceId }
+      : { status: 'declined', choiceId, reason: result.reason };
   }
 
   /** `failure` is `null` when the deterministic answer was *chosen* rather than fallen back to. */
