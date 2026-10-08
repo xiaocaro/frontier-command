@@ -224,6 +224,42 @@
 
 ---
 
+## 2b. P2（DeepSeek Runtime）新增条目（C-26 … C-28）
+
+来源：`docs/lv3/06-deepseek-runtime-status.md` §5。三条均为**实现与批准设计的差异**，已在代码中落地并有测试覆盖；**未重开 `02-*.md` 的设计**。
+
+### C-26 — 熔断的粒度与时间基准与批准的提案不一致 🟡 MEDIUM
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `02-llm-boundary.md` §6 写「连续失败则临时停用**该 Agent** 的 LLM 路径」「降级为确定性模式一段时间（**提案 30 游戏分钟**）」；P2 的实现在 `electron/agent/openai-compatible.ts` 内按 **provider 全局** 计数、按 **wall-clock** 冷却（`DEFAULT_COOLDOWN_MS = 30_000`） |
+| **Current Code** | `OpenAiCompatibleModelClient` 的 `consecutiveFailures` / `breakerOpenUntil`；`recordFailure()` 在 `consecutiveFailures >= maxConsecutiveFailures`（默认 2）时置 `breakerOpenUntil = now() + cooldownMs`；`decide()` 开头短路为 `{ok:false,error:'unavailable'}`，不发网络请求 |
+| **Approved Design** | per-Agent 停用 + 游戏分钟粒度 |
+| **Impact** | ① 一个 Agent 的连续失败会短暂影响其他 Agent 的 LLM 路径；② 冷却时长与游戏速度无关（倍速下体感不同）；③ **不**影响安全性——「降级为确定性模式」已由 `DecisionRuntime` 的既有 fallback 独立保证，与熔断无关 |
+| **Proposed Resolution** | **不在 P2 修**。provider 不得持有 `SimulationEngine` 或游戏时钟（Rule 1），per-Agent 状态属于 Scheduler 的 `Map<agentId, Pending>`（`03-api-contract.md` §4.6）。P3 在 Scheduler 内实现游戏分钟粒度与 per-Agent 停用；届时 provider 的熔断退化为纯传输层护栏（保留，防止空转网络）。**验收见 `03-test-plan.md` L-13**（P2 已满足「有限重试 + 不死循环」的部分） |
+
+### C-27 — `ModelClient` / `DecisionTrace` 的**增量**字段 ⚪ INFO
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | 交接说明（`05-mock-runtime-status.md` §7）写「P2 **不要重写** `electron/agent/model-client.ts` 的契约」；任务书 §19 又要求 trace 能记录 `model` |
+| **Current Code** | `ModelClient` 追加**可选** `readonly model?: string`；`DecisionTrace` 追加 `model: string \| null`（`runtime.ts` 由 `this.client.model ?? null` 填充） |
+| **Approved Design** | `03-api-contract.md` §4.4 的 `ModelClient` 无 `model`；`DecisionTrace` 由 P1 定义 |
+| **Impact** | 无。`model` 是**可选**成员，`MockModelClient` 与 P1 测试里的全部 stub（`lyingClient`、spy provider）**零修改**仍满足接口；`ModelResult`（§4.4 的另一半，且被 P1 测试 `toEqual`）**一字未改**；既有 trace 断言均为字段级 |
+| **Proposed Resolution** | 保留。「不重写契约」= 不改变既有成员的语义与必需性；追加一个可选成员是满足 §19 的**最小**代价。若未来要把 `model` 放进 `ModelResult`（必需形状），需先重开 `03-api-contract.md` §4.4 并同步更新 P1 测试——**本阶段明确不做** |
+
+### C-28 — `prompts/agent/*.md` 未随 P2 调优 ⚪ INFO
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | 任务书 §7/§8/§9 把 Prompt/Context Builder 与提示词设计原则列为 P2 交付；`05-mock-runtime-status.md` §8 限制 6 又说「提示词好不好，P2 接上真实模型才知道」 |
+| **Current Code** | 四个提示词文件**一字未改**，`prompt_version` 仍为 `agent-v1`；`AGENT_PROMPT_VERSION` 未改；`tests/fixtures/agent/scenarios.json` 的 `promptVersion` 未改 |
+| **Approved Design** | `02-llm-boundary.md` §4.2 只规定内容原则，未规定具体措辞 |
+| **Impact** | 提示词的**质量**（模型是否真的「像这个 Agent」）仍未被验证。P1 已有的 `renderSituation` 已把 §8/§9 要求的结构化输入全部渲染进「当前态势」，`tests/agent/context.test.ts` 对其逐项断言——即「信息是否送到」已验证，「模型是否善用」未验证 |
+| **Proposed Resolution** | 保留现状。P2 全程离线（无 key），改动措辞的收益无法在本阶段被验证，却会连带更新 `AGENT_PROMPT_VERSION`、fixture 的 `promptVersion` 与 P1 的版本一致性测试（`tests/agent/prompt.test.ts`）。**P3 接上真实端点后**，用 `npm run test:llm` 观察真实输出再决定是否调优；若调优，须同步 bump `prompt_version` 并更新 fixture 与版本测试 |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |
