@@ -9,7 +9,8 @@
  * pure, and it invents nothing: every `choiceId` here is one `actions.ts` already put on the menu, so
  * an Agent can only ever say something the engine offered it the chance to say.
  */
-import type { AgentDecision, AgentMessageKind, MessagePayload } from './types';
+import { decisionScore, scoreBand } from './score';
+import type { Agent, AgentDecision, AgentMessageKind, AgentObservation, MessagePayload } from './types';
 
 /** The Admiral is an address, not an Agent (`agentMessageSchema`). */
 export const ADMIRAL = 'admiral';
@@ -38,6 +39,47 @@ const DEFAULT_LINE: Readonly<Record<string, string>> = Object.freeze({
 function spoken(decision: AgentDecision, fallbackKey: string): string {
   const said = (decision.say ?? '').trim();
   return said.length > 0 ? said : (DEFAULT_LINE[fallbackKey] ?? '……');
+}
+
+/** The three answers to a task offer, in the order the menu lists them. */
+export const OFFER_ANSWERS: readonly string[] = Object.freeze(['accept', 'reject', 'counteroffer']);
+
+export type OfferResponse = 'accept' | 'counteroffer' | 'reject';
+
+/**
+ * How the Agent answers a task offer, decided **once from the score** rather than by ranking the
+ * three answers against each other.
+ *
+ * `actions.ts` gives `accept`, `reject` and `counteroffer` identical risk, reward and goal kinds, so
+ * `decisionScore` gives them identical breakdowns and `rankCandidates` falls through to its id
+ * tie-break — which can only ever produce `accept`. Ranking them therefore cannot distinguish them at
+ * all; the Agent.md §46 bands can. So the offer is scored once and the band picks the answer.
+ *
+ * `null` when nothing is being offered (no `accept` on the menu), which is what keeps this from
+ * inventing an answer to a question nobody asked.
+ */
+export function offerResponse(agent: Agent, observation: AgentObservation): OfferResponse | null {
+  const offer = observation.availableActions.find((candidate) => candidate.id === 'accept');
+  if (!offer) return null;
+  const band = scoreBand(decisionScore(agent, observation, offer).score);
+  if (band === 'accept') return 'accept';
+  if (band === 'reject') return 'reject';
+  // The middle bands are the ones whose fallback is a deliberate `wait` or a bare `request` — exactly
+  // the bands a negotiation is for. An offer is not merely deferred; it is answered with terms.
+  return 'counteroffer';
+}
+
+/**
+ * Which of the three answers the deterministic fallback should give, given the candidate that won the
+ * ranking. A team answer (`team-accept:<id>`) is not an offer answer and passes through untouched.
+ */
+export function offerAnswerChoiceId(
+  rankedChoiceId: string,
+  agent: Agent,
+  observation: AgentObservation,
+): string {
+  if (!OFFER_ANSWERS.includes(rankedChoiceId)) return rankedChoiceId;
+  return offerResponse(agent, observation) ?? rankedChoiceId;
 }
 
 /**

@@ -16,6 +16,7 @@
  */
 import { RULES } from '../definitions/rules';
 import { isSocialChoiceId } from './actions';
+import { offerAnswerChoiceId } from './dialogue';
 import { scoreBand, rankCandidates, type DecisionBand } from './score';
 import { agentDecisionSchema } from './schemas';
 import type { Agent, AgentActionCandidate, AgentDecision, AgentObservation } from './types';
@@ -190,13 +191,23 @@ export function fallbackDecision(
   };
   if (!best) return { ...base, intent: 'wait', reason: '当前没有可执行的行动。' };
   const score = best.breakdown.score;
-  if (isSocialChoiceId(best.candidate.id))
+  if (isSocialChoiceId(best.candidate.id)) {
+    // The three answers to a task offer score identically, so the ranking cannot choose between them
+    // — `dialogue.offerResponse` scores the offer once and lets the band decide.
+    const choiceId = offerAnswerChoiceId(best.candidate.id, agent, observation);
     return {
       ...base,
       intent: 'respond',
-      choiceId: best.candidate.id,
-      reason: '按确定性的目标与状态评估，先回应收到的消息。',
+      choiceId,
+      reason:
+        choiceId === 'counteroffer'
+          ? '这项任务值得接，但按当前状态我需要额外条件。'
+          : choiceId === 'reject'
+            ? '按确定性的目标与状态评估，我不该接这项任务。'
+            : '按确定性的目标与状态评估，先回应收到的消息。',
+      ...(choiceId === 'counteroffer' ? { request: { type: 'equipment' as const } } : {}),
     };
+  }
   // Agent.md §46's "<25 = REJECT" band. `reject` is not one of the seven intents in
   // `schemas/agent-decision.schema.json` and that contract is not ours to edit, so a rejection is
   // expressed the way the flow already routes refusals: as a social response. With no offer on the
