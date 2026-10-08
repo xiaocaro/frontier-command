@@ -11,6 +11,8 @@
  * `src/engine/agent/**` functions.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { quietEngine, issue } from '../helpers';
 import type {
   Agent,
@@ -18,10 +20,13 @@ import type {
   AgentDecision,
   AgentEvent,
   AgentObservation,
+  Ship,
   SimulationEvent,
 } from '../../src/engine/types';
 import { SimulationEngine } from '../../src/engine/engine';
+import { capabilities } from '../../src/engine/capabilities';
 import { AGENT_PROMPT_VERSION, fallbackDecision } from '../../src/engine/agent/decision';
+import { assessReadiness } from '../../src/engine/agent/readiness';
 import { decisionScore } from '../../src/engine/agent/score';
 import { AgentHost, agentEventsOf, agentTriggersOf } from '../../electron/agent-host';
 import { MockModelClient } from '../../electron/agent/mock-client';
@@ -663,6 +668,69 @@ describe('P3-08 a real install fulfils a real promise (EVT-08)', () => {
     expect(after.promises.at(-1)).toMatchObject({ status: 'fulfilled' });
     expect(after.state.trustInAdmiral).toBeGreaterThan(before);
     expect(memoryTags(after)).toContainEqual(['promise-kept']);
+  });
+});
+
+describe('P3-04 readiness is deterministic and has no fuel (EVT-04)', () => {
+  const readinessFor = (engine: SimulationEngine, shipId: string, patch: Partial<Ship> = {}) => {
+    const ship = engine.state.ships.find((s) => s.id === shipId)!;
+    const base = engine.state.locations.find((l) => l.owner === 'starfleet' && l.hull > 0)!;
+    return assessReadiness(engine.state, { ...ship, ...patch }, base);
+  };
+
+  it('reads ammunition, hull and the route, and nothing else', () => {
+    const engine = quietEngine();
+    const shipId = agentShipOf(engine, agentByCareer(engine, 'logistics'));
+    const ship = engine.state.ships.find((s) => s.id === shipId)!;
+    const full = capabilities(ship).hull;
+
+    const healthy = readinessFor(engine, shipId, { photon: 10, quantum: 5, hull: full });
+    expect(healthy).toEqual({ verdict: 'READY', reasons: [] });
+    // Same ship, dry magazines.
+    expect(readinessFor(engine, shipId, { photon: 0, quantum: 0, hull: full }).verdict).toBe('WARNING');
+    // Same ship, holed.
+    expect(readinessFor(engine, shipId, { photon: 10, quantum: 5, hull: 1 }).verdict).toBe('WARNING');
+    // Deterministic: identical inputs, identical answer — the card's API contract.
+    expect(readinessFor(engine, shipId, { photon: 10, quantum: 5, hull: full })).toEqual(healthy);
+  });
+
+  it('flags the option it applies to, and only that one', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'logistics');
+    const shipId = agentShipOf(engine, agent);
+    const ship = engine.state.ships.find((s) => s.id === shipId)!;
+    ship.photon = 0;
+    ship.quantum = 0;
+
+    const observation = observationFor(engine, agent.id);
+    const warned = observation.availableActions.filter((c) =>
+      c.requirements.some((reason) => reason.includes('弹药')),
+    );
+    // The verdict crossed the observation boundary: the decision can see it, and so can the prompt.
+    expect(warned.length).toBeGreaterThan(0);
+    // It is a fact about a destination, so the option with no destination does not carry it.
+    const back = observation.availableActions.find((c) => c.id === 'return')!;
+    expect(back.requirements.some((reason) => reason.includes('弹药'))).toBe(true);
+    expect(back.requirements.some((reason) => reason.includes('返航余量'))).toBe(false);
+  });
+
+  it('leaves no fuel anywhere in the codebase', () => {
+    // The card's Done When is "仓库中仍无 `fuel` 字段", and a comment claiming so is not evidence — so
+    // this scans the source with comments stripped, exactly as `boundary.test.ts` does.
+    const strip = (source: string) =>
+      source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/gm, '$1');
+    const files: string[] = [];
+    const walk = (directory: string) => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const path = join(directory, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (entry.name.endsWith('.ts')) files.push(path);
+      }
+    };
+    for (const root of ['src', 'electron']) walk(join(REPO_ROOT, root));
+    expect(files.length).toBeGreaterThan(50);
+    const offenders = files.filter((file) => /\bfuel\b/i.test(strip(readFileSync(file, 'utf8'))));
+    expect(offenders).toEqual([]);
   });
 });
 

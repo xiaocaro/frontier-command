@@ -24,9 +24,10 @@ import { available, inventory } from '../inventory';
 import { dist } from '../navigation';
 import { visibleIntel } from '../sensors';
 import { frontierSectors, sectorCenter } from '../world-generation';
-import type { Location, ModuleId, Point, Ship, WorldState } from '../types';
+import type { Action, Location, ModuleId, Point, Ship, WorldState } from '../types';
 import { GOODS } from '../types';
 import { isTaskOfferKind } from './interactions';
+import { assessReadiness } from './readiness';
 import type { Agent, AgentActionCandidate, GoalKind } from './types';
 
 /** Caps keep one decision affordable and the prompt bounded. */
@@ -184,6 +185,47 @@ function socialCandidate(ship: Ship, id: string, label: string): AgentActionCand
 
 function ownFacilities(w: WorldState): Location[] {
   return w.locations.filter((l) => l.owner === 'starfleet' && l.hull > 0).sort(byId);
+}
+
+/**
+ * Where an option is headed, when the route to it is something a readiness assessment can use.
+ * `null` means "no destination to assess": returning home or acting locally is sustainable by
+ * definition, and flagging it would be noise rather than information.
+ */
+function destinationOf(w: WorldState, action: Action, ship: Ship): Point | null {
+  if (action.type === 'MOVE') return action.point;
+  if (action.type === 'EXPLORE') return sectorCenter(action.sector);
+  if (action.type === 'RETURN') return null;
+  if (!('targetId' in action)) return null;
+  const id = action.targetId;
+  return (
+    w.ships.find((x) => x.id === id) ??
+    w.civilians.find((x) => x.id === id) ??
+    w.locations.find((x) => x.id === id) ??
+    w.bodies.find((x) => x.id === id) ??
+    w.systems.find((x) => x.id === id) ??
+    w.wrecks.find((x) => x.id === id) ??
+    null
+  );
+}
+
+/**
+ * EVT-04: an option this ship cannot sustain says so, on the field the decision already reads.
+ *
+ * The verdict is computed here rather than spoken by the Agent because it is a **world fact** — it
+ * needs the route, and the Agent's observation deliberately carries no chart (Rule 1). Attaching it
+ * to the candidate is what gets it across that boundary: the model sees it in the prompt, and the
+ * deterministic band sees it in the observation.
+ */
+function withReadiness(
+  w: WorldState,
+  ship: Ship,
+  candidate: AgentActionCandidate,
+): AgentActionCandidate {
+  const { verdict, reasons } = assessReadiness(w, ship, destinationOf(w, candidate.action, ship));
+  return verdict === 'READY'
+    ? candidate
+    : { ...candidate, requirements: [...candidate.requirements, ...reasons] };
 }
 
 /** Physical affordances. Callers must not call this while the ship is busy. */
@@ -467,9 +509,9 @@ export function availableActions(w: WorldState, agent: Agent): AgentActionCandid
   if (!ship) return [];
   const social = socialCandidates(w, agent, ship);
   if (shipIsBusy(ship)) return social;
-  const physical = physicalCandidates(w, ship).filter(
-    (c) => validateActionIn(w, ship, c.action).ok,
-  );
+  const physical = physicalCandidates(w, ship)
+    .map((candidate) => withReadiness(w, ship, candidate))
+    .filter((c) => validateActionIn(w, ship, c.action).ok);
   return [...physical, ...social];
 }
 

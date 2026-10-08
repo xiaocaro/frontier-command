@@ -60,6 +60,7 @@ Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用*
 | --- | ---: | --- |
 | `src/engine/agent/events.ts` | 244 | 结算规划器：`AgentEvent` 的一种 kind 一个函数，组合既有纯函数产出 delta/记忆/关系 |
 | `src/engine/agent/dialogue.ts` | 114 | 社交决策 → `agentMessage`；以及 offer 的确定性分档 |
+| `src/engine/agent/readiness.ts` | 62 | EVT-04 的确定性战备评估（弹药 + 船体 + 路径），**无 fuel** |
 | `tests/agent/vertical-slice.test.ts` | 718 | 25 个用例：P3-00 接缝、EVT-01/02/03/08/09、宿主闭环 |
 | `tests/e2e/vertical-slice.spec.ts` | 113 | 真实 Electron 应用中的 EVT-01（playbook §三十一） |
 | `tests/e2e/agent-stub.ts` | 92 | 测试进程内的 OpenAI-compatible stub provider，确定性 |
@@ -96,7 +97,7 @@ Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用*
 | 01 Admiral 发布任务 | **PASS** | 经真实 `AgentHost`、无 key，Agent 产出 `respond` 并把回复发回 Admiral；offer 随后被消费 |
 | 02 反报价 | **PASS** | `counteroffer` → `kind:'negotiate'`，payload `{requestType, targetAgentId}`（`AgentRequest.type` 映射为 `requestType`） |
 | 03 Agent-Agent 组队 | **PASS** | `team-reply` 成消息 → `team-resolved` 结算**双方**关系各 ±10 → 另起一次 `act` 决策真正提交 `ESCORT`（`source:'standing'`） |
-| 04 Logistics 战备评估 | **NOT IMPLEMENTED** | 见 §6 |
+| 04 Logistics 战备评估 | **PASS** | `readiness.ts` 是纯函数，输入恰为卡片指定的三项（弹药 / 船体 / `routeEstimate`），**仓库中仍无 `fuel`**（以剥注释后的源码扫描断言，不靠注释自称）。结论经候选的 `requirements` 进入观察，决策与提示词都看得到 |
 | 05 穿越 + 发现异常 | **PARTIAL** | 结算侧完成（`discovery` 记忆 + 目标进度 + `subjectId` 去重）；**`TRANSIT`/`SURVEY` 的整段集成测试未写** |
 | 06 四方分歧 | **PARTIAL** | 既有 `runtime.test.ts` 的 EVT-06 用例已断言四条不同答案；**未在本阶段补充** |
 | 07A Promise 创建 | **PASS** | `promise-made` 造出 `pending` / `resolvedAt:null` 的承诺 |
@@ -133,7 +134,37 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 两半一起修：`fallbackDecision` 先回答待答 offer；引擎在收到回复时消费掉它所回答的 offer
 （`consumeAnswered`）。
 
-### 5.4 `C-33`：推理模型的 token 预算不足导致 live 路径**静默**全量降级（已修复）
+### 5.4 EVT-04 的设计决定：战备结论挂在**候选**上，不挂在 offer 上（已实现）
+
+**问题**：P3-04 要求 Logistics 在出发前给出 READY/WARNING，但任务 offer 是**自由文本**——它不携带
+任何结构化目标，所以"评估这趟任务"没有一个可判定的输入。这正是它此前被记为"未实现"的原因。
+
+**决定**：战备不是对抽象任务的评估，而是对**这艘船能不能跑完某个具体选项**的评估。
+菜单上的每个物理候选都指向一个引擎已知的真实目标，所以：
+
+```text
+ship(弹药/船体)  +  candidate 的目标点  ──assessReadiness──▶  READY | WARNING(+理由)
+                                                              │
+                                      写进该候选的 requirements（既有字段）
+                                                              │
+                                      进入 AgentObservation → 决策与提示词都看得到
+```
+
+**为什么不能在 Agent 层算**：战备需要航路，而 `AgentObservation` **刻意不含海图**
+（Rule 1：runtime 不持有世界）。所以它是**世界事实**，必须在引擎侧算、经观察跨过边界——
+这与"runtime 不能写回"是同一个约束的两面。
+
+**被否决的方案**：
+- 给 `agentMessage` 的 payload 加结构化目标 —— 会改动 `schemas/agent-message.schema.json`
+  这个**跨工具合同**（CLAUDE.md §6 要求同步 7 个 JSON Schema），代价与收益不成比例。
+- 让 LLM 决定 READY/WARNING —— 直接违反卡片的 API Contract（"确定性评估……否则不可测"）。
+
+**残余缺口**：结论说的是"这艘船能不能跑完这个选项"，**不是**"能不能跑完 Admiral 心里那趟任务"。
+要把两者接起来，仍然需要 offer 携带结构化目标——即上面被否决的那条路。已记录在 §6。
+
+---
+
+### 5.5 `C-33`：推理模型的 token 预算不足导致 live 路径**静默**全量降级（已修复）
 
 `DEFAULT_MAX_TOKENS = 1200` 对非推理模型够用，对**推理**模型不够：`deepseek-flash` 把预算全花在
 `reasoning_content` 上，`content` 返回空串，provider 归类 `invalid-json` 且不重试。**失败是静默的**
@@ -146,7 +177,7 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 
 | # | 项 | 说明 |
 | --- | --- | --- |
-| 1 | **EVT-04 未实现** | `readiness.ts` 未建。原因：offer 没有**结构化目标**（目标只出现在自由文本里），所以"判断这趟够不够"缺一个可判定的输入。需要先决定战备结论挂在什么上（候选的 `requirements`？offer 的分档？），**不宜由实施者单方面发明**。不影响阶段退出判据 |
+| 1 | **战备结论是"选项级"的，不是"任务级"的** | §5.4 的决定：`readiness` 评估的是"这艘船能不能跑完**这个候选**"，而不是"能不能跑完 Admiral 心里那趟任务"。后者需要 offer 携带结构化目标，而那会改动 `agent-message.schema.json` 这个跨工具合同。**这是有意选择的代价**，不是遗漏 |
 | 2 | **E2E 只覆盖 EVT-01** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。`tests/e2e/vertical-slice.spec.ts` **已通过**（5.1s），全套也已跑过（35/37），但它只走"Admiral 发布 → Agent 作答"这一段：反报价 / 组队 / 执行 / 结算的更深处断言在 `tests/agent/vertical-slice.test.ts` 里，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案 |
 | 3 | **`promiseMemory`（kind `'promise'`）无生产者** | `memoryContribution` 只读 **episodic** 记忆，所以承诺兑现写的是 `episodicMemory{tags:['promise-kept'], subjectId:<promiseId>}`。`promiseMemory` 携带 `promiseId` 但没有 tags，写它不会影响任何分数。**要么**在别处用它（例如承诺详情 UI），**要么**承认它多余 |
 | 4 | **team-accept / team-decline 仍然同分** | 两个候选的分解一致，平局由 id 决定 ⇒ 离线永远接受组队。要做成"关系差就拒绝"，需要一个 per-peer 的候选项（现有 `teamFit` 用的是**平均**合作度） |
@@ -159,13 +190,14 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 
 ## 7. 推荐下一步
 
-1. **`03-test-plan.md` §12 的决议仍未就地更新** —— 那一行写着"❌ 不新增 Lv3 E2E spec（本阶段决议）"，
+1. **跑一次全套 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`**，确认新增 spec 与既有的 8 个 spec
+   共存（期望 `34+1 / 2`，那 2 项是既存失败 + 一项满载 flake，见 §0）。
+2. **`03-test-plan.md` §12 的决议仍未就地更新** —— 那一行写着"❌ 不新增 Lv3 E2E spec（本阶段决议）"，
    而用户已裁决全量覆盖、spec 也已通过。它是红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），
    故未就地改写；反转登记在 `PLAYBOOK_COVERAGE.md` §3.2 与本文 §6.2。
-2. **跑一次全套 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`**，确认新增 spec 与既有的 8 个 spec
-   共存（期望 `34+1 / 2`，那 2 项是既存失败）。
-3. **EVT-04 的设计决定**（§6.1），然后实现 `readiness.ts`。
-4. **`CODEX_TASKS.md` 卡片更正的落地**（§6.3 / `C-34`）——需要在红线上做一次显式决定。
+   （`CODEX_TASKS.md` 的同类问题已由用户显式授权后就地更正，见 `C-34`。）
+3. **若要"任务级"战备**（§6.1），需要先决定是否让 offer 携带结构化目标——那是一次跨工具合同变更。
+4. **P3 之后的常规走向**：稳定化 / 平衡 / UI 打磨 / Codex 交接。
 
 **不要重写**：`scheduler.ts` 的判定与单一写入面、`agent-host.ts` 的寻址、
 `src/engine/agent/events.ts` 的"事实而非数字"分工、`AgentControllerPort` 的 key 集合、
