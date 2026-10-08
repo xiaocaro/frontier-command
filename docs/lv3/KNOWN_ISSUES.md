@@ -309,6 +309,23 @@
 
 ---
 
+## 2d. P3（Game Integration）新增条目（C-33 …）
+
+来源：P3 实施期对**真实端点**的实测，以及与计划不符之处。
+
+### C-33 — 推理模型的 `max_tokens` 预算不足，导致 live 路径**静默**全量降级 🔴 BLOCKER（**已修复**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | P2 的退出判据是「DeepSeek → valid AgentDecision」。`DEFAULT_MAX_TOKENS = 1200` 对**非推理**模型够用（P2 实测 4/4 通过），但对**推理**模型不够 |
+| **Current Code** | `electron/agent/openai-compatible.ts` 的 `body()` 发送 `max_tokens: this.config.maxTokens` + `response_format: {type:'json_object'}`；`contentOf()` 在 `content` 为空串时返回 `null`，于是 `decide()` 返回 `{error:'invalid-json', retryable:false}` |
+| **Measured** | 2026-10-08 对 `https://api.deepseek.com` 实测（`npm run test:llm`）：<br>`deepseek-flash` + 1200 → `outcome=fail:invalid-json`，响应体 `content:""` 而全部内容在 `reasoning_content`，推理链被截断在半句；<br>`deepseek-flash` + 2048 → ok（2/2）；+ 4096 → ok 1/2（另一次 `schema-mismatch`）；+ 8000 → ok（1/1）；<br>`deepseek-chat`（非推理）+ 1200 → ok |
+| **Impact** | 🔴 **最危险的一类失败：静默**。1200 下推理模型**不可能**成功，而失败被 `DecisionRuntime` 的确定性回退接住——世界照常运行、UI 照常刷新、测试照常全绿，但**模型对游戏的贡献为零**。若按本机 CCR 配置的 `deepseek-flash` 运行，P3 的全部"LLM 参与"断言都只是纸面成立 |
+| **Proposed Resolution** | **已修复**：`DEFAULT_MAX_TOKENS` 1200 → **4096**（`max_tokens` 是上限而非花费，加大无额外成本），并在常量处附上上述实测表。**不保证成功**：同一模型在 4096 仍出现过 `schema-mismatch`，这正是所有失败路径都落到确定性回退、而非崩溃的原因（playbook §三十二：不得把"LLM 必须输出 X"作为稳定测试条件） |
+| **教训** | 与 `C-29` 同类：**离线 fixture 是盲区**。录制决策由人写成，不会犯"把答案全写进 reasoning_content"这种错。模型换成一个推理模型、或 provider 改一个默认值，都只有真实端点能暴露。任何改动 provider 默认值或更换模型的提交，都应重跑 `npm run test:llm` |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |

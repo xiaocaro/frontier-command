@@ -59,7 +59,26 @@ export const DEFAULT_DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-chat';
 export const DEFAULT_MAX_RETRIES = 2;
 export const DEFAULT_TEMPERATURE = 0.7;
-export const DEFAULT_MAX_TOKENS = 1200;
+/**
+ * Enough for a **reasoning** model to think *and* still answer.
+ *
+ * Measured against `deepseek-flash` on the live endpoint (2026-10-08):
+ *
+ * ```text
+ * max_tokens=1200   → content: "" (every token spent on `reasoning_content`) → fail:invalid-json
+ * max_tokens=2048   → ok, 2/2
+ * max_tokens=4096   → ok 1/2, one schema-mismatch
+ * max_tokens=8000   → ok, 1/1
+ * ```
+ *
+ * At 1200 a reasoning model cannot succeed at all, and the failure is silent: the runtime falls back
+ * to the deterministic decision, so the game looks healthy while the model contributes nothing. That
+ * is the failure mode this number exists to prevent. Larger is not a cost — `max_tokens` is a ceiling,
+ * not a spend — but it is not a guarantee either: the same model still produced a schema-mismatch at
+ * 4096, which is exactly why every failure path ends in the deterministic fallback rather than a
+ * crash.
+ */
+export const DEFAULT_MAX_TOKENS = 4096;
 export const DEFAULT_MAX_CONSECUTIVE_FAILURES = 2;
 export const DEFAULT_BACKOFF_BASE_MS = 500;
 
