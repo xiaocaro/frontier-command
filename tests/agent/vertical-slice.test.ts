@@ -12,9 +12,45 @@
  */
 import { describe, it, expect } from 'vitest';
 import { quietEngine, issue } from '../helpers';
-import type { Agent, SimulationEvent } from '../../src/engine/types';
+import type { Agent, AgentDecision, AgentObservation, SimulationEvent } from '../../src/engine/types';
 import { SimulationEngine } from '../../src/engine/engine';
-import { agentByCareer, agentShipOf, operatorOf } from './support';
+import { AGENT_PROMPT_VERSION } from '../../src/engine/agent/decision';
+import { MockModelClient } from '../../electron/agent/mock-client';
+import {
+  agentByCareer,
+  agentRuntime,
+  agentShipOf,
+  engineMessenger,
+  observationFor,
+  offerMission,
+  operatorOf,
+  recordingSubmitter,
+  requestTeamUp,
+} from './support';
+
+/** A client that only ever declines — `applyDecision` never consults it. */
+const silent = () => new MockModelClient({ rules: [] });
+
+function decisionFor(
+  observation: AgentObservation,
+  patch: Partial<AgentDecision> & { intent: AgentDecision['intent'] },
+): AgentDecision {
+  return {
+    reason: '测试决策',
+    promptVersion: AGENT_PROMPT_VERSION,
+    observationTick: observation.tick,
+    provider: 'deterministic',
+    ...patch,
+  } as AgentDecision;
+}
+
+/** Applies one decision for real: the Agent speaks through the engine, as itself. */
+function applyFor(engine: SimulationEngine, observation: AgentObservation, decision: AgentDecision) {
+  return agentRuntime(silent(), undefined, recordingSubmitter(), engineMessenger(engine)).applyDecision(
+    observation,
+    decision,
+  );
+}
 
 /** Every settlement fact the engine emits over `ticks` steps, in order. */
 function collectFacts(engine: SimulationEngine, ticks: number) {
@@ -183,5 +219,87 @@ describe('P3-00 the settlement seam', () => {
       return engine.state;
     };
     expect(run()).toEqual(run());
+  });
+});
+
+describe('P3-01/P3-02 the Agent answers the Admiral (EVT-01, EVT-02)', () => {
+  it('speaks an acceptance as an agentMessage addressed to the Admiral', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    offerMission(engine, agent.id);
+    const observation = observationFor(engine, agent.id);
+    const before = engine.state.agentMessages.length;
+
+    expect(
+      applyFor(engine, observation, decisionFor(observation, { intent: 'respond', choiceId: 'accept' })),
+    ).toEqual({ status: 'replied', to: 'admiral', kind: 'report' });
+
+    expect(engine.state.agentMessages).toHaveLength(before + 1);
+    const reply = engine.state.agentMessages.at(-1)!;
+    expect(reply.from).toBe(agent.id);
+    expect(reply.to).toBe('admiral');
+    expect(reply.kind).toBe('report');
+    expect(reply.text.length).toBeGreaterThan(0);
+  });
+
+  it('turns a counteroffer into a negotiate message carrying the request (EVT-02)', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    const tactical = agentByCareer(engine, 'tactical');
+    offerMission(engine, agent.id);
+    const observation = observationFor(engine, agent.id);
+
+    applyFor(
+      engine,
+      observation,
+      decisionFor(observation, {
+        intent: 'respond',
+        choiceId: 'counteroffer',
+        say: '我可以去，但需要 Tactical 护航。',
+        request: { type: 'teammate', targetAgentId: tactical.id },
+      }),
+    );
+
+    const reply = engine.state.agentMessages.at(-1)!;
+    expect(reply).toMatchObject({ from: agent.id, to: 'admiral', kind: 'negotiate' });
+    // `AgentRequest.type` becomes the payload's `requestType` — same five values, different key.
+    expect(reply.payload).toEqual({ requestType: 'teammate', targetAgentId: tactical.id });
+    expect(reply.text).toBe('我可以去，但需要 Tactical 护航。');
+  });
+
+  it('answers a team request to the peer rather than to the Admiral (EVT-03)', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    const tactical = agentByCareer(engine, 'tactical');
+    requestTeamUp(engine, explorer.id, tactical.id);
+    const observation = observationFor(engine, tactical.id);
+
+    expect(
+      applyFor(
+        engine,
+        observation,
+        decisionFor(observation, { intent: 'respond', choiceId: 'team-accept:' + explorer.id }),
+      ),
+    ).toEqual({ status: 'replied', to: explorer.id, kind: 'team-reply' });
+
+    const reply = engine.state.agentMessages.at(-1)!;
+    expect(reply.to).toBe(explorer.id);
+    expect(reply.payload).toEqual({ requestingAgentId: explorer.id, accept: true });
+    // `team-reply` is an interaction kind, so the audit trail records the answer.
+    expect(engine.state.agentInteractions.at(-1)?.kind).toBe('team-reply');
+  });
+
+  it('refuses to invent a recipient for a choice the menu never offered', () => {
+    // `replyFor` only understands choice ids `actions.ts` put on the menu; anything else is not
+    // speech and must not become a message.
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'scientist');
+    const observation = observationFor(engine, agent.id);
+    const before = engine.state.agentMessages.length;
+
+    expect(
+      applyFor(engine, observation, decisionFor(observation, { intent: 'respond', choiceId: 'team-accept:' })),
+    ).toEqual({ status: 'not-an-action', intent: 'respond' });
+    expect(engine.state.agentMessages).toHaveLength(before);
   });
 });

@@ -454,6 +454,7 @@ describe('S-7 a failing provider is contained', () => {
         prompts: loadPromptTemplates(REPO_ROOT),
         schema: loadDecisionSchema(REPO_ROOT),
         submitter: { submit: () => ({ ok: false, reason: 'unused' }) },
+        messenger: { send: () => ({ ok: false, reason: 'unused' }) },
       }),
     });
 

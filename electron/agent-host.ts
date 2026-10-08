@@ -26,7 +26,7 @@ import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
 import { createDeepSeekClient } from './agent/openai-compatible';
-import { DecisionRuntime, type ActionSubmitter, type DecisionTrace } from './agent/runtime';
+import { DecisionRuntime, type ActionSubmitter, type DecisionTrace, type MessageSubmitter } from './agent/runtime';
 
 /** The ship an Agent commands, via the existing operator/assignment binding. */
 function shipOfAgent(w: WorldState, agentId: string): string | null {
@@ -122,6 +122,31 @@ function submitterFor(engine: SimulationEngine): ActionSubmitter {
   };
 }
 
+/**
+ * The runtime's route to the world for **speech** (P3, EVT-01/02/03).
+ *
+ * An Agent may only speak as itself — that is precisely the `agentMessage` permission relaxation in
+ * `command-system.ts` (`from === actorId && from !== 'admiral'`), so the dispatch carries the Agent's
+ * own id as the actor. It is never `'commander'`: an Agent must not be able to borrow the Admiral's
+ * powers, the same rule `submitterFor` above observes (`N-3`).
+ */
+function messengerFor(engine: SimulationEngine): MessageSubmitter {
+  return {
+    send: (reply, observation) =>
+      engine.dispatchCommand(
+        {
+          type: 'agentMessage',
+          from: observation.agentId,
+          to: reply.to,
+          kind: reply.kind,
+          text: reply.text,
+          payload: reply.payload,
+        },
+        observation.agentId,
+      ),
+  };
+}
+
 /** Every trigger in a frame's events. */
 export function agentTriggersOf(events: readonly SimulationEvent[]): AgentTrigger[] {
   const triggers: AgentTrigger[] = [];
@@ -160,6 +185,7 @@ export class AgentHost {
       prompts: loadPromptTemplates(options.root),
       schema: loadDecisionSchema(options.root),
       submitter: submitterFor(engine),
+      messenger: messengerFor(engine),
       ...(options.onTrace ? { onTrace: options.onTrace } : {}),
     });
     this.scheduler = new AgentScheduler({ world: schedulerWorld(engine), runtime });

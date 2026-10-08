@@ -15,7 +15,8 @@ import type { MockAnswer, MockDecision, MockRule, ModelError } from '../../elect
 import { loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
 import { DecisionRuntime, type DecisionTrace } from '../../electron/agent/runtime';
 import type { ModelClient } from '../../electron/agent/model-client';
-import type { ActionSubmitter } from '../../electron/agent/runtime';
+import type { ActionSubmitter, MessageSubmitter } from '../../electron/agent/runtime';
+import type { AgentReply } from '../../src/engine/agent/dialogue';
 import { quietEngine } from '../helpers';
 
 export { quietEngine };
@@ -31,6 +32,7 @@ export function agentRuntime(
   client: ModelClient,
   onTrace?: (trace: DecisionTrace) => void,
   submitter?: ActionSubmitter,
+  messenger?: MessageSubmitter,
 ): DecisionRuntime {
   return new DecisionRuntime({
     client,
@@ -40,7 +42,41 @@ export function agentRuntime(
     // Defaults to one that declines. Every P1/P2 test asserts that *asking* for a decision leaves
     // the world alone, so the scaffold must not quietly start submitting things.
     submitter: submitter ?? { submit: () => ({ ok: false, reason: '测试脚手架未接线提交' }) },
+    // Same reasoning for speech: a test that wants an Agent to actually be heard passes a real one.
+    messenger: messenger ?? { send: () => ({ ok: false, reason: '测试脚手架未接线喊话' }) },
   });
+}
+
+/** A messenger that actually reaches the engine, speaking as the Agent itself. */
+export function engineMessenger(engine: SimulationEngine): MessageSubmitter {
+  return {
+    send: (reply, observation) =>
+      engine.dispatchCommand(
+        {
+          type: 'agentMessage',
+          from: observation.agentId,
+          to: reply.to,
+          kind: reply.kind,
+          text: reply.text,
+          payload: reply.payload,
+        },
+        observation.agentId,
+      ),
+  };
+}
+
+/** Records what an Agent tried to say, without letting it reach the world. */
+export function recordingMessenger(
+  verdict: CommandResult = { ok: true, reason: '记录' },
+): MessageSubmitter & { said: AgentReply[] } {
+  const said: AgentReply[] = [];
+  return {
+    said,
+    send: (reply) => {
+      said.push(reply);
+      return verdict;
+    },
+  };
 }
 
 /** A submitter that actually reaches the engine, through the Agent's own operator port. */

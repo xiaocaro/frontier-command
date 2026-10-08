@@ -48,7 +48,9 @@ import {
   type ValidationError,
 } from '../../src/engine/agent/decision';
 import type { Agent, AgentDecision, AgentObservation } from '../../src/engine/agent/types';
-import type { Action, CommandResult } from '../../src/engine/types';
+import { replyFor } from '../../src/engine/agent/dialogue';
+import type { AgentReply } from '../../src/engine/agent/dialogue';
+import type { Action, AgentMessageKind, CommandResult } from '../../src/engine/types';
 import type { JsonSchema, ModelClient, ModelError, ModelResult } from './model-client';
 import { buildDecisionRequest, type PromptTemplates } from './prompt';
 
@@ -121,6 +123,20 @@ export interface ActionSubmitter {
 }
 
 /**
+ * The runtime's second route to the engine: what an Agent **says**.
+ *
+ * A social decision (`accept`/`reject`/`counteroffer`, `team-accept:<id>`) is not an `Action` and can
+ * never be submitted as one — `decision.ts` refuses it. Before P3 that meant such a decision ended in
+ * `not-an-action` and evaporated: an Agent could decide to counteroffer and no one ever heard. This is
+ * the missing half, and it is a separate port for the same reason `ActionSubmitter` is one — the host
+ * binds it, so this module still never names the engine's command seam.
+ */
+export interface MessageSubmitter {
+  /** Say one thing on behalf of the Agent whose observation this is. Returns the engine's verdict. */
+  send(reply: AgentReply, observation: AgentObservation): CommandResult;
+}
+
+/**
  * What became of a decision once it was applied. Reported rather than assumed: an Agent whose
  * action the engine refused has learned something, and the log should be able to say so.
  */
@@ -130,6 +146,10 @@ export type SubmissionOutcome =
   | { status: 'declined'; choiceId: string; reason: string }
   /** `intent !== 'act'`. Nothing physical was attempted, which is the common case. */
   | { status: 'not-an-action'; intent: AgentDecision['intent'] }
+  /** A social decision was spoken into the world as an `agentMessage`. */
+  | { status: 'replied'; to: string; kind: AgentMessageKind }
+  /** The engine refused the message — a peer that does not exist, a permission gate. */
+  | { status: 'reply-declined'; kind: AgentMessageKind; reason: string }
   /** The choiceId is not on the menu. Unreachable after validation; kept as a value, not a throw. */
   | { status: 'unresolved'; choiceId: string };
 
@@ -142,6 +162,12 @@ export interface DecisionRuntimeOptions {
    * wants the decision half passes a submitter that records and declines.
    */
   submitter: ActionSubmitter;
+  /**
+   * Required for the same reason `submitter` is: "a social decision never reached anyone" must not be
+   * something that can happen by omission. A test that only wants the decision half passes one that
+   * records and declines.
+   */
+  messenger: MessageSubmitter;
   timeoutMs?: number;
   /** Injected so trace ids are reproducible. Defaults to `agentId@tick`. */
   nextDecisionId?: (observation: AgentObservation) => string;
@@ -153,6 +179,7 @@ export class DecisionRuntime {
   private readonly prompts: PromptTemplates;
   private readonly schema: JsonSchema;
   private readonly submitter: ActionSubmitter;
+  private readonly messenger: MessageSubmitter;
   private readonly timeoutMs: number | undefined;
   private readonly nextDecisionId: (observation: AgentObservation) => string;
   private readonly onTrace: ((trace: DecisionTrace) => void) | undefined;
@@ -162,6 +189,7 @@ export class DecisionRuntime {
     this.prompts = options.prompts;
     this.schema = options.schema;
     this.submitter = options.submitter;
+    this.messenger = options.messenger;
     this.timeoutMs = options.timeoutMs;
     this.nextDecisionId =
       options.nextDecisionId ?? ((observation) => observation.agentId + '@' + observation.tick);
@@ -260,18 +288,32 @@ export class DecisionRuntime {
   }
 
   /**
-   * Turn a validated decision into a physical act — the only place that happens.
+   * Turn a validated decision into a world effect — the only place that happens.
    *
-   * The `choiceId` is resolved against the options the engine already offered, so the Action
+   * An `act` resolves its `choiceId` against the options the engine already offered, so the Action
    * submitted is one the engine itself constructed; the model never supplied a target, a coordinate
-   * or a parameter, and there is no path here that invents one (Rule 3 / Rule 6). Anything that is
-   * not an `act` is not an action to submit — `respond`, `wait`, `request` and the rest are speech
-   * and intent, and they end here rather than being dressed up as a ship order.
+   * or a parameter, and there is no path here that invents one (Rule 3 / Rule 6).
+   *
+   * Anything that is not an `act` is **speech, not a ship order** — it is sent as an `agentMessage`
+   * through the injected `MessageSubmitter`, never dressed up as an Action. Three intents say
+   * something (`respond`, `request`, `invite`); the rest (`wait`, `rest`, `quit`) say nothing and end
+   * here. Note the asymmetry that keeps this safe: what an Agent *may* say is bounded by `replyFor`,
+   * which only accepts choice ids `actions.ts` already put on the menu.
    *
    * Synchronous, and it never throws: the engine's own verdict comes back as a value.
    */
   applyDecision(observation: AgentObservation, decision: AgentDecision): SubmissionOutcome {
-    if (decision.intent !== 'act') return { status: 'not-an-action', intent: decision.intent };
+    if (decision.intent !== 'act') {
+      // A social decision is speech, and speech is now a world effect too (P3). `replyFor` returns
+      // `null` for the intents that genuinely say nothing — `wait`, `rest`, `quit` — and those end
+      // here exactly as they always did.
+      const reply = replyFor(decision);
+      if (!reply) return { status: 'not-an-action', intent: decision.intent };
+      const result = this.messenger.send(reply, observation);
+      return result.ok
+        ? { status: 'replied', to: reply.to, kind: reply.kind }
+        : { status: 'reply-declined', kind: reply.kind, reason: result.reason };
+    }
     const choiceId = decision.choiceId;
     if (choiceId === undefined) return { status: 'unresolved', choiceId: '' };
     const candidate = observation.availableActions.find((option) => option.id === choiceId);

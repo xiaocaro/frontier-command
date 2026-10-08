@@ -25,6 +25,7 @@ import {
   agentRuntime,
   engineSubmitter,
   observationFor,
+  recordingMessenger,
   recordingSubmitter,
 } from './support';
 
@@ -101,10 +102,11 @@ describe('only an act is submitted, and only from the menu', () => {
     expect(recorder.submitted[0].action).toEqual(expected);
   });
 
-  it('does not submit anything that is not an act', () => {
+  it('never submits a non-act as a ship order, and says what can be said', () => {
     const { engine, observation } = setup();
     const recorder = recordingSubmitter();
-    const runtime = agentRuntime(silent(), undefined, recorder);
+    const messenger = recordingMessenger();
+    const runtime = agentRuntime(silent(), undefined, recorder, messenger);
     const before = JSON.stringify(engine.state);
 
     for (const intent of ['wait', 'rest', 'quit'] as const)
@@ -113,14 +115,19 @@ describe('only an act is submitted, and only from the menu', () => {
         intent,
       });
     // A social option is speech, not a ship order — it must not be dressed up as one (P1 §5.1).
+    // Since P3 it must also actually be *said*: before P3 a counteroffer evaporated into
+    // `not-an-action` and nobody ever heard it.
     expect(
       runtime.applyDecision(
         observation,
         decisionFor(observation, { intent: 'respond', choiceId: 'accept' }),
       ),
-    ).toEqual({ status: 'not-an-action', intent: 'respond' });
+    ).toEqual({ status: 'replied', to: 'admiral', kind: 'report' });
 
     expect(recorder.submitted).toEqual([]);
+    expect(messenger.said).toHaveLength(1);
+    expect(messenger.said[0]).toMatchObject({ to: 'admiral', kind: 'report' });
+    // The world is untouched: the scaffold messenger is what was reached, never the engine.
     expect(JSON.stringify(engine.state)).toBe(before);
   });
 
