@@ -19,7 +19,7 @@
 | `git diff --check` | **无输出** |
 | `npm run test:llm`（真实端点） | **PASS** — `deepseek-flash` 与 `deepseek-chat` 均 `outcome=ok:respond`；**并因此发现并修复 `C-33`** |
 | `npm run test:e2e`（仅新增 spec） | **PASS** — `tests/e2e/vertical-slice.spec.ts`，1 passed，**5.6s** |
-| `npm run test:e2e`（全套） | **未运行** —— 见 §6.2。全套约 15 分钟且含 2 项既存失败 |
+| `npm run test:e2e`（全套） | **35 passed / 2 failed / 14.7m** —— 37 用例（原 36 + 新增）。两项失败：`mine-accidents.spec.ts:130`（既存阈值问题）与 `recon.spec.ts:216` 的 **200%** 档（**P3 新观察到的满载时序 flake**，单独重跑通过）。新增的 `vertical-slice.spec.ts` 通过（5.1s）。详见 `KNOWN_ISSUES.md` §4 |
 | `npm run test:package` | **未运行** |
 
 改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
@@ -147,7 +147,7 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 | # | 项 | 说明 |
 | --- | --- | --- |
 | 1 | **EVT-04 未实现** | `readiness.ts` 未建。原因：offer 没有**结构化目标**（目标只出现在自由文本里），所以"判断这趟够不够"缺一个可判定的输入。需要先决定战备结论挂在什么上（候选的 `requirements`？offer 的分档？），**不宜由实施者单方面发明**。不影响阶段退出判据 |
-| 2 | **E2E 只覆盖 EVT-01，且全套未跑** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。`tests/e2e/vertical-slice.spec.ts` **已通过**（5.6s），但它只走"Admiral 发布 → Agent 作答"这一段：反报价 / 组队 / 执行 / 结算的更深处断言在 `tests/agent/vertical-slice.test.ts` 里，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案。**全套 E2E 未运行**：约 15 分钟，且含 2 项既存失败（`mine-accidents.spec.ts:48/:130`，非本次回归），跑它对本阶段的增量信息有限 |
+| 2 | **E2E 只覆盖 EVT-01** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。`tests/e2e/vertical-slice.spec.ts` **已通过**（5.1s），全套也已跑过（35/37），但它只走"Admiral 发布 → Agent 作答"这一段：反报价 / 组队 / 执行 / 结算的更深处断言在 `tests/agent/vertical-slice.test.ts` 里，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案 |
 | 3 | **`promiseMemory`（kind `'promise'`）无生产者** | `memoryContribution` 只读 **episodic** 记忆，所以承诺兑现写的是 `episodicMemory{tags:['promise-kept'], subjectId:<promiseId>}`。`promiseMemory` 携带 `promiseId` 但没有 tags，写它不会影响任何分数。**要么**在别处用它（例如承诺详情 UI），**要么**承认它多余 |
 | 4 | **team-accept / team-decline 仍然同分** | 两个候选的分解一致，平局由 id 决定 ⇒ 离线永远接受组队。要做成"关系差就拒绝"，需要一个 per-peer 的候选项（现有 `teamFit` 用的是**平均**合作度） |
 | 5 | **offer 消费是钝的** | 给 Admiral 的一条回复会消费该 Agent **全部**未读任务 offer，而不只是被回答的那条。替代方案是让回复携带 message id，那会让 Agent 层知道它不该看见的消息日志 |

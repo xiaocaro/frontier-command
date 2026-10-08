@@ -360,7 +360,10 @@
 | --- | --- | --- |
 | `tests/e2e/mine-accidents.spec.ts:48` | Windows 文件锁竞争（flaky） | 环境相关，非引擎缺陷 |
 | `tests/e2e/mine-accidents.spec.ts:130` | 超时 15.000s vs 需求约 15.38s | 阈值问题，非引擎缺陷 |
+| `tests/e2e/recon.spec.ts:216`（**200%** 档） | **P3 新观察到**：全套满载运行时 `typography.ts:58` 的字体断言拿到空字体表（`result.fonts === []`）；**单独重跑通过（1.0m）**。125% / 150% 两档在同期全套中均通过 | **满载时序 flake**，非回归：P3 未改动 `src/ui/**`、CSS 或字体（见 `09-game-integration-status.md` §3 的"未修改"清单）。疑为 200% 档在 14 分钟套件末尾的字体加载竞态 |
 
-另有一个**环境坑**：shell 中若存在 `ELECTRON_RUN_AS_NODE=1`，全部 36 项 E2E 会以 `bad option` 失败。运行前须 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`；且**不要**把输出管道给 `tail`，否则真实退出码会被吞掉。
+另有一个**环境坑**：shell 中若存在 `ELECTRON_RUN_AS_NODE=1`，全部 E2E 会以 `bad option` 失败。运行前须 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`；且**不要**把输出管道给 `tail`，否则真实退出码会被吞掉。
 
-本阶段（Prompt 3）**未运行 E2E**，见 `CLAUDE_TO_CODEX.md` 的验证记录。
+**P3 全套实测（2026-10-08）**：37 用例（原 36 + 新增 `vertical-slice.spec.ts`）→ **35 passed / 2 failed / 14.7m**，
+失败的两项即上表后两条（`mine-accidents:130` 与 `recon:216@200%`）；`mine-accidents:48` 本次通过。
+新增的 `tests/e2e/vertical-slice.spec.ts` **通过**（5.1s）。
