@@ -18,7 +18,8 @@
 | `npm run build` | **PASS** — exit 0 |
 | `git diff --check` | **无输出** |
 | `npm run test:llm`（真实端点） | **PASS** — `deepseek-flash` 与 `deepseek-chat` 均 `outcome=ok:respond`；**并因此发现并修复 `C-33`** |
-| `npm run test:e2e` | **未运行本阶段** —— 见 §6「未完成」 |
+| `npm run test:e2e`（仅新增 spec） | **PASS** — `tests/e2e/vertical-slice.spec.ts`，1 passed，**5.6s** |
+| `npm run test:e2e`（全套） | **未运行** —— 见 §6.2。全套约 15 分钟且含 2 项既存失败 |
 | `npm run test:package` | **未运行** |
 
 改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
@@ -60,6 +61,8 @@ Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用*
 | `src/engine/agent/events.ts` | 244 | 结算规划器：`AgentEvent` 的一种 kind 一个函数，组合既有纯函数产出 delta/记忆/关系 |
 | `src/engine/agent/dialogue.ts` | 114 | 社交决策 → `agentMessage`；以及 offer 的确定性分档 |
 | `tests/agent/vertical-slice.test.ts` | 718 | 25 个用例：P3-00 接缝、EVT-01/02/03/08/09、宿主闭环 |
+| `tests/e2e/vertical-slice.spec.ts` | 113 | 真实 Electron 应用中的 EVT-01（playbook §三十一） |
+| `tests/e2e/agent-stub.ts` | 92 | 测试进程内的 OpenAI-compatible stub provider，确定性 |
 
 ## 3. 实际修改的文件
 
@@ -144,7 +147,7 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 | # | 项 | 说明 |
 | --- | --- | --- |
 | 1 | **EVT-04 未实现** | `readiness.ts` 未建。原因：offer 没有**结构化目标**（目标只出现在自由文本里），所以"判断这趟够不够"缺一个可判定的输入。需要先决定战备结论挂在什么上（候选的 `requirements`？offer 的分档？），**不宜由实施者单方面发明**。不影响阶段退出判据 |
-| 2 | **E2E spec 未写** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。仓库 `03-test-plan.md` §12 原决议为"不新增"，用户已裁决全量覆盖，但**尚未落地**：需要一个测试进程内的 OpenAI-compatible stub（`DEEPSEEK_BASE_URL` 指向它）与一个约 10 步的 spec。**注意**：整条链路已用真实 `AgentHost`（`main.ts` 驱动的同一代码路径）在进程内证明过，Playwright spec 的增量价值是"打包后的真实应用"，不是"链路能否跑通" |
+| 2 | **E2E 只覆盖 EVT-01，且全套未跑** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。`tests/e2e/vertical-slice.spec.ts` **已通过**（5.6s），但它只走"Admiral 发布 → Agent 作答"这一段：反报价 / 组队 / 执行 / 结算的更深处断言在 `tests/agent/vertical-slice.test.ts` 里，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案。**全套 E2E 未运行**：约 15 分钟，且含 2 项既存失败（`mine-accidents.spec.ts:48/:130`，非本次回归），跑它对本阶段的增量信息有限 |
 | 3 | **`promiseMemory`（kind `'promise'`）无生产者** | `memoryContribution` 只读 **episodic** 记忆，所以承诺兑现写的是 `episodicMemory{tags:['promise-kept'], subjectId:<promiseId>}`。`promiseMemory` 携带 `promiseId` 但没有 tags，写它不会影响任何分数。**要么**在别处用它（例如承诺详情 UI），**要么**承认它多余 |
 | 4 | **team-accept / team-decline 仍然同分** | 两个候选的分解一致，平局由 id 决定 ⇒ 离线永远接受组队。要做成"关系差就拒绝"，需要一个 per-peer 的候选项（现有 `teamFit` 用的是**平均**合作度） |
 | 5 | **offer 消费是钝的** | 给 Admiral 的一条回复会消费该 Agent **全部**未读任务 offer，而不只是被回答的那条。替代方案是让回复携带 message id，那会让 Agent 层知道它不该看见的消息日志 |
@@ -156,13 +159,13 @@ Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋�
 
 ## 7. 推荐下一步
 
-1. **E2E spec**（§6.2）——playbook §三十一 是唯一尚未兑现的硬性要求。
-2. **EVT-04 的设计决定**（§6.1），然后实现 `readiness.ts`。
-3. **P3-09 的收口**：`CODEX_TASKS.md` 的 P3-01…P3-08 都写着 "Files to Modify: `electron/agent/runtime.ts`"，
-   **那是错的**——`runtime.ts` 按构造不能写回（B-2 禁止它命名引擎，它也不持有引擎引用）。
-   正确文件集是引擎发射点 + `commands.ts` + `command-system.ts` + `electron/agent-host.ts`。
-   `CODEX_TASKS.md` 属红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），故**未就地改写卡片**，
-   更正登记为 `KNOWN_ISSUES.md` `C-34`。
+1. **`03-test-plan.md` §12 的决议仍未就地更新** —— 那一行写着"❌ 不新增 Lv3 E2E spec（本阶段决议）"，
+   而用户已裁决全量覆盖、spec 也已通过。它是红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），
+   故未就地改写；反转登记在 `PLAYBOOK_COVERAGE.md` §3.2 与本文 §6.2。
+2. **跑一次全套 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`**，确认新增 spec 与既有的 8 个 spec
+   共存（期望 `34+1 / 2`，那 2 项是既存失败）。
+3. **EVT-04 的设计决定**（§6.1），然后实现 `readiness.ts`。
+4. **`CODEX_TASKS.md` 卡片更正的落地**（§6.3 / `C-34`）——需要在红线上做一次显式决定。
 
 **不要重写**：`scheduler.ts` 的判定与单一写入面、`agent-host.ts` 的寻址、
 `src/engine/agent/events.ts` 的"事实而非数字"分工、`AgentControllerPort` 的 key 集合、
