@@ -48,6 +48,15 @@ export interface ModelClient {
   readonly id: string;
   /** Must match `prompts/agent/*.md`'s `prompt_version` (CLAUDE.md §7). */
   readonly promptVersion: string;
+  /**
+   * The underlying model name, when the provider has one (`'deepseek-chat'`). Optional because it is
+   * a property of a *live* provider: a recorded fixture answers for a model that was chosen once, and
+   * naming it on the mock would suggest a precision the mock does not have.
+   *
+   * Added in P2 for traceability (playbook §19 names `model` alongside `provider`), and optional so
+   * that every existing `ModelClient` — including the test stubs — still satisfies the contract.
+   */
+  readonly model?: string;
   decide(request: DecisionRequest): Promise<ModelResult>;
 }
 

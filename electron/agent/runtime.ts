@@ -74,6 +74,8 @@ export interface DecisionTrace {
   observationTick: number;
   observationTime: number;
   provider: string;
+  /** The provider's model name, or `null` for a provider that has none (`mock`, `deterministic`). */
+  model: string | null;
   promptVersion: string;
   /** Where the returned decision came from. */
   outcome: 'provider' | 'fallback' | 'discarded';
@@ -125,6 +127,7 @@ export class DecisionRuntime {
       observationTick: observation.tick,
       observationTime: observation.time,
       provider: this.client.id,
+      model: this.client.model ?? null,
       promptVersion: this.client.promptVersion,
       outcome: 'fallback',
       providerFailure: null,
