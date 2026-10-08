@@ -48,7 +48,9 @@
       "dist-electron/**/*",
       "build/icon.png",
       "package.json",
-      "docs/**/*"
+      "docs/**/*",
+      "prompts/**/*",
+      "schemas/**/*"
     ],
     "asar": true,
     "npmRebuild": false,
