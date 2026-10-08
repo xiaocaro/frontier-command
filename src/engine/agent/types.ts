@@ -116,7 +116,14 @@ export type AgentTrigger =
   | { kind: 'directive-completed'; shipId: string; directiveId: string }
   | { kind: 'directive-failed'; shipId: string; directiveId: string; reason: string }
   | { kind: 'admiral-message'; messageId: string }
-  | { kind: 'agent-request'; fromAgentId: string }
+  /**
+   * One Agent asking another for something.
+   *
+   * Both ends are named because the **recipient** is who must decide — `02-decision-flow.md` §3.3,
+   * "A asks B ⇒ B decides". With only the sender there was no way for anything downstream to work
+   * out who that was (`KNOWN_ISSUES.md` `C-30`), and the emission site knew the answer all along.
+   */
+  | { kind: 'agent-request'; fromAgentId: string; toAgentId: string }
   | { kind: 'high-value-opportunity'; opportunityId: string }
   | { kind: 'danger'; contactId: string }
   | { kind: 'promise-changed'; promiseId: string }

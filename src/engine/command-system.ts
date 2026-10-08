@@ -620,7 +620,7 @@ export function dispatchCommand(
         trigger:
           c.from === 'admiral'
             ? { kind: 'admiral-message', messageId: message.id }
-            : { kind: 'agent-request', fromAgentId: c.from },
+            : { kind: 'agent-request', fromAgentId: c.from, toAgentId: target.id },
       });
 
     if (target && createsInteraction(c.kind)) {

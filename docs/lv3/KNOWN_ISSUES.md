@@ -277,7 +277,7 @@
 | **Current Code** | SC-2 按类型原样发射：`command-system.ts` 的 `agentMessage` 分支在消息落到 `agentMessages` 之后 push `{ kind: 'agent-request', fromAgentId: c.from }`。发射点上 `target.id`（收件人）**是已知的**，但类型里没有它的位置 |
 | **Approved Design** | `02-domain-model.md` §14 的联合类型即上述形状；`07-scheduler-plan.md` §13.5 决定「不改该类型，寻址放适配器」 |
 | **Impact** | 🟠 适配器（SC-3）拿到 `fromAgentId` 后**无法确定收件人**。若用「该发送方最新一条未读消息的 `to`」这类启发式，会在同一 Agent 连发多条请求时挑错，且是一条藏在适配器里的隐式规则 |
-| **Proposed Resolution** | 三选一，需在 SC-3 开工前定：① **给 `agent-request` 加 `toAgentId`**（`src/engine/agent/types.ts`，**不是** `schemas/*.json` 的跨工具合同，纯追加，现有消费方按 `kind` 判别不受影响）——**推荐**，因为发射点本来就持有该值，且消除全部歧义；② 适配器按「未读消息」启发式反查（不推荐，见 Impact）；③ 本阶段不发射 `agent-request`，推迟到 P3 的 Agent-Agent 回路（该回路本就属 P3）。**不得**在适配器里静默选一个而不记录 |
+| **Proposed Resolution** | **已决议并落地（2026-10-08）：选项 ①**。`src/engine/agent/types.ts` 的 `agent-request` 追加 `toAgentId: string`，`command-system.ts` 发射时填 `target.id`。变更面：该类型**没有** `schemas/*.json` 对应合同（`schemas/` 只覆盖 agent / decision / memory / message / promise / relationship / action-candidate），故不触碰跨工具合同；唯一消费方是同一次提交里的发射点与两个测试，均为纯追加。<br>被否决的：② 适配器按「未读消息」反查——隐式规则藏在适配器里，同一 Agent 连发多条请求时会挑错；③ 推迟到 P3——`agent-request` 现在就能正确发射，没有理由留一个已知错误的形状 |
 
 ---
 

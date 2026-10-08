@@ -183,7 +183,7 @@ const trigger = (kind: AgentTrigger['kind']): AgentTrigger =>
           : kind === 'admiral-message'
             ? { kind, messageId: 'm-1' }
             : kind === 'agent-request'
-              ? { kind, fromAgentId: 'a-1' }
+              ? { kind, fromAgentId: 'a-1', toAgentId: 'a-2' }
               : kind === 'world-event'
                 ? { kind, eventId: 'e-1' }
                 : kind === 'promise-changed'

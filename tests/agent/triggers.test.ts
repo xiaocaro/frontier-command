@@ -132,7 +132,11 @@ describe('world events and messages emit their own triggers', () => {
 
     expect(result.ok).toBe(true);
     const triggers = collect(engine, 1);
-    expect(triggers).toContainEqual({ kind: 'agent-request', fromAgentId: first.id });
+    expect(triggers).toContainEqual({
+      kind: 'agent-request',
+      fromAgentId: first.id,
+      toAgentId: second.id,
+    });
     expect(kinds(triggers)).not.toContain('admiral-message');
   });
 
