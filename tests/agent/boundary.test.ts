@@ -170,8 +170,16 @@ describe('B-11 only the named provider module may touch the network', () => {
     expect(preload.match(/ipcRenderer\.invoke\(/g) ?? []).toHaveLength(5);
   });
 
-  it('does not wire the runtime into the host loop (the scheduler is a later stage)', () => {
-    expect(read('electron/main.ts')).not.toMatch(/from\s+['"]\.\/agent/);
+  it('wires the Agent loop into the host frame — guarded, and never awaited', () => {
+    // This replaces P1's "the scheduler is a later stage" assertion, which this stage is the later
+    // stage for. The rule is inverted rather than dropped: the wiring must exist, and it must have
+    // the two properties that keep a slow model from becoming a stalled or corrupted world.
+    const main = read('electron/main.ts');
+    expect(main).toMatch(/from\s+['"]\.\/agent-host['"]/);
+    // Its own try/catch, so a provider failure can never reach the branch that sets `saveBlocked`.
+    expect(main).toMatch(/try\s*\{[^}]*agentHost\?\.frame\(/s);
+    // And never awaited: `setInterval` must not block on the network (CLAUDE.md §2.4).
+    expect(main).not.toMatch(/await\s+agentHost/);
   });
 });
 

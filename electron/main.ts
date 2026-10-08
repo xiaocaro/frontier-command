@@ -5,6 +5,7 @@ import { SimulationEngine } from '../src/engine/engine';
 import { createWorld } from '../src/engine/data';
 import { HOST_FRAME_MS } from '../src/engine/clock';
 import { SaveStore } from './persistence';
+import { AgentHost } from './agent-host';
 import { z } from 'zod';
 
 protocol.registerSchemesAsPrivileged([
@@ -20,6 +21,7 @@ let saveBlocked = false;
 let timer: ReturnType<typeof setInterval> | undefined;
 let lastAutoSave = 0;
 let saveMessage = '';
+let agentHost: AgentHost | undefined;
 const send = () => {
   if (window && !window.isDestroyed()) window.webContents.send('world:state', engine.snapshot());
 };
@@ -57,6 +59,13 @@ app.whenReady().then(async () => {
   engine = new SimulationEngine(loaded.world ?? createWorld());
   if (engine.state.status === 'active') engine.state.paused = true;
   if (!loaded.world && !loaded.blocked) store.write(engine.state);
+  try {
+    agentHost = new AgentHost(engine, { root: app.getAppPath() });
+  } catch (error) {
+    // Unreadable or version-mismatched prompts are a packaging fault. Loud, but not fatal: the game
+    // runs, it just never asks a model anything.
+    engine.log('Agent 运行时装配失败，本局不产生 Agent 决策：' + String(error), 'warning');
+  }
   window = new BrowserWindow({
     show: process.env.FRONTIER_HEADLESS !== '1',
     width: 1600,
@@ -174,6 +183,15 @@ app.whenReady().then(async () => {
       engine.state.paused = true;
       saveMessage = '时间线写入失败：' + String(error);
       saveBlocked = true;
+    }
+    // The Lv3 Agent beat. Deliberately its own try/catch, outside the one above: a slow or broken
+    // provider must never reach the branch that marks the world `saveBlocked` — a model being down
+    // is not a broken save (KNOWN_ISSUES `N-9`). `frame()` starts requests and returns; it never
+    // awaits, so the network cannot stall this interval (CLAUDE.md §2.4).
+    try {
+      agentHost?.frame(events);
+    } catch (error) {
+      engine.log('Agent 调度异常：' + String(error), 'warning');
     }
     // Critical pauses are world events even when they do not add a log entry.
 
