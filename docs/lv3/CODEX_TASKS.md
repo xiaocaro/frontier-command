@@ -650,8 +650,16 @@ chore(agent): prepare codex handoff
 
 # P3 — MVP Vertical Slice
 
-> **⬜ 下一步从这里开始。** 前置阶段（P0 / P1 / P2 / P2.5）均已完成，无缺失前置。
+> **✅ 已完成**（2026-10-08）。实测状态、EVT 逐条结论与已知限制见 `docs/lv3/09-game-integration-status.md`。
 > 新上下文入口顺序见 `docs/lv3/CLAUDE_TO_CODEX.md` §9。
+
+> **P3 实施期更正（已在原处修改，非静默）**：本节九张卡的 `Files to Modify` 原本一律写
+> `electron/agent/runtime.ts`，**那是错的**——`runtime.ts` 按构造不能写回世界（`tests/agent/boundary.test.ts`
+> 的 B-2 禁止 `electron/agent/**` 出现引擎名，且它不持有引擎引用）。实际落地的是引擎发射点 +
+> `src/engine/commands.ts` + `src/engine/command-system.ts` + `src/engine/agent/**` + `electron/agent-host.ts`。
+> 每张卡的该行已改为其实测文件集并标注「P3 实施期更正」；冲突经过与理由见 `KNOWN_ISSUES.md` `C-34`。
+> 这是本文件唯一一次就地改写卡片，且由用户显式授权（`docs/lv3/00-*`…`09-*` 与 `CODEX_TASKS.md`
+> 通行的规矩是"冲突只登记在 `KNOWN_ISSUES.md`，不静默修改"）。
 
 > P3 的九张卡各自接线一个 MVP 事件。每张卡都必须**只用既有 `Action`**（`ESCORT`/`TRANSIT`/`SURVEY`/`RETURN`），
 > **不得新增物理行为**（ADR-3）。全部验证用 `tests/agent/vertical-slice.test.ts` + mock provider。
@@ -665,7 +673,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-01
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-01；`docs/lv3/02-mvp-traceability.md` §2 EVT-01 行
 - **Files to Create**：无（技能接线进既有 `electron/agent/**`）
-- **Files to Modify**：`electron/agent/runtime.ts`、`electron/agent/scheduler.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/agent/dialogue.ts`、`src/engine/agent/decision.ts`、`src/engine/command-system.ts`（`consumeAnswered`）、`electron/agent/runtime.ts`（注入式 `MessageSubmitter`）、`electron/agent-host.ts`（绑定 messenger）
 - **Files That Must NOT Be Modified**：`src/engine/**` 的物理分发表
 - **Dependencies**：P1-04、P2-04
 - **Input / Output**：Input = 玩家的任务命令；Output = `AgentMessage` + （若 `counteroffer`）请求
@@ -686,7 +694,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-02
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-02、§5 Branch B；`docs/lv3/02-mvp-traceability.md` §2 EVT-02 行
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/agent/dialogue.ts`（`counteroffer` → `negotiate` 消息 + 请求载荷）
 - **Files That Must NOT Be Modified**：`src/engine/command-system.ts` 的既有分支
 - **Dependencies**：P3-01
 - **Input / Output**：Input = 玩家 `agentMessage{kind:'negotiate'}`；Output = 新 `AgentMessage` + episodic memory
@@ -707,7 +715,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-03
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-03；`docs/lv3/02-mvp-traceability.md` §2 EVT-03 行、§3 链路 C；`src/engine/types.ts:233`（`ESCORT`）；`src/engine/command-system.ts:550-563`（空舰约束）
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/command-system.ts`（`team-reply` 分支发射 `team-resolved`）、`src/engine/agent/events.ts`
 - **Files That Must NOT Be Modified**：`src/engine/execution.ts` 的 `ESCORT` 实现
 - **Dependencies**：P3-02
 - **Input / Output**：Input = `team-request`；Output = `team-reply` + 既有 `ESCORT` 指令 + 关系变化
@@ -728,7 +736,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-04
 - **Read First**：`docs/lv3/02-mvp-traceability.md` §4 CONFLICT-1；`docs/lv3/01-mvp-scenario.md` §4 EVT-04；`src/engine/types.ts:261-291`（`Ship` 的 `hull`/`photon`/`quantum`）；`src/engine/navigation.ts`（`routeEstimate`）
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：**CREATE** `src/engine/agent/readiness.ts`、`src/engine/agent/actions.ts`（把战备结论挂到候选的 `requirements`）
 - **Files That Must NOT Be Modified**：`src/engine/types.ts` 的 `Ship`（**不新增 `fuel` 字段**）
 - **Dependencies**：P3-01
 - **Input / Output**：Input = 舰船状态 + 目标 + 路线；Output = `say: 'READY' | 'WARNING'`（+ 理由）
@@ -749,7 +757,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-05
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-05；`docs/lv3/02-mvp-traceability.md` §2 EVT-05 行、§4 CONFLICT-7；`src/engine/command-system.ts:64-65`（`TRANSIT` 要求虫洞已 `discovered`）；`src/engine/world-events.ts:354-371`（Veil 链路，**复用不新增**）
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/execution.ts`（SURVEY 命中异常处追加 `discovery`）、`src/engine/agent/events.ts`
 - **Files That Must NOT Be Modified**：`src/engine/world-events.ts` 的 Veil 接管分支；`src/engine/world-generation.ts`
 - **Dependencies**：P3-03
 - **Input / Output**：Input = `directive-completed`；Output = 既有 `SURVEY` 指令 + episodic memory
@@ -770,7 +778,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-06、EVT-07 Path A
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-06/EVT-07、§5；`docs/lv3/02-mvp-traceability.md` §3 链路 A；`schemas/agent-promise.schema.json`
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/commands.ts`（`agentEventSchema`）、`src/engine/command-system.ts`、`src/engine/agent/events.ts`
 - **Files That Must NOT Be Modified**：`src/engine/command-system.ts` 的既有 `REFIT` 处理
 - **Dependencies**：P3-04、P3-05
 - **Input / Output**：Input = 新的异常数据；Output = 四条 `AgentMessage` + 一条 `AgentPromise{pending, fulfills:{kind:'grant-module', key:'deepScan'}}`
@@ -791,7 +799,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-07 Path B
 - **Read First**：`docs/lv3/03-implementation-plan.md` §4.6；`docs/lv3/01-mvp-scenario.md` §4 EVT-07 Path B、§5 Branch C；`docs/lv3/02-mvp-traceability.md` §3 链路 B
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：无（P0 已完成：`command-system.ts` 的 `agentMessage`/`override` 分支本身就是代价路径）
 - **Files That Must NOT Be Modified**：`src/engine/command-system.ts` 的 `validate` 权限门（除 P0-15 的 `agentMessage` 放宽外）
 - **Dependencies**：P3-06
 - **Input / Output**：Input = 玩家的 Override 操作；Output = 既有 `issueDirective`（`source:'admiral'`）+ `agentMessage{kind:'override', payload:{directiveActionType}}` + `AgentInteraction{outcome:'forced'}`
@@ -812,7 +820,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-08
 - **Read First**：`docs/lv3/02-mvp-traceability.md` §2 EVT-08 行、§3 链路 A；`src/engine/engine.ts:108-133`（`complete()`）；`src/engine/execution.ts:676`（`REFIT` 真正装入模块处，即 promise 兑现判定点）；`src/engine/command-system.ts:132`（`REFIT` 校验）
 - **Files to Create**：无
-- **Files to Modify**：`electron/agent/runtime.ts`
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`src/engine/engine.ts`（`complete()` 内追加 `mission-settled`）、`src/engine/execution.ts`（REFIT 装入处追加 `module-installed`）、`src/engine/agent/events.ts`
 - **Files That Must NOT Be Modified**：`src/engine/engine.ts` 的 `complete()` 控制流（只允许追加 trigger push）
 - **Dependencies**：P3-07
 - **Input / Output**：Input = `directive-completed`；Output = 结算后的 Agent 状态 + 记忆
@@ -833,7 +841,7 @@ chore(agent): prepare codex handoff
 - **MVP Event**：EVT-09（Path A 与 Path B 对照）
 - **Read First**：`docs/lv3/01-mvp-scenario.md` §4 EVT-09、§6/§9；`docs/lv3/02-mvp-traceability.md` §3 全部三条链路；`Agent.md` §50/§51
 - **Files to Create**：`tests/agent/vertical-slice.test.ts`、`tests/fixtures/agent/lv3-demo.json`、`docs/lv3/07-vertical-slice.md`（可选，供 Prompt 7 阶段）
-- **Files to Modify**：`electron/agent/runtime.ts`（收口）
+- **Files to Modify**（**P3 实施期更正**，见 `KNOWN_ISSUES.md` `C-34`）：`tests/agent/vertical-slice.test.ts`、`tests/e2e/vertical-slice.spec.ts`、`tests/e2e/agent-stub.ts`、`docs/lv3/09-game-integration-status.md`（收口）
 - **Files That Must NOT Be Modified**：`src/engine/**` 的物理规则
 - **Dependencies**：P3-08
 - **Input / Output**：Input = 新高风险任务；Output = Path A/B 下**不同**的下一次决策
