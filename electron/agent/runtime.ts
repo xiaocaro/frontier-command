@@ -119,8 +119,20 @@ export class DecisionRuntime {
     this.onTrace = options.onTrace;
   }
 
-  /** Deterministic for a given (observation, fixture): the same pair always yields the same answer. */
-  async requestDecision(observation: AgentObservation): Promise<DecisionOutcome> {
+  /**
+   * Deterministic for a given (observation, fixture): the same pair always yields the same answer.
+   *
+   * `skipProvider` is how the scheduler says "this beat does not deserve a model call"
+   * (docs/lv3/02-decision-flow.md §3.4: low-priority triggers resolve from the deterministic rule).
+   * It is **not** a second fallback: it goes through the same private `fallBack` and the same
+   * `fallbackDecision`, so there is still exactly one implementation and one trace shape. It is
+   * distinguishable after the fact — `trace.providerFailure` is `null` rather than an error, and
+   * `trace.reason` says the beat was not worth asking about.
+   */
+  async requestDecision(
+    observation: AgentObservation,
+    options: { skipProvider?: boolean; reason?: string } = {},
+  ): Promise<DecisionOutcome> {
     const base: DecisionTrace = {
       decisionId: this.nextDecisionId(observation),
       agentId: observation.agentId,
@@ -135,6 +147,14 @@ export class DecisionRuntime {
       reason: null,
       decision: null,
     };
+
+    if (options.skipProvider)
+      return this.fallBack(
+        observation,
+        base,
+        null,
+        options.reason ?? '这一拍不值得调用模型：按确定性规则作答。',
+      );
 
     let result: ModelResult;
     let thrown: string | null = null;
@@ -190,10 +210,11 @@ export class DecisionRuntime {
     );
   }
 
+  /** `failure` is `null` when the deterministic answer was *chosen* rather than fallen back to. */
   private fallBack(
     observation: AgentObservation,
     base: DecisionTrace,
-    failure: ModelError | ValidationError,
+    failure: ModelError | ValidationError | null,
     reason: string,
   ): DecisionOutcome {
     const decision = fallbackDecision(
