@@ -15,7 +15,7 @@
 | `npm test` | **PASS** — 30 files / **457 tests，456 passed + 1 skipped** |
 | `npm run build` | **PASS** — exit 0（`create-icon` + `tsc --noEmit` + `vite build` + `tsc -p tsconfig.electron.json`） |
 | `git diff --check` | **无输出** |
-| `npm run test:llm` | **SKIPPED** — 本机未设置 `DEEPSEEK_API_KEY`，该文件以 `describe.skip` 报告未运行（非「通过」） |
+| `npm run test:llm` | **PASS（实跑）** — 对真实端点 `https://api.deepseek.com` 跑通 4 次：`deepseek-flash` ×3、`deepseek-v4-pro` ×1；4/4 返回**通过校验的 `AgentDecision`**（`provider:'llm'`）。见 §1.1 |
 | `npm run test:package` | **未运行**（需先 `npm run package`；P2 未改打包内容） |
 | `npm run test:e2e` | **未运行**（P2 未接宿主循环；`tests/e2e/desktop.spec.ts` 未改） |
 
@@ -23,8 +23,11 @@
 
 **新增用例构成**：`tests/agent/deepseek.test.ts` 42 + `tests/agent/context.test.ts` 11 + `tests/agent/live-deepseek.test.ts` 1（默认 skipped）+ `tests/agent/boundary.test.ts` +1（B-11 拆分）= **54 passed / 1 skipped**。
 
-> **最重要的一条诚实声明**：本阶段**没有对 DeepSeek 发起过任何真实调用**（无 key）。
-> provider 的全部行为都由注入的 stub transport 验证。真实端点的端到端行为**尚未被验证过**，见 §8 限制 1。
+> **真实端点已验证（2026-10-08 补做）**。首次提交本阶段时没有可用的 key，全部结论来自注入的
+> stub transport，`npm run test:llm` 报 SKIPPED。之后改用本机 claude-code-router 中已配置的
+> DeepSeek 凭据（`%APPDATA%\claude-code-router\config.sqlite`，provider `id=deepseek`，
+> `api_base_url=https://api.deepseek.com`）实跑，发现并修复了一个**真实缺陷**，见 §1.1 与 §5.8。
+> 密钥全程只经环境变量传入子进程，未写入仓库、命令或日志。
 
 ---
 
@@ -53,6 +56,26 @@ Valid Deterministic Decision
 
 与 P1 相比，管线**只多了一个 provider**。校验、降级、路径、返回类型全部复用，没有第二套。
 
+### 1.1 真实端点的第一次调用（首次即失败，已修复）
+
+第一次实跑的结果**不是**成功，而是：
+
+```text
+[live] deepseek/deepseek-flash attempts=1 latency=4010ms outcome=fail:invalid-choice-id
+[live] raw response body=…{"content":"{\"intent\": \"act\", \"choiceId\": \"accept\", \"reason\": …}"}
+```
+
+模型给出的 `choiceId: "accept"` **确实在菜单里**，失败的原因是 `intent` 用了 `act`。
+`validateDecisionShape` 拒绝 `act` + 社交选项（`accept`/`reject`/`counteroffer`/`team-*`），
+因为 `act` 的语义是「把这条 Action 提交给引擎」，而接受任务不是舰船动作 —— 这是 P1 已批准并有
+测试覆盖的行为，**校验器是对的**。
+
+问题在提示词：`decision.md` 的 intent 表把 `act` 解释为「执行菜单里的**某个**动作」，
+菜单里又确实有 `accept`。**提示词与校验器自相矛盾**，模型照着提示词走，于是被拒。
+这就是 live 测试的价值所在 —— 离线 fixture 永远发现不了这个矛盾，因为录制好的决策是人写的。
+
+修复见 §5.8。修复后同一情形 4/4 返回 `ok:respond`。
+
 ---
 
 ## 2. 实际创建的文件
@@ -62,7 +85,7 @@ Valid Deterministic Decision
 | `electron/agent/openai-compatible.ts` | 518 | `DeepSeekConfig` + `deepSeekConfigFromEnv` + `describeDeepSeekConfig` + `OpenAiCompatibleModelClient` + `extractJsonObject` + `createDeepSeekClient` + `LlmAttemptTrace` |
 | `tests/agent/deepseek.test.ts` | 710 | 配置（§5/§6）、请求装配（§7/§10）、六类错误（L-7…L-10）、重试/退避、熔断（L-13）、不抛异常（§16）、密钥不外泄（L-12）、隔离（§28）、无真实网络（L-15）、§31 退出判据 |
 | `tests/agent/context.test.ts` | 329 | §22 事件级 Prompt fixture（EVT-01/02/03/05/07）、§23 四 Agent 同任务分化、§24 同一 Agent 两段历史 |
-| `tests/agent/live-deepseek.test.ts` | 83 | 可选 live 检查；无 key 时 `describe.skip` |
+| `tests/agent/live-deepseek.test.ts` | 116 | 可选 live 检查；无 key 时 `describe.skip`。含诊断用 transport（原样捕获响应体）与结果上报，见 §1.1 |
 | `docs/lv3/06-deepseek-runtime-status.md` | 本文 | — |
 
 **为什么 `openai-compatible.ts` 是一个文件而不是三个**：`03-implementation-plan.md` §2 已把 provider 实现定名为 `openai-compatible.ts`。配置解析、传输、解析、重试、熔断都只服务于这一个类的构造与 `decide()`，拆成 `config.ts` / `transport.ts` 会增加文件数而不增加边界。**P2 不新增计划外的模块名。**
@@ -78,7 +101,18 @@ Valid Deterministic Decision
 | `tests/agent/boundary.test.ts` | B-11 从「整层无网络」改为「**唯一命名模块**可联网」+ 1 个新用例 | 见 §5.3 |
 | `package.json` | `scripts` 追加 `"test:llm"` | §21：live 检查必须能被单独调用，且**不在** `npm test` 的依赖集内 |
 
-**未修改**（P2 明令保持）：`electron/main.ts`、`electron/preload.ts`、`electron/persistence.ts`、`src/engine/**`（全部）、`schemas/*.json`、`prompts/agent/*.md`、`src/ui/**`、P0/P1 的既有测试与 fixture。
+### 3.1 真实端点实测后的追加改动（§1.1 / §5.8）
+
+| 文件 | 改动 |
+| --- | --- |
+| `electron/agent/prompt.ts` | `renderSituation` 在每个可选项后标注其接受的 intent（`isSocialChoiceId` 判定） |
+| `prompts/agent/{system,decision,conversation,reflection}.md` | `prompt_version` → `agent-v2`；`decision.md` 增补硬性规则 2 |
+| `src/engine/agent/decision.ts` | `AGENT_PROMPT_VERSION` → `'agent-v2'` |
+| `tests/fixtures/agent/{scenarios,valid-decision}.json` | `promptVersion` → `agent-v2` |
+| `tests/agent/{runtime,replay,deepseek}.test.ts` | 4 处版本断言改为引用 `AGENT_PROMPT_VERSION` 常量（未来升级不再改测试） |
+| `tests/agent/live-deepseek.test.ts` | 追加诊断 transport 与结果上报 |
+
+**未修改**（P2 明令保持）：`electron/main.ts`、`electron/preload.ts`、`electron/persistence.ts`、`src/engine/engine.ts` 及引擎其余部分、`src/engine/agent/**` 的**行为**（只改了 `decision.ts` 的版本常量）、`schemas/*.json`、`src/ui/**`、P0/P1 既有测试的**断言语义**（只改了版本字面量的引用方式）。
 
 ---
 
@@ -96,7 +130,7 @@ DeepSeek unavailable → Failure → **P1 既有 fallback** → Valid Decision  
 | §4 provider 抽象 | `OpenAiCompatibleModelClient implements ModelClient` | ✅ |
 | §5 API 配置注入 | `DeepSeekConfig` + `deepSeekConfigFromEnv(env)` | ✅ |
 | §6 安全读取 key | 仅 `openai-compatible.ts` 读 `process.env`；`describeDeepSeekConfig` 是唯一可安全记录的形状 | ✅ |
-| §7 Prompt/Context Builder | 复用 P1 `prompt.ts`（**未改**）；P2 用 `context.test.ts` 证明它把 Agent 专属信息传给了模型 | ✅ |
+| §7 Prompt/Context Builder | 复用 P1 `prompt.ts`，**实测后修正**（§5.8）：`renderSituation` 现逐条标注选项 intent；`context.test.ts` 证明它把 Agent 专属信息传给了模型 | ✅ |
 | §8/§9 结构化上下文优先于文字人格 | `renderSituation` 输出 personality/state/trust/memory/promise/availableActions 的**取值**，而非形容词 | ✅ |
 | §10 结构化输出 | `response_format: json_object` + `extractJsonObject` + `parse` + `validateDecisionShape` | ✅ |
 | §11 Schema Validation | 复用 `agentDecisionSchema`（Zod，`strict()`） | ✅ |
@@ -160,11 +194,32 @@ DeepSeek unavailable → Failure → **P1 既有 fallback** → Valid Decision  
 - **Actual**：两者都是**上界**，取更严的那个。
 - **Reason**：runtime 的每请求预算是调用方的权利，provider 的配置是它自己的护栏；任一被另一个静默覆盖都会让其中一处配置变成死代码。
 
-### 5.7 `prompts/agent/*.md` 未改动
+### 5.7 提示词最初未改动（后被 §5.8 取代）
 
 - **Approved**：任务书 §7/§8/§9 要求 Prompt/Context Builder 与设计原则。
-- **Actual**：四个提示词文件**一字未改**，`prompt_version` 仍为 `agent-v1`。
-- **Reason**：P1 的 `renderSituation` 已经把 §8/§9 要求的全部结构化输入（who am I / what do I want / state / recent / trust / relationships / promises / choices）渲染进「当前态势」，`context.test.ts` 逐项断言了这一点。改提示词正文会连带更新 `AGENT_PROMPT_VERSION`、fixture 的 `promptVersion` 与 P1 的版本一致性测试，**收益（推测的措辞改进）无法在本阶段离线验证**。提示词质量按 `05-mock-runtime-status.md` §8 限制 6 的既定处置留给实测。见 `KNOWN_ISSUES.md` `C-28`。
+- **Actual（首次提交时）**：四个提示词文件一字未改，`prompt_version` 仍为 `agent-v1`。
+- **Reason（当时的判断）**：P1 的 `renderSituation` 已把 §8/§9 要求的全部结构化输入渲染进「当前态势」，
+  `context.test.ts` 逐项断言了这一点；而措辞改动的收益**离线无法验证**，成本却是版本一致性测试的连锁更新。
+- **后续**：接上真实端点后发现了 §1.1 的缺陷，这个判断被实测推翻，遂有 §5.8。保留本条以记录决策过程。
+
+### 5.8 提示词修正 + `prompt_version` 升到 `agent-v2`（**实测驱动**）
+
+- **Approved**：`02-llm-boundary.md` §4.2 只规定内容原则；CLAUDE.md §7 要求提示词版本化以便回溯。
+- **Actual**：两处改动 ——
+  1. `electron/agent/prompt.ts` 的 `renderSituation` 在每个可选项后面**逐条**标注它接受的 intent
+     （`｜intent：respond` 或 `｜intent：act`，由 `isSocialChoiceId` 判定）；
+  2. `prompts/agent/decision.md` 新增硬性规则 2：intent 必须与选项标注一致，社交选项只能用 `respond`。
+  四个提示词文件的 `prompt_version` 与 `AGENT_PROMPT_VERSION` 同步升到 **`agent-v2`**，
+  fixture 的 `promptVersion` 一并更新。
+- **Reason**：§1.1 的实测失败。修法有三种，只有一种成立：
+  | 方案 | 判断 |
+  | --- | --- |
+  | 放宽 `validateDecisionShape`，允许 `act` + 社交选项 | **否**。这是 P1 已批准、有测试覆盖的语义：`act` = 提交 Action 给引擎，社交选项不是 Action。改它等于改 P1 行为 |
+  | provider 把 `act` + 社交选项"顺手"改成 `respond` | **否**。Rule 3 明文禁止对模型输出做善意改写；provider 只能拒绝 |
+  | 让菜单自己说清楚每个选项要哪个 intent | **是**。矛盾本来就在提示词里，修在提示词里 |
+- **为什么标注在**每个选项**上而不只写进规则**：规则表要模型跨表比对，标注在选项旁边则在**做选择的位置**消除歧义。这正是 §9「不要把人格全靠文字 prompt」的同一条思路——能结构化表达的，就不要留给模型推断。
+- **验效**：修复后 4/4 通过（§1.1），且三次 `deepseek-flash` 分别给出 `accept` / `counteroffer`(+teammate 请求) / `accept`，理由各自引用自身目标、风险偏好、疲劳与信任 —— 说明 §23/§24 要的「同一任务、不同 Agent 上下文」在真实模型上确实生效。
+- **涟漪**：4 处测试里的版本断言改为引用 `AGENT_PROMPT_VERSION` 常量（而非字面量），使未来的版本升级不再需要改测试。见 `KNOWN_ISSUES.md` `C-28`（已更新）与 `C-29`。
 
 ---
 
@@ -203,7 +258,7 @@ DeepSeek unavailable → Failure → **P1 既有 fallback** → Valid Decision  
 
 | # | 内容 | 影响 | 处置 |
 | --- | --- | --- | --- |
-| 1 | **从未对真实 DeepSeek 发起调用**（本机无 key） | provider 的线路格式、鉴权头、`response_format` 的实际效果、真实模型的输出质量**均未被验证**。全部结论来自 stub transport | 计划内：`npm run test:llm` 已备好；需要 key 的机器上跑一次即可补上。**在此之前不得声称「DeepSeek 已接好并可工作」** |
+| 1 | ~~从未对真实 DeepSeek 发起调用~~ **已于 2026-10-08 补做** | 线路格式、鉴权头、`response_format`、真实输出**现已验证**（§1.1）。仍**未**验证的是：长期稳定性、并发下的行为、`deepseek-v4-pro` 在 20s 默认超时下会超时（实测一次 `attempts=2`、总耗时 36s） | 结论只对 `https://api.deepseek.com` 的 `deepseek-flash` / `deepseek-v4-pro` 成立。换端点或换模型需重跑 `npm run test:llm` |
 | 2 | 熔断是 provider 级、wall-clock（§5.1） | 一个 Agent 的连续失败会短暂影响其他 Agent 的 LLM 路径；冷却时长与游戏时间无关 | `C-26`，P3 Scheduler 补游戏分钟与 per-Agent 粒度 |
 | 3 | §22 覆盖 6 个事件的 5 种情境（EVT-01/02/03/05/07），EVT-06/09 在 §23/§24 中以「四 Agent 分化」「两段历史」的形式覆盖 | 事件编号与用例不是一对一 | 属覆盖方式差异，非缺口；EVT-04/EVT-08 未单列（其录制本就是 `wait`，无新情境） |
 | 4 | 重试的**总**耗时上界是 `(maxRetries+1) × timeout` | 极端情况下单次决策可占用约 60s（默认 2 次重试 × 20s） | 由调用方的 `request.timeoutMs` 收紧；P3 Scheduler 需要为决策设定总预算 |

@@ -248,15 +248,26 @@
 | **Impact** | 无。`model` 是**可选**成员，`MockModelClient` 与 P1 测试里的全部 stub（`lyingClient`、spy provider）**零修改**仍满足接口；`ModelResult`（§4.4 的另一半，且被 P1 测试 `toEqual`）**一字未改**；既有 trace 断言均为字段级 |
 | **Proposed Resolution** | 保留。「不重写契约」= 不改变既有成员的语义与必需性；追加一个可选成员是满足 §19 的**最小**代价。若未来要把 `model` 放进 `ModelResult`（必需形状），需先重开 `03-api-contract.md` §4.4 并同步更新 P1 测试——**本阶段明确不做** |
 
-### C-28 — `prompts/agent/*.md` 未随 P2 调优 ⚪ INFO
+### C-29 — 提示词的 `intent` 解释与校验器矛盾（**已由真实端点暴露并修复**）🟠 HIGH
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `prompts/agent/decision.md` 的 intent 表写 `act` =「执行菜单里的**某个**动作」，规则 1 又说 `act` 的 `choiceId` 必须是菜单里的 id；而菜单里**确实**包含 `accept`。同一份提示词的另一处又说社交选项应当用 `respond`。**提示词自相矛盾**，且与 `src/engine/agent/decision.ts#validateDecisionShape`（`act` + 社交选项 ⇒ 拒绝）矛盾 |
+| **Current Code** | 首次对真实 DeepSeek 的调用返回 `{"intent":"act","choiceId":"accept"}` ⇒ `invalid-choice-id` ⇒ 降级为确定性决策。原始响应体与判定见 `docs/lv3/06-deepseek-runtime-status.md` §1.1 |
+| **Approved Design** | `02-llm-boundary.md` §4.2 只规定内容原则；`decision.ts` 的 `act` 语义是 P1 已批准、有测试覆盖的行为。**两者不可能都对** |
+| **Impact** | 🟠 真实模型的**第一次**回答即被拒。若不加处理，MVP 里 Agent 会系统性地无法接受任务（只能给出反报价或观望），P2 的退出判据「DeepSeek → valid AgentDecision」不成立 |
+| **Proposed Resolution** | **已落地**（P2 内）：① `renderSituation` 在每个可选项后逐条标注其接受的 intent；② `decision.md` 增补硬性规则 2。**不**放宽校验器、**不**在 provider 里改写模型输出（Rule 3）。四个提示词与 `AGENT_PROMPT_VERSION` 升至 `agent-v2`。修复后 4/4 实跑通过。详见 `06-deepseek-runtime-status.md` §5.8 |
+| **教训** | 离线 fixture 是这个缺陷的**盲区**——录制决策由人写成，人不会犯「act + accept」这种错。**只有真实端点能暴露提示词与校验器的矛盾。** 后续每次改提示词或改 intent 规则，都应对真实端点重跑 `npm run test:llm` |
+
+### C-28 — `prompts/agent/*.md` 未随 P2 调优 ⚪ INFO（**已解决**）
 
 | 项 | 内容 |
 | --- | --- |
 | **Conflict** | 任务书 §7/§8/§9 把 Prompt/Context Builder 与提示词设计原则列为 P2 交付；`05-mock-runtime-status.md` §8 限制 6 又说「提示词好不好，P2 接上真实模型才知道」 |
-| **Current Code** | 四个提示词文件**一字未改**，`prompt_version` 仍为 `agent-v1`；`AGENT_PROMPT_VERSION` 未改；`tests/fixtures/agent/scenarios.json` 的 `promptVersion` 未改 |
+| **Current Code** | 首次提交时四个提示词文件一字未改，`prompt_version` 为 `agent-v1`。**现为 `agent-v2`**：`decision.md` 增补 intent 规则，`renderSituation` 逐条标注选项 intent（见 `C-29`）；`AGENT_PROMPT_VERSION` 与 fixture 的 `promptVersion` 已同步 |
 | **Approved Design** | `02-llm-boundary.md` §4.2 只规定内容原则，未规定具体措辞 |
-| **Impact** | 提示词的**质量**（模型是否真的「像这个 Agent」）仍未被验证。P1 已有的 `renderSituation` 已把 §8/§9 要求的结构化输入全部渲染进「当前态势」，`tests/agent/context.test.ts` 对其逐项断言——即「信息是否送到」已验证，「模型是否善用」未验证 |
-| **Proposed Resolution** | 保留现状。P2 全程离线（无 key），改动措辞的收益无法在本阶段被验证，却会连带更新 `AGENT_PROMPT_VERSION`、fixture 的 `promptVersion` 与 P1 的版本一致性测试（`tests/agent/prompt.test.ts`）。**P3 接上真实端点后**，用 `npm run test:llm` 观察真实输出再决定是否调优；若调优，须同步 bump `prompt_version` 并更新 fixture 与版本测试 |
+| **Impact** | 首次提交时提示词质量未被验证（离线无 key）。接上真实端点后**暴露了实际缺陷**（`C-29`），证明「离线无法验证措辞」这一顾虑是对的，只是方向比预想的严重 |
+| **Proposed Resolution** | **已解决**：调优由实测驱动，只改必要处（intent 标注 + 一条硬性规则），未做无依据的措辞重写。后续任何提示词改动都必须同步 bump `prompt_version`、更新 fixture，并对真实端点重跑 `npm run test:llm`（`C-29` 的教训） |
 
 ---
 
