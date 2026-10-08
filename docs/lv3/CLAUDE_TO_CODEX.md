@@ -157,17 +157,17 @@ P0  Domain Foundation      16 卡   ✅ 已完成（04-foundation-status.md）
 P1  Mock LLM                5 卡   ✅ 已完成（05-mock-runtime-status.md）
 P2  Live DeepSeek Runtime   4 卡   ✅ 已完成（06-deepseek-runtime-status.md）
 P2.5 Scheduler             5 卡   ✅ 已完成（07-scheduler-plan.md / 08-scheduler-status.md）
-P3  MVP Vertical Slice      9 卡   🟡 EVT-01/02/03/07/08/09 PASS；EVT-04 未实现
-                                      E2E spec 已通过（09-game-integration-status.md）
+P3  MVP Vertical Slice      9 卡   ✅ 完成（EVT-01…09 全部 PASS 或 PARTIAL；09-game-integration-status.md）
 ```
 
 剩余：
 
-1. **跑一次全套 E2E**——新增 spec 已单独通过（5.6s），但没和既有的 8 个 spec 一起跑过。
-   期望 `34+1 / 2`（那 2 项是 `mine-accidents` 的既存失败，不是回归）。
-2. **EVT-04**（`readiness.ts`）——先要决定战备结论挂在什么上；offer 没有结构化目标，见 `09-*` §6.1。
-3. **`03-test-plan.md` §12** 的"不新增 E2E"决议与 `CODEX_TASKS.md` 的 P3 卡片文件清单（`C-34`）
-   都是**红线文档上的既有错误**，只登记未就地改写——需要在红线上做一次显式决定。
+1. **跑一次全套 E2E**——新增 spec 已单独通过（5.1s），全套也跑过（35/37）。期望 `34+1 / 2`：
+   那 2 项是 `mine-accidents:130`（既存阈值）+ `recon:216@200%`（满载时序 flake，单独跑通过）。
+2. **`03-test-plan.md` §12** 的"不新增 E2E"决议是**红线文档上的既有错误**（已被用户裁决覆盖、
+   spec 已通过），只登记未就地改写。`CODEX_TASKS.md` 的同类问题已获授权后就地更正（`C-34`）。
+3. **可选**：把战备结论做成"任务级"（`09-*` §6.1）——需要 offer 携带结构化目标，即一次跨工具合同变更。
+4. **P3 之后的常规走向**：稳定化 / 平衡 / UI 打磨 / Codex 交接。
 
 P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用既有 `Action`**
 （`ESCORT`/`TRANSIT`/`SURVEY`/`RETURN`），**不得新增物理行为**（ADR-3）；
@@ -237,13 +237,15 @@ Proposed Resolution`，追加到 `docs/lv3/KNOWN_ISSUES.md`。
 ## 10. 下一张卡
 
 ```text
-P3-09 收口 · EVT-04 readiness（09-game-integration-status.md §6.1）
-  Files to Create : src/engine/agent/readiness.ts（**先做设计决定**：战备结论挂在什么上）
-  Files to Modify : 取决于决定——候选的 `requirements`？offer 的分档？
-  Dependencies    : P3 主体（已完成）
-  Why blocked     : offer 没有**结构化目标**（目标只出现在自由文本里），"这趟够不够"缺一个可判定的输入
-  Done When       : 设计决定记录在 docs/lv3/，且 readiness 是**有生产调用者**的（不是又一个死函数）
+（P3 已完成，无进行中的卡。）
 ```
 
-E2E 已完成；若要继续加固，跑一遍全套 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e` 即可。
-完整背景见 `09-game-integration-status.md`。
+若要继续，顺序建议：
+
+```text
+1. 稳定化 / 平衡 —— P3 只保证"闭环成立"，没有调过任何权重或阈值
+2. 跑一次全套 E2E 作为收尾门禁（见 §7）
+3. UI 打磨 / Codex 交接
+```
+
+P3 的实测状态、EVT 逐条结论与已知限制见 `09-game-integration-status.md`。
