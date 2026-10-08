@@ -130,6 +130,18 @@ export class SimulationEngine {
         this.complete(s, '目标无法接续：' + valid.reason, true);
       }
     }
+    // Lv3 decision triggers (docs/lv3/02-domain-model.md §14). `complete()` is the single funnel for
+    // every directive that ends — ~45 call sites across execution/world-events call it — so one push
+    // here covers all of them. These ride the transient `pendingEvents` channel and never enter
+    // `state`, which is what keeps `tests/architecture.test.ts`'s replay assertion true (C-16).
+    if (old)
+      this.pendingEvents.push({
+        type: 'agentTrigger',
+        trigger: failed
+          ? { kind: 'directive-failed', shipId: s.id, directiveId: old.id, reason: text }
+          : { kind: 'directive-completed', shipId: s.id, directiveId: old.id },
+      });
+    if (!next) this.pendingEvents.push({ type: 'agentTrigger', trigger: { kind: 'ship-idle', shipId: s.id } });
   }
   step(fixedDelta = FIXED_DELTA): SimulationEvent[] {
     if (fixedDelta !== FIXED_DELTA) throw Error('Simulation requires fixed 0.1 game-minute steps');

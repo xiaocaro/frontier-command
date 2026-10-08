@@ -608,6 +608,21 @@ export function dispatchCommand(
     });
     w.agentMessages = boundMessages([...w.agentMessages, message]);
 
+    // The only door for both social triggers (docs/lv3/02-domain-model.md §14). Emitted only when
+    // the message is actually addressed to an Agent — a message to the Admiral wakes nobody.
+    //
+    // The transient channel is drained by the next `step()`, so a message dispatched from the host
+    // is delivered to the scheduler one frame later. That is acceptable: it is a trigger, not a
+    // state change, and the game is unsynchronised with it by design (Rule 1).
+    if (target)
+      this.pendingEvents.push({
+        type: 'agentTrigger',
+        trigger:
+          c.from === 'admiral'
+            ? { kind: 'admiral-message', messageId: message.id }
+            : { kind: 'agent-request', fromAgentId: c.from },
+      });
+
     if (target && createsInteraction(c.kind)) {
       const outcome = interactionOutcomeFor(c.kind, c.payload);
       const { agent, effects } = applyInteraction(target, c.kind, outcome);

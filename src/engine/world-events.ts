@@ -50,6 +50,9 @@ export function createEvent(
   };
   e.state.events.push(v);
   e.record('event', EVENT_LABELS[kind] + '：' + evidence, v.id);
+  // Only reached on actual creation — the `existing` guard above returns early for a live event of
+  // the same kind and subject, so this fires once per event.
+  e.pendingEvents.push({ type: 'agentTrigger', trigger: { kind: 'world-event', eventId: v.id } });
   return v;
 }
 export function finishEvent(e: SimulationEngine, v: WorldEvent, outcome: string, failed = false) {

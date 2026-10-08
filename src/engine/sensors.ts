@@ -117,6 +117,14 @@ export function updateSensors(e: SimulationEngine) {
         '，请 Admiral 处置后手动继续';
       e.report(message, result.record.id, 'urgent', 'threat');
       e.critical('newContact', result.record.id, message);
+      // Mirrors the alert above rather than deduplicating it: this branch already re-fires for a
+      // contact that went quiet for 10 minutes or turned hostile, and each of those is a genuine
+      // danger signal. The scheduler coalesces repeats and caps the model budget, so a repeated
+      // alert cannot turn into repeated calls.
+      e.pendingEvents.push({
+        type: 'agentTrigger',
+        trigger: { kind: 'danger', contactId: result.record.id },
+      });
       if (!alert) {
         alert = { contactId: enemy.id, lastAlertAt: w.time, hostileAlerted: false };
         w.contactAlerts.push(alert);

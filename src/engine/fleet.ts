@@ -145,9 +145,15 @@ export function advanceStanding(e: SimulationEngine, s: Ship) {
       return;
     }
   }
+  // Captured before the assignment so the trigger fires on the *transition* into a settled state,
+  // not on every tick: this function runs for every ship every tick, and an unconditional push
+  // would be a trigger flood rather than an event.
+  const wasSettled = s.status === 'docked' || s.status === 'idle';
   s.status = e.state.locations.some(
     (l) => l.owner === 'starfleet' && l.hull > 0 && dist(s, l) <= 12 + 1e-8,
   )
     ? 'docked'
     : 'idle';
+  // A ship that just became free is worth telling its Agent about (docs/lv3/02-domain-model.md §14).
+  if (!wasSettled) e.pendingEvents.push({ type: 'agentTrigger', trigger: { kind: 'ship-idle', shipId: s.id } });
 }
