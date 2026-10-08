@@ -364,6 +364,10 @@
 
 另有一个**环境坑**：shell 中若存在 `ELECTRON_RUN_AS_NODE=1`，全部 E2E 会以 `bad option` 失败。运行前须 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`；且**不要**把输出管道给 `tail`，否则真实退出码会被吞掉。
 
+**还有一个会弄脏工作区的坑**：跑一次 E2E 会**重写 `docs/verification/` 下 60+ 个被 git 跟踪的截图与 JSON**
+（它们是 spec 的产物，不是源码）。这些差异是重渲染噪音，**不要提交**。跑完 E2E 后先
+`git checkout -- docs/verification` 再 `git diff --check`，否则 `git add -A` 会把它们一起带进提交。
+
 **P3 全套实测（2026-10-08）**：37 用例（原 36 + 新增 `vertical-slice.spec.ts`）→ **35 passed / 2 failed / 14.7m**，
 失败的两项即上表后两条（`mine-accidents:130` 与 `recon:216@200%`）；`mine-accidents:48` 本次通过。
 新增的 `tests/e2e/vertical-slice.spec.ts` **通过**（5.1s）。
