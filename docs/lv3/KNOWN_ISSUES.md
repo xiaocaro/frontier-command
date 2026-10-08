@@ -269,6 +269,16 @@
 | **Impact** | 首次提交时提示词质量未被验证（离线无 key）。接上真实端点后**暴露了实际缺陷**（`C-29`），证明「离线无法验证措辞」这一顾虑是对的，只是方向比预想的严重 |
 | **Proposed Resolution** | **已解决**：调优由实测驱动，只改必要处（intent 标注 + 一条硬性规则），未做无依据的措辞重写。后续任何提示词改动都必须同步 bump `prompt_version`、更新 fixture，并对真实端点重跑 `npm run test:llm`（`C-29` 的教训） |
 
+### C-30 — `agent-request` 不携带收件人，调度器无法知道该叫醒谁 🟠 HIGH（**SC-3 必须解决**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `AgentTrigger` 的 `{ kind: 'agent-request'; fromAgentId: string }` 只给出**发送方**，而 `02-decision-flow.md` §3.3 要的是「A 请求 B ⇒ 触发 **B** 决策」——收件人不在载荷里 |
+| **Current Code** | SC-2 按类型原样发射：`command-system.ts` 的 `agentMessage` 分支在消息落到 `agentMessages` 之后 push `{ kind: 'agent-request', fromAgentId: c.from }`。发射点上 `target.id`（收件人）**是已知的**，但类型里没有它的位置 |
+| **Approved Design** | `02-domain-model.md` §14 的联合类型即上述形状；`07-scheduler-plan.md` §13.5 决定「不改该类型，寻址放适配器」 |
+| **Impact** | 🟠 适配器（SC-3）拿到 `fromAgentId` 后**无法确定收件人**。若用「该发送方最新一条未读消息的 `to`」这类启发式，会在同一 Agent 连发多条请求时挑错，且是一条藏在适配器里的隐式规则 |
+| **Proposed Resolution** | 三选一，需在 SC-3 开工前定：① **给 `agent-request` 加 `toAgentId`**（`src/engine/agent/types.ts`，**不是** `schemas/*.json` 的跨工具合同，纯追加，现有消费方按 `kind` 判别不受影响）——**推荐**，因为发射点本来就持有该值，且消除全部歧义；② 适配器按「未读消息」启发式反查（不推荐，见 Impact）；③ 本阶段不发射 `agent-request`，推迟到 P3 的 Agent-Agent 回路（该回路本就属 P3）。**不得**在适配器里静默选一个而不记录 |
+
 ---
 
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）

@@ -245,8 +245,8 @@ tests/architecture.test.ts:39-60                          ← 必须继续通过
 | 卡 | 状态 | 产物 |
 | --- | --- | --- |
 | SC-1 | ✅ **完成**（2026-10-08） | `electron/agent/scheduler.ts`、`tests/agent/scheduler.test.ts`（18 用例，`S-1…S-11` + `C-17` 全覆盖） |
-| SC-2 | ⬜ 未开始 | `agentTrigger` 发射 |
-| SC-3 | ⬜ 未开始 | `main.ts` 接线 + world 适配器 |
+| SC-2 | ✅ **完成**（2026-10-08） | 5 个引擎文件共 **+44 行、0 删除**（纯追加，约束 ⑤ 满足）；`tests/agent/triggers.test.ts`（10 用例） |
+| SC-3 | ⬜ 未开始（**需先定 `C-30`**） | `main.ts` 接线 + world 适配器 |
 | SC-4 | ⬜ 未开始 | 决策提交（选项 B） |
 | SC-5 | ⬜ 未开始 | 阶段文档 |
 
