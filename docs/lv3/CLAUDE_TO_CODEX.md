@@ -46,9 +46,14 @@
 > 都明令不含它，于是被两次跳过。它不是被取消，而是被挤掉的。规划见 `07-scheduler-plan.md`。
 
 > **若你在按外部 playbook 逐条施工**：先读 `PLAYBOOK_COVERAGE.md`。playbook 自己把 Scheduler 划在
-> **P3**（Prompt 6 §25），所以它的 **Prompt 7**（§四/§五 建立 AgentScheduler、event-driven 触发）
-> 与已完成的 P2.5 **重叠**。该 Prompt 的调度器部分**已满足，不要重建**（`KNOWN_ISSUES.md` `C-31`）；
-> 其中 `Mission offered` 一条是真实缺口，但**尚未做设计决定**（`C-32`）。
+> **P3**（Prompt 6 §25），所以它的 **Prompt 7** 里 §四/§五 的调度器部分与已完成的 P2.5 **重叠**，
+> **已满足，不要重建**（`KNOWN_ISSUES.md` `C-31`）。
+>
+> 但 Prompt 7 **不只是调度器**——它的标题是 `P3 Game Integration + MVP Vertical Slice`，
+> 主体（§二十一 EVT-01…09、§二十五 UI/IPC、§二十九–§三十二 测试与 E2E、§三十三 DoD）**是 P3 的工作**，
+> 由 `CODEX_TASKS.md` 的 `P3-01…P3-09` 承担，状态见 `09-game-integration-status.md`。
+> 其中 §三十一 的 E2E 与仓库 `03-test-plan.md` §12 的既有决议冲突，已由用户裁决为**全量范围**并登记；
+> §二十五 的 UI/IPC 则**无需**新通道（§二十五 自带豁免条款，见 `PLAYBOOK_COVERAGE.md` §3.2）。
 
 **真实端点已实测**：`npm run test:llm` 对 `https://api.deepseek.com` 实跑通过，
 并因此发现并修复了一个真实缺陷（`KNOWN_ISSUES.md` `C-29`：提示词把 `act` 解释成「菜单里的任一动作」，

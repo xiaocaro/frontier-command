@@ -16,25 +16,37 @@
 
 ---
 
-## Prompt 7 — AgentScheduler / event-driven
+## Prompt 7 — P3 Game Integration + MVP Vertical Slice
+
+> **⚠️ 更正（2026-10-08）**：本条目初版把 Prompt 7 定性为「AgentScheduler / event-driven」，那是**错的**。
+> 当时只读了用户选中的 §四/§五 两节就下了结论。Prompt 7 的标题逐字是
+> `# Prompt 7 — P3 Game Integration + MVP Vertical Slice`，调度器只是它的其中两节。
+> 低估 Prompt 7 的范围会导致「以为整条 Prompt 都已完成」这一危险结论。以下为更正后的对照。
 
 ### 0. 结论
 
-> **Prompt 7 第四节与第五节描述的 Scheduler，已由插入阶段 `P2.5` 完整实现并合入。**
+Prompt 7 有**两块**内容，覆盖情况完全不同：
 
-- `07-scheduler-plan.md` 的 SC-1…SC-5 **全部 ✅**（2026-10-08）。
-- `08-scheduler-status.md` 记录了构建管线、验证结果与已知限制。
-- 触发到动作的整条链路已在游戏中接线（`electron/main.ts` → `agent-host.ts` → `scheduler.ts`）。
+| 块 | Prompt 7 的章节 | 覆盖状态 |
+| --- | --- | --- |
+| **A. Scheduler** | §二（职责表列 `AgentScheduler`）、§四（建 AgentScheduler）、§五（event-driven 触发） | ✅ **已由 P2.5 完成**，不要重建 |
+| **B. 垂直切片与整合** | §三、§七–§二十四、§二十一（EVT-01…09）、§二十五（UI/IPC）、§二十九–§三十二（测试与 E2E）、§三十三（DoD） | ⬜ **P3 的工作**，**尚未开始** |
 
-**但 playbook 自己把 Scheduler 划在 P3**：Prompt 6 §25 逐字写着「不要在 P2 实现
-Scheduler …… **真正 Scheduler 在 P3。**」，Prompt 7 §二 也把 `AgentScheduler` 列为 P3 职责。
-仓库的理由是它被 P1/P2 两次挤掉（见 `CLAUDE_TO_CODEX.md` §2「P2.5 为什么存在」）。
+**A 块的结论**：`07-scheduler-plan.md` 的 SC-1…SC-5 **全部 ✅**（2026-10-08）；
+`08-scheduler-status.md` 记录了管线、验证与限制；链路已在游戏中接线
+（`electron/main.ts` → `agent-host.ts` → `scheduler.ts`）。
 
-于是 **Prompt 7 §四/§五 与已完成的 P2.5 大面积重叠**，而 Prompt 7 只在阅读清单里补了 P2.5 的文档，
-正文仍写着「现在实现 Prompt 2 已批准的 Scheduler」。**按 playbook 顺序施工会重复实现一个已经存在
-且被边界测试锁死的调度器。** 该冲突登记为 `KNOWN_ISSUES.md` `C-31`。
+playbook 自己把 Scheduler 划在 P3（Prompt 6 §25 逐字：「不要在 P2 实现 Scheduler ……
+**真正 Scheduler 在 P3。**」），仓库把它作为插入阶段 P2.5 提前完成。于是 **Prompt 7 §四/§五
+与 P2.5 重叠**，而 Prompt 7 正文仍写着「现在实现 Prompt 2 已批准的 Scheduler」。
+**按 playbook 顺序施工会重复实现一个已经存在且被边界测试锁死的调度器。** 登记为 `KNOWN_ISSUES.md` `C-31`。
 
-### 1. 证据（Prompt 7 要求 Scheduler 负责的东西，实际在哪）
+**B 块的结论**：**没有任何一部分被 P2.5 覆盖**。它的施工图是 `docs/lv3/CODEX_TASKS.md` 的
+`P3-01…P3-09`，实施状态见 `docs/lv3/09-game-integration-status.md`。
+两处偏差已在 `KNOWN_ISSUES.md` 登记：`C-32`（`Mission offered` 无触发生产者）、
+以及 B 块要求的 E2E 与仓库原决议的冲突（见 §3）。
+
+### 1. 证据（A 块：Prompt 7 要求 Scheduler 负责的东西，实际在哪）
 
 | 职责 | 实际位置 |
 | --- | --- |
@@ -46,7 +58,7 @@ Scheduler …… **真正 Scheduler 在 P3。**」，Prompt 7 §二 也把 `Agen
 | 宿主接线 | `electron/main.ts`：`advanceFrame` 之后、**独立** try/catch 内调用 `agentHost.frame(events)` |
 | 测试 | `tests/agent/scheduler.test.ts`（`S-1…S-11`、`C-17`、SC-4）、`tests/agent/triggers.test.ts`、`tests/agent/host.test.ts` |
 
-### 2. 逐条对照
+### 2. A 块逐条对照（Prompt 7 的 Scheduler 章节 vs P2.5）
 
 #### 2.1 §四 「Scheduler 的职责是」
 
@@ -106,8 +118,8 @@ Scheduler …… **真正 Scheduler 在 P3。**」，Prompt 7 §二 也把 `Agen
 | Task completed | `directive-completed` | `src/engine/engine.ts:141-142`（`complete()`） | ✅ |
 | Task failed | `directive-failed` | `src/engine/engine.ts:141-142` | ✅ |
 | Danger | `danger` | `src/engine/sensors.ts:124-127`（`newContact`） | ✅ |
-| Admiral message | `admiral-message` | `src/engine/command-system.ts:617-624`（`agentMessage`，`from === 'admiral'`） | ✅ |
-| Agent request | `agent-request`（含 `toAgentId`，`C-30`） | `src/engine/command-system.ts:617-624`（其余 `from`） | ✅ |
+| Admiral message | `admiral-message` | `src/engine/command-system.ts:629-636`（`agentMessage`，`from === 'admiral'`） | ✅ |
+| Agent request | `agent-request`（含 `toAgentId`，`C-30`） | `src/engine/command-system.ts:629-636`（其余 `from`） | ✅ |
 | Major event | `world-event` | `src/engine/world-events.ts:55`（`createEvent`） | ✅ |
 | Team-up request | 消息 kind `team-request`，经 `agent-request` 承载 | `src/engine/agent/interactions.ts:38-47` 的 kind 枚举；触发同上 | ✅（**无独立变体**，见 §3） |
 | High-value opportunity | `high-value-opportunity` | **无生产者** | ⚠️ 未实现（P3） |
@@ -126,23 +138,33 @@ Scheduler …… **真正 Scheduler 在 P3。**」，Prompt 7 §二 也把 `Agen
 **✅ 满足。** 模型调用发生在 `pump()` 之外的调度器边界；`pump()` 同步返回，决策由 `DecisionRuntime`
 在宿主帧内异步推进。`step()` 只负责把 `pendingEvents` 排空给宿主（`C-16`：触发**不进** `WorldState`）。
 
-### 3. 落差清单（Prompt 7 要求 vs 仓库实际）
+### 3. 落差清单
+
+**3.1 A 块（Scheduler）内部的落差**
 
 | # | 落差 | 性质 |
 | --- | --- | --- |
 | 1 | `high-value-opportunity`、`promise-changed`、`no-decision-for` 三个变体**声明了但无生产者** | 已知；`promise-changed` / `high-value-opportunity` 明确留给 P3（`08-scheduler-status.md` §6） |
-| 2 | `Mission offered` **完全没有承载**：Admiral 下达指令不产生任何触发 | **新发现**，登记为 `C-32`，**需要显式设计决定**（CLAUDE.md §15） |
+| 2 | `Mission offered` **完全没有承载**：Admiral 下达指令不产生任何触发 | 登记为 `C-32`；**P3 已决议**——由 `admiral-message` 语义覆盖，不新增触发变体（见 §3.2） |
 | 3 | playbook 的 `Team-up request` 没有独立变体，被合并进 `agent-request` | 语义上仍能叫醒收件人（`C-30` 已保证收件人在载荷里），但**触发类型上不可区分** |
-| 4 | playbook 的 `Promise fulfilled` / `Promise broken` 被合并为单个 `promise-changed` | 与 `07-scheduler-plan.md` 的设计一致；两事件对 Agent 的含义不同，P3 接线时需决定是否拆分 |
+| 4 | playbook 的 `Promise fulfilled` / `Promise broken` 被合并为单个 `promise-changed` | 与 `07-scheduler-plan.md` 的设计一致；P3 用 `agentEvent` 结算时不再需要独立触发 |
 | 5 | playbook 把 Scheduler 划在 P3，仓库已在 P2.5 完成 | 登记为 `C-31` |
 
-**另需注意的最大未验证项**（来自 `08-scheduler-status.md` §8.1，非 Prompt 7 特有的落差）：
+**3.2 B 块（垂直切片）与仓库既有决议的冲突**
+
+| # | playbook 要求 | 仓库实际 | 处置 |
+| --- | --- | --- | --- |
+| 1 | §三十一「本阶段必须最终运行 `npm run test:e2e`」，新增 E2E spec | `03-test-plan.md` §12 原决议：**不新增** Lv3 E2E spec（Playwright 列为 POST-MVP） | **用户已裁决：全量范围**。该行决议被显式覆盖并登记，新增 `tests/e2e/vertical-slice.spec.ts`（mock provider，确定性） |
+| 2 | §二十五「实现 Admiral → Agent UI / IPC」 | `boundary.test.ts:167-171` 断言渲染层**不得**新增 IPC；`src/ui/**`、`preload.ts` 冻结 | **不需要推翻**。§二十五 自带豁免条款（「若 MVP 可先用现有 UI / debug controls 验证，则不要为了展示而重做 UI」）。既有 `world:command` 已能承载 `agentMessage`，回复经 `N-6` 镜像进既有 Communications 面板——**零新 IPC、零 UI 改动** |
+| 3 | §二十三/§二十四 持久化 Agent 状态，且旧 v10 存档仍可迁移 | v11 `agentSchema` 已持久化 state/goal/relationships/memories/promises/nextDecisionAt | **P3 不新增字段 ⇒ 无 v12、无迁移**（见 `09-game-integration-status.md`） |
+
+**另需注意的最大未验证项**（来自 `08-scheduler-status.md` §8.1）：
 **游戏内从未观察到一次真实的 Agent 行动**——载入的世界默认 `paused: true`，调度器整局静默。
-在 P3 的垂直切片第一次解除暂停之前，**不得**声称「Scheduler 已在游戏中实际驱动过 Agent」。
+P3 的垂直切片第一次解除暂停时才会真正跑起来；在那之前**不得**声称「Agent 已在游戏里行动」。
 
 ### 4. P3 不要重写（沿用 `08-scheduler-status.md` §7）
 
-若后续 Prompt 要求「建立 AgentScheduler」，**不要重建**下列已被锁定的东西：
+若后续 Prompt 再次要求「建立 AgentScheduler」，**不要重建**下列已被锁定的东西：
 
 - `scheduler.ts` 的判定逻辑与**单一写入面**（只写 `Agent.nextDecisionAt`，且只在 `pump()` 里）；
 - `agent-host.ts` 的三类寻址（`agentsForTrigger`）；
