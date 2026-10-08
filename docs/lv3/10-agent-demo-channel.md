@@ -113,8 +113,32 @@ override 另给一个 `directiveActionType` 选择器；一个 **`承诺 Deep Sc
 
 ## 4. 人类演示 Runbook
 
-前提：`npm start`（或 `npm run dev`）启动应用；载入的世界**默认暂停**，先点「继续」；
-`speed` 用 `16×` 让 Agent 的节拍（每 15 游戏分钟一次）来得快些。
+**第一步：看你处在哪种模式。** 启动时终端会有一行 `[agent] …`（见 §2.4）：
+
+```text
+[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型
+[agent] 模型已配置 — {…,"model":"deepseek-chat","hasApiKey":true}
+```
+
+**本机默认是第一种**——密钥不在环境变量里（它在 claude-code-router 的 `config.sqlite`），仓库里也
+**没有 `.env` 加载**。要跑"带真模型"的演示，在启动时把 key 注入环境：
+
+```bash
+DEEPSEEK_API_KEY=<key> npm run dev      # dev.mjs 会把 process.env 透给 electron
+# 或
+DEEPSEEK_API_KEY=<key> npm start
+```
+
+可同时覆盖 `DEEPSEEK_MODEL`（默认 `deepseek-chat`）、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MAX_TOKENS` 等。
+
+> **不要把 key 写进 `.env`**：本仓库的 `.gitignore` **没有** `.env` 条目，那个文件会被 `git add -A`
+> 一并提交。要用文件形式，先把它加进 `.gitignore`。
+>
+> 两种模式都会产出**合法**决策，游戏里看起来一样（这正是 `C-33` 那一整段能发生的原因），
+> 所以**先读那行**再开始演示，否则无从判断自己在看模型还是确定性分档。
+
+前提：应用已启动；载入的世界**默认暂停**，先点「继续」；`speed` 用 `16×` 让 Agent 的节拍
+（每 15 游戏分钟一次）来得快些。
 
 面板：控制台 PRIORITY COMMUNICATIONS 下方 → 展开 **AGENT CHANNEL · 舰桥通讯**。
 
