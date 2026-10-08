@@ -83,6 +83,28 @@ export function isTeamCandidate(candidateId: string): boolean {
   return candidateId.startsWith('escort:') || candidateId.startsWith('team-');
 }
 
+/**
+ * Whether a memory of this kind makes an Agent *more* or *less* willing to take the candidate on.
+ *
+ * A memory carries a weight — how strongly it is remembered — but nothing in `MEMORY_WEIGHTS` says
+ * which way. Without this map `memoryContribution` returns a weight, so an `admiral-override`
+ * (weight 90) pushed the score **up**, toward accepting: the Agent.md §50 loop ran, but backwards.
+ * That is the P3 calibration `04-foundation-status.md` §6 item 1 deferred, and it is what lets
+ * EVT-09's two histories produce opposite decisions instead of two different-but-positive ones.
+ */
+export const MEMORY_VALENCE: Readonly<Record<MemoryTag, 1 | -1>> = Object.freeze({
+  'admiral-override': -1,
+  'promise-kept': 1,
+  'promise-broken': -1,
+  'mission-success': 1,
+  'mission-failure': -1,
+  discovery: 1,
+  'team-up': 1,
+  conflict: -1,
+  'near-death': -1,
+  'risk-taken': 1,
+});
+
 /** Agent.md §21 bands mapped onto the `FatiguePenalty` term. */
 export const FATIGUE_PENALTY: Readonly<Record<ReturnType<typeof fatigueBand>, number>> =
   Object.freeze({
@@ -167,8 +189,12 @@ export function decisionScore(
 
 /**
  * How strongly the Agent's recent memories push toward this candidate: the heaviest memory whose
- * tag speaks to one of the candidate's goal kinds. This is where Agent.md §50 ("memory must change
- * future behaviour") becomes a number instead of a promise.
+ * tag speaks to one of the candidate's goal kinds, **signed by `MEMORY_VALENCE`**. This is where
+ * Agent.md §50 ("memory must change future behaviour") becomes a number instead of a promise — and
+ * the sign is what makes "a bad memory makes me more cautious" true rather than merely different.
+ *
+ * The most *decisive* memory wins, not the largest positive one: a strong bad memory outranks a
+ * weaker good one, which is the asymmetry a bad experience actually has.
  */
 export function memoryContribution(
   observation: AgentObservation,
@@ -178,8 +204,11 @@ export function memoryContribution(
   let best = 0;
   for (const memory of observation.recentMemory) {
     if (memory.kind !== 'episodic') continue;
-    if (!memory.tags.some((tag) => TAG_GOALS[tag].some((goal) => kinds.has(goal)))) continue;
-    best = Math.max(best, memory.weight);
+    for (const tag of memory.tags) {
+      if (!TAG_GOALS[tag].some((goal) => kinds.has(goal))) continue;
+      const signed = MEMORY_VALENCE[tag] * memory.weight;
+      if (Math.abs(signed) > Math.abs(best)) best = signed;
+    }
   }
   return best;
 }

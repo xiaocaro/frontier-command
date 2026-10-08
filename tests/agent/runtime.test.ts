@@ -356,13 +356,13 @@ describe('DEC-14/§十二/§十三 different Agents and different pasts produce 
       candidateIn(forced.observation),
     );
     expect(keptScore.ceoTrust).toBeGreaterThan(forcedScore.ceoTrust);
-    // Both histories contribute memory, by different weights — the claim is that the past moves the
-    // score at all, not that a pleasant past outranks an unpleasant one (`MEMORY_WEIGHTS` is a
-    // proposal to be calibrated in P3, per docs/lv3/04-foundation-status.md §6 item 1).
+    // P3 calibrated this (`MEMORY_WEIGHTS` / `MEMORY_VALENCE`): the two histories now pull in
+    // opposite directions, not merely by different amounts. A kept promise is a reason to say yes;
+    // a forced Override is a reason to hold back. Before the sign existed both terms were positive,
+    // so the worst memory in the game pushed an Agent toward accepting.
     expect(keptScore.recentMemoryScore).toBeGreaterThan(0);
-    expect(forcedScore.recentMemoryScore).toBeGreaterThan(0);
-    expect(keptScore.recentMemoryScore).not.toBe(forcedScore.recentMemoryScore);
-    expect(keptScore.score).not.toBe(forcedScore.score);
+    expect(forcedScore.recentMemoryScore).toBeLessThan(0);
+    expect(keptScore.score).toBeGreaterThan(forcedScore.score);
   });
 });
 
