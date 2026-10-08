@@ -112,8 +112,22 @@ describe('B-2/Rule 1 the Agent layer cannot touch the world', () => {
   });
 });
 
-describe('B-11/§16/§23 P1 performs no network call and adds no IPC', () => {
-  it('has no network client, SDK or credential in the Agent layer', () => {
+/**
+ * The one module allowed to reach the network (P2, docs/lv3/02-llm-boundary.md §7).
+ *
+ * P1 had no live provider, so the rule was "the whole layer is offline". P2 adds one, and the rule
+ * becomes sharper rather than weaker: **exactly one named file** may open a socket, read a
+ * credential or look at the environment, and every other file in the layer must stay as clean as it
+ * was. A blanket ban would now be a lie; a per-file exemption with the exemption named is a rule
+ * that still catches the thing it was written to catch — a second module quietly acquiring network
+ * access.
+ */
+const NETWORK_MODULE = 'electron/agent/openai-compatible.ts';
+const isNetworkModule = (file: string): boolean =>
+  file.replace(/\\/g, '/').endsWith(NETWORK_MODULE);
+
+describe('B-11 only the named provider module may touch the network', () => {
+  it('confines fetch, credentials and environment reads to that one file', () => {
     const network = [
       /\bfetch\s*\(/,
       /\baxios\b/,
@@ -124,13 +138,30 @@ describe('B-11/§16/§23 P1 performs no network call and adds no IPC', () => {
       /process\.env/,
       /DEEPSEEK|OPENAI|ANTHROPIC/,
     ];
-    for (const { file, code } of AGENT_LAYER_CODE)
+    const scanned = AGENT_LAYER_CODE.filter(({ file }) => !isNetworkModule(file));
+    // A guard that silently scans nothing is worse than no guard, so make the scan's size visible.
+    expect(scanned.length).toBe(AGENT_LAYER_CODE.length - 1);
+    for (const { file, code } of scanned)
       for (const pattern of network)
         expect({ file, pattern: String(pattern), hit: pattern.test(code) }).toEqual({
           file,
           pattern: String(pattern),
           hit: false,
         });
+  });
+
+  it('the exempt module exists, and reaches out only through an injected transport', () => {
+    expect(AGENT_LAYER.filter(isNetworkModule).map((file) => file.replace(/\\/g, '/'))).toEqual([
+      NETWORK_MODULE,
+    ]);
+    const code = stripComments(read(NETWORK_MODULE));
+    // It must actually be able to make a call…
+    expect(code).toMatch(/fetch/);
+    // …but must not smuggle in a second HTTP client, and must not bury an endpoint in a literal.
+    expect(code).not.toMatch(/\baxios\b|node:https?|XMLHttpRequest/);
+    // The transport is a dependency, not a global reached for at the call site: that is what makes
+    // L-15 ("stub fetch, no real network") possible rather than aspirational.
+    expect(code).toMatch(/options\.fetch\s*\?\?/);
   });
 
   it('leaves the renderer surface untouched: no new IPC channel', () => {
