@@ -21,7 +21,7 @@
  *     *deterministic mode* rather than *no Agents*.
  */
 import { SimulationEngine } from '../src/engine/engine';
-import type { AgentTrigger, SimulationEvent, WorldState } from '../src/engine/types';
+import type { AgentEvent, AgentTrigger, SimulationEvent, WorldState } from '../src/engine/types';
 import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
@@ -129,6 +129,13 @@ export function agentTriggersOf(events: readonly SimulationEvent[]): AgentTrigge
   return triggers;
 }
 
+/** Every settlement fact in a frame's events. */
+export function agentEventsOf(events: readonly SimulationEvent[]): AgentEvent[] {
+  const settled: AgentEvent[] = [];
+  for (const event of events) if (event.type === 'agentEvent') settled.push(event.event);
+  return settled;
+}
+
 export interface AgentHostOptions {
   /** Where `prompts/` and `schemas/` live. */
   root: string;
@@ -138,9 +145,11 @@ export interface AgentHostOptions {
 }
 
 export class AgentHost {
+  private readonly engine: SimulationEngine;
   private readonly scheduler: AgentScheduler;
 
   constructor(engine: SimulationEngine, options: AgentHostOptions) {
+    this.engine = engine;
     const env = options.env ?? process.env;
     // No key configured is the normal state of a checkout, and it must not mean "no Agents": an
     // offline client that always declines gives the runtime its deterministic path, so every Agent
@@ -163,6 +172,15 @@ export class AgentHost {
    * reach the branch that marks the world `saveBlocked` (`N-9`) — a slow model is not a broken save.
    */
   frame(events: readonly SimulationEvent[]): void {
+    // Settlement runs **before** the pump, so an Agent that just finished a mission decides from the
+    // state that mission left behind rather than the state before it — that ordering is what makes
+    // EVT-08 lead into EVT-09 instead of being a frame late.
+    for (const event of agentEventsOf(events)) {
+      const result = this.engine.dispatchCommand({ type: 'agentEvent', event });
+      // A refused settlement is logged, never thrown: this runs inside the host frame's own
+      // try/catch, and a bad fact must not be able to stall the world (N-9).
+      if (!result.ok) this.engine.log('Agent 结算被拒：' + result.reason, 'warning');
+    }
     this.scheduler.notify(agentTriggersOf(events));
     this.scheduler.pump();
   }

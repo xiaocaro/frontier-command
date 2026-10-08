@@ -26,6 +26,7 @@ import {
   overrideMemory,
 } from './agent/interactions';
 import { remember } from './agent/memory';
+import { settleAgentEvent } from './agent/events';
 import { actionSchema, commandSchema } from './commands';
 import { emptyStock } from './data';
 import { capabilities, cargoUsed } from './capabilities';
@@ -250,6 +251,17 @@ export function validate(
     if (c.to !== 'admiral' && !w.agents.some((a) => a.id === c.to))
       return no('接收方不是有效的 Agent');
     if (c.from === c.to) return no('不能向自己发送消息');
+    return ok();
+  }
+  if (c.type === 'agentEvent') {
+    // Settlement facts are engine-originated, but they arrive through the same `dispatchCommand` door
+    // as everything else (CLAUDE.md §2.1). Bounded here to facts this world can actually settle: a
+    // ship that exists and an Agent standing behind it. Anything else is refused rather than ignored.
+    if (!w.ships.some((s) => s.id === c.event.shipId)) return no('结算目标舰船不存在');
+    const assignment = w.assignments.find((a) => a.shipId === c.event.shipId);
+    const operator = w.operators.find((o) => o.id === assignment?.operatorId);
+    if (!operator?.agentId || !w.agents.some((a) => a.id === operator.agentId))
+      return no('该舰船没有对应的 Agent');
     return ok();
   }
   const frontierResult = validateFrontierCommand(this, c);
@@ -664,6 +676,16 @@ export function dispatchCommand(
       c.from === 'admiral' ? from + ' → ' + to + '：' + c.text : to + ' ← ' + from + '：' + c.text;
     this.report(line, target?.id ?? null, c.kind === 'override' ? 'high' : 'normal', 'decision');
     return ok('消息已送达');
+  }
+  if (c.type === 'agentEvent') {
+    // Settlement commits here, from the pure domain functions in `src/engine/agent/**`. This keeps
+    // `dispatchCommand` the single write door for Agent state, exactly as the `agentMessage` branch
+    // above does for social writes (CLAUDE.md §2.1) — and it gives settlement a refusal surface
+    // instead of a silent mutation.
+    const settled = settleAgentEvent(w, c.event, () => 'agent-memory-' + w.nextId++);
+    if (!settled) return no('结算事件没有对应的 Agent');
+    w.agents = settled.agents;
+    return ok('Agent 状态已结算');
   }
   return ok();
 }

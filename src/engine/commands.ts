@@ -150,6 +150,36 @@ export const messagePayloadSchema = z.union([
 export type AgentMessageKind = z.infer<typeof agentMessageKindSchema>;
 export type AgentRequestType = z.infer<typeof agentRequestTypeSchema>;
 export type MessagePayload = z.infer<typeof messagePayloadSchema>;
+/**
+ * Lv3 settlement events: the **facts** an engine branch reports so that Agent state, memory, goals,
+ * relationships and promises can be settled from them (docs/lv3/09-game-integration-status.md).
+ *
+ * An event carries what happened — "this directive ended", "this module was installed" — and never a
+ * precomputed number. Every magnitude stays in `src/engine/agent/**`, so there is one source of truth
+ * and the change actually applied can be recorded on `AgentInteraction.effects`.
+ *
+ * Declared here rather than in `src/engine/agent/` for the same evaluation-order reason as the
+ * payloads above: `agentEventSchema` is a member of `commandSchema`, and the agent layer imports
+ * from this module — not the other way round.
+ */
+export const agentEventSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('mission-settled'),
+      shipId: id,
+      directiveId: id,
+      /**
+       * The action that ended. Settlement keys on this rather than on the bare existence of a
+       * completion, because `complete()` funnels every directive that ends — including the
+       * intermediate "目标无法接续" failures (`src/engine/engine.ts`) — through the same path.
+       * Only an Admiral-sourced directive is a mission; see the emission guard in `complete()`.
+       */
+      actionType: id,
+      outcome: z.enum(['success', 'failure']),
+    })
+    .strict(),
+]);
+export type AgentEvent = z.infer<typeof agentEventSchema>;
 const members = z
   .array(id)
   .min(1)
@@ -298,4 +328,11 @@ export const commandSchema = z.discriminatedUnion('type', [
       payload: messagePayloadSchema.nullable(),
     })
     .strict(),
+  /**
+   * Lv3: the settlement door. An engine branch reports a fact; the engine's own apply path runs the
+   * pure `src/engine/agent/**` functions and writes the Agent roster, so `dispatchCommand` stays the
+   * single validation entry point for every Agent-facing write (CLAUDE.md §2.1) — the same rule the
+   * `agentMessage` member above already follows.
+   */
+  z.object({ type: z.literal('agentEvent'), event: agentEventSchema }).strict(),
 ]);

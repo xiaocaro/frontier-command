@@ -55,7 +55,7 @@ export type {
   PromiseType,
   SocialMemory,
 } from './schemas';
-export type { AgentMessageKind, AgentRequestType, MessagePayload } from '../commands';
+export type { AgentEvent, AgentMessageKind, AgentRequestType, MessagePayload } from '../commands';
 
 /** The Agent's own view of the current directive on its ship. */
 export interface AgentDirectiveView {

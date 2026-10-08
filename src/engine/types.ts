@@ -2,6 +2,7 @@ import type { SimulationSpeed } from './clock';
 import type { ShipClassId } from './definitions/ships';
 import type {
   Agent,
+  AgentEvent,
   AgentInteraction,
   AgentMessage,
   AgentMessageKind,
@@ -14,6 +15,7 @@ export type {
   AgentActionCandidate,
   AgentCareer,
   AgentDecision,
+  AgentEvent,
   AgentGoal,
   AgentInteraction,
   AgentMemory,
@@ -496,7 +498,13 @@ export type SimulationEvent =
    * Lv3 decision trigger. Carried on the transient `pendingEvents` channel, so it never enters
    * `WorldState` and cannot affect the same-seed replay assertion.
    */
-  | { type: 'agentTrigger'; trigger: AgentTrigger };
+  | { type: 'agentTrigger'; trigger: AgentTrigger }
+  /**
+   * Lv3 settlement fact. Carried on the same transient `pendingEvents` channel as the trigger above,
+   * so it never enters `WorldState` and cannot affect the same-seed replay assertion. The host
+   * relaunches it as an `agentEvent` Command, which is what actually writes the Agent roster.
+   */
+  | { type: 'agentEvent'; event: AgentEvent };
 /** Only completed, visible own-ship actions may be delivered as UI events. */
 export type PublicSimulationEvent = {
   type: 'shipTransited';
@@ -702,7 +710,14 @@ export type Command =
       kind: AgentMessageKind;
       text: string;
       payload: MessagePayload | null;
-    };
+    }
+  /**
+   * Lv3: how an engine branch reports a settled fact so Agent state, memory, goals, relationships and
+   * promises can be written. The engine applies it through the pure `src/engine/agent/**` functions,
+   * which keeps `dispatchCommand` the single write door (CLAUDE.md §2.1) and gives settlement a
+   * refusal surface instead of a silent mutation.
+   */
+  | { type: 'agentEvent'; event: AgentEvent };
 export type SessionCommand = { type: 'restorePreviousDay' | 'beginNewFrontier' };
 export type CommandResult = { ok: boolean; reason: string };
 /**

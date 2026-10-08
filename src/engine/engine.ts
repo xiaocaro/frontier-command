@@ -142,6 +142,23 @@ export class SimulationEngine {
           : { kind: 'directive-completed', shipId: s.id, directiveId: old.id },
       });
     if (!next) this.pendingEvents.push({ type: 'agentTrigger', trigger: { kind: 'ship-idle', shipId: s.id } });
+    // Lv3 settlement fact (docs/lv3/09-game-integration-status.md). Separate from the trigger above:
+    // the trigger decides *when* an Agent thinks, this decides *what it learns from the outcome*.
+    //
+    // Only an Admiral-sourced directive settles. An Agent's own submission carries
+    // `source: 'standing'` (`command-system.ts` derives it from the actor), so routine self-directed
+    // work — and every ordinary move — does not spray mission memories across the roster.
+    if (old && old.source === 'admiral')
+      this.pendingEvents.push({
+        type: 'agentEvent',
+        event: {
+          kind: 'mission-settled',
+          shipId: s.id,
+          directiveId: old.id,
+          actionType: old.action.type,
+          outcome: failed ? 'failure' : 'success',
+        },
+      });
   }
   step(fixedDelta = FIXED_DELTA): SimulationEvent[] {
     if (fixedDelta !== FIXED_DELTA) throw Error('Simulation requires fixed 0.1 game-minute steps');
