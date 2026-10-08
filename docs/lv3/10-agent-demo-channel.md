@@ -137,8 +137,13 @@ DEEPSEEK_API_KEY=<key> npm start
 > 两种模式都会产出**合法**决策，游戏里看起来一样（这正是 `C-33` 那一整段能发生的原因），
 > 所以**先读那行**再开始演示，否则无从判断自己在看模型还是确定性分档。
 
-前提：应用已启动；载入的世界**默认暂停**，先点「继续」；`speed` 用 `16×` 让 Agent 的节拍
-（每 15 游戏分钟一次）来得快些。
+前提：应用已启动；载入的世界**默认暂停**，先点「继续」。
+
+> **⚠️ 带真 key 时不要用 16×。** 一条决策在 `observation` 之后超过 `STALE_TICK_LIMIT`（15 游戏分钟）
+> 才被排空就会**被丢弃**；换算下来模型必须在 **1× → 15s、4× → 3.75s、16× → 0.94s** 内返回，而实测
+> DeepSeek 延迟 **2–8s**。**16× 下模型的回答基本永远落地不了**——你看到的其实一直是确定性回退，
+> 而两者在界面上看起来一样。**带 key 演示请用 1×。** 详见 `KNOWN_ISSUES.md` `C-36`。
+> 无 key 的确定性模式不受影响，16× 随意。
 
 面板：控制台 PRIORITY COMMUNICATIONS 下方 → 展开 **AGENT CHANNEL · 舰桥通讯**。
 
@@ -161,3 +166,38 @@ DEEPSEEK_API_KEY=<key> npm start
 
 **看什么、不看什么**：面板显示记忆的 **tag**，不显示文本。要看「他具体记得什么」，读通信栏里
 Agent 自己说的话——那是它自己写的，不是从世界状态推出来的。
+
+---
+
+## 5. 把同一份 runbook 自动跑一遍：`npm run demo:live`
+
+人手点一遍适合给人看；要**可复现的记录**就用这条：
+
+```powershell
+$env:DEEPSEEK_API_KEY='sk-...'; npm run demo:live      # PowerShell
+```
+```bash
+DEEPSEEK_API_KEY=sk-... npm run demo:live              # Git Bash（= 后不要有空格）
+```
+
+它跑 `tests/live/vertical-slice.live.ts`（经 `vitest.live.config.ts`），把八步逐步打印出来，
+**包括每一条决策的 intent / choiceId / reason、Agent 说的话、以及无模型时确定性回退会怎么答**。
+
+**它断言什么、不断言什么**（这是刻意的，不是偷懒）：
+
+| | |
+| --- | --- |
+| **断言**（与模型无关，必然为真） | 承诺 `pending → fulfilled`、`trustInAdmiral` 升降、记忆出现 `promise-kept` / `admiral-override`、第 8 步两条历史的信任值差异 |
+| **只打印，不断言** | 每一条 `intent` / `choiceId` / 文本；第 8 步"两次答复是否不同" |
+
+依据：`02-mvp-traceability.md` §1 把 Live LLM 标为「人工演示，**不参与回归断言**」，
+playbook §三十二 明令不得把「DeepSeek 必须输出 COUNTEROFFER」当稳定条件。真模型下同一问题两次
+答案**可能相同**——那本身是结果，脚本会把它印出来。
+
+几条实测得来的注意事项（都写在代码注释里）：
+
+- **每一步各起一局**（vignette）。真模型会做出把世界带偏的选择，一局连跑会让后面的步骤被静默吞掉。
+- **循环必须定速**（`PACE_MS = 50`）。全速推进世界会让模型思考期间过去几百游戏分钟，
+  决策全部因超过 `STALE_TICK_LIMIT` 被判过期——表现就是"模型说了 accept 但什么也没发生"。
+- **第 4 步的 team-request 是注入的**，不是模型自己发起的（要看的是 Tactical 的答复）。
+- 脚本会打印**模型调用次数与耗时**。实测一次约 **25 次调用 / 50s**。

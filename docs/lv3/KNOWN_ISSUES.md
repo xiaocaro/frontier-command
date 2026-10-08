@@ -348,6 +348,19 @@
 
 ---
 
+### C-36 — 加速时模型的决策会被判过期丢弃，16× 下几乎必然 🔴 BLOCKER（**未修复，需设计决定**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `scheduler.apply()` 在 `ageTicks > STALE_TICK_LIMIT` 时丢弃决策并只写一行 `info` 日志；而仿真速度是玩家可调的 1/4/16×。`STALE_TICK_LIMIT = RULES.agentDecisionInterval * 10 = 150` tick = **15 游戏分钟** |
+| **Current Code** | `electron/agent/scheduler.ts:288-297`（`ageTicks = (now - decision.observation.time) * 10`）；`HOST_FRAME_MS = 100`，`advanceFrame()` 每宿主帧跑 `speed` 步，每步 0.1 游戏分钟 |
+| **Measured** | 模型在 15 游戏分钟内必须返回，否则决策作废：**1× → 15.0s；4× → 3.75s；16× → 0.94s**。而实测 DeepSeek 延迟 **2–8s**（`C-33` 的实测表）。⇒ **16× 下模型的回答基本永远落地不了**，Agent 实际一直由确定性回退驱动 |
+| **Impact** | 🔴 **静默且反直觉**：玩家加速是为了看得快，结果加速**越界地关掉了 LLM**——而两种模式在游戏里看起来一样（`C-33` 的同一类问题）。更糟的是**演示 runbook 原本建议用 16×**，照着做会得到一份"模型参与了"的假象。这是靠带真 key 跑 `demo:live` 才暴露的——所有离线测试都在 1× 或同步循环里，看不到 |
+| **Proposed Resolution** | **未决定，不擅自改**。至少三条路，代价不同：① 让 `STALE_TICK_LIMIT` 随 `speed` 缩放（一致但会放宽"过期"的语义）；② 决策在**开始**时就记下 `observation.time`，而 `apply` 比较的是"决策发起后世界走了多少"，并按实际 elapsed 而非阈值判断；③ 模型调用期间**暂停/降速**世界（玩家可感知，但最诚实）。**在决定之前不要改这个常量**——它同时约束着确定性回退路径，而那条路径**必须**保持现在的严格性 |
+| **临时缓解** | 带真 key 演示时**用 1×**（15s 余量）。`10-agent-demo-channel.md` §4 已改 |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |
