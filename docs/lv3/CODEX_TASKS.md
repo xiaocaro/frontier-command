@@ -481,6 +481,12 @@ chore(agent): prepare codex handoff
 - **Rollback Point**：R3
 - **Done When**：测试通过；打包产物含 `prompts/`
 
+> **⚠️ 以下三张卡（P1-03 / P1-04 / P1-05）虽编号为 P1，但 P1 与 P2 的任务书都明令不含调度器与引擎接线，
+> 因此它们从未执行。** 2026-10-08 决议：把它们**恢复为一个独立阶段**，排在 P2 之后、P3 之前。
+> 范围、文件级变更计划、边界决策与门禁见 **`docs/lv3/07-scheduler-plan.md`**。
+> 本处保留原卡原文，作为该阶段的施工依据；实施时以 `07-scheduler-plan.md` 为准（其中已按实测更正了
+> 若干过期行号）。P1-04 的「`runtime.ts`」部分已在 P1 完成，剩余的是宿主接线与（待确认的）决策提交。
+
 ## P1-03 · `scheduler.ts`
 
 - **Task ID**：P1-03
