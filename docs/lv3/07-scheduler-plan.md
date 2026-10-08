@@ -240,6 +240,20 @@ tests/architecture.test.ts:39-60                          ← 必须继续通过
 
 - **Files to Create**：`docs/lv3/08-scheduler-status.md`
 
+### 实施进度
+
+| 卡 | 状态 | 产物 |
+| --- | --- | --- |
+| SC-1 | ✅ **完成**（2026-10-08） | `electron/agent/scheduler.ts`、`tests/agent/scheduler.test.ts`（18 用例，`S-1…S-11` + `C-17` 全覆盖） |
+| SC-2 | ⬜ 未开始 | `agentTrigger` 发射 |
+| SC-3 | ⬜ 未开始 | `main.ts` 接线 + world 适配器 |
+| SC-4 | ⬜ 未开始 | 决策提交（选项 B） |
+| SC-5 | ⬜ 未开始 | 阶段文档 |
+
+SC-1 落地时新增一条**计划外的澄清**：`SchedulerWorld.agentsForTrigger` 由**适配器**实现寻址
+（§13.5），因此调度器本身不含任何引擎知识；`SC-3` 需在 `main.ts` 侧把 `SimulationEngine` 适配成
+`SchedulerWorld`，包括 `shipId → Agent`、`messageId → 收件人`、世界级事件广播三类寻址。
+
 ---
 
 ## 7. 测试计划与门禁
