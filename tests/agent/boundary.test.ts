@@ -253,3 +253,18 @@ describe('B-10 no model call inside the fixed-tick loop', () => {
     expect(careerIds(engine).explorer).toBe(explorer.id);
   });
 });
+
+describe('B-13 exactly one module may reach the engine’s command seam', () => {
+  it('confines it to the host bridge, so the agent layer still names no engine', () => {
+    // B-2 above bans these names across the whole agent layer and is unchanged by P2.5 — even
+    // though the agent loop now *submits* things. It can, because submission arrives as an injected
+    // function rather than as a port the runtime imports. This asserts the other half: somewhere
+    // that seam must exist, and exactly one named place may hold it.
+    const seam = /controllerPort|submitAction/;
+    const callers = filesUnder('electron')
+      .filter((file) => seam.test(stripComments(read(file))))
+      .map((file) => file.replace(/\\/g, '/'))
+      .sort();
+    expect(callers).toEqual(['electron/agent-host.ts']);
+  });
+});

@@ -10,11 +10,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SimulationEngine } from '../../src/engine/engine';
 import { createWorld } from '../../src/engine/data';
-import type { Agent, AgentObservation, AgentCareer } from '../../src/engine/types';
+import type { Action, Agent, AgentObservation, AgentCareer, CommandResult } from '../../src/engine/types';
 import type { MockAnswer, MockDecision, MockRule, ModelError } from '../../electron/agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
 import { DecisionRuntime, type DecisionTrace } from '../../electron/agent/runtime';
 import type { ModelClient } from '../../electron/agent/model-client';
+import type { ActionSubmitter } from '../../electron/agent/runtime';
 import { quietEngine } from '../helpers';
 
 export { quietEngine };
@@ -29,13 +30,39 @@ export const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export function agentRuntime(
   client: ModelClient,
   onTrace?: (trace: DecisionTrace) => void,
+  submitter?: ActionSubmitter,
 ): DecisionRuntime {
   return new DecisionRuntime({
     client,
     prompts: loadPromptTemplates(REPO_ROOT),
     schema: loadDecisionSchema(REPO_ROOT),
     onTrace,
+    // Defaults to one that declines. Every P1/P2 test asserts that *asking* for a decision leaves
+    // the world alone, so the scaffold must not quietly start submitting things.
+    submitter: submitter ?? { submit: () => ({ ok: false, reason: '测试脚手架未接线提交' }) },
   });
+}
+
+/** A submitter that actually reaches the engine, through the Agent's own operator port. */
+export function engineSubmitter(engine: SimulationEngine): ActionSubmitter {
+  return {
+    submit: (action, observation) =>
+      engine.controllerPort(observation.operatorId).submitAction(action),
+  };
+}
+
+/** Records what a decision tried to submit, without letting it reach the world. */
+export function recordingSubmitter(verdict: CommandResult = { ok: false, reason: '未提交' }): ActionSubmitter & {
+  submitted: { action: Action; agentId: string }[];
+} {
+  const submitted: { action: Action; agentId: string }[] = [];
+  return {
+    submitted,
+    submit: (action, observation) => {
+      submitted.push({ action, agentId: observation.agentId });
+      return verdict;
+    },
+  };
 }
 
 /** A quiet world (no enemies) that already carries the four starting Agents. */

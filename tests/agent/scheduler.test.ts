@@ -19,6 +19,7 @@ import {
   scoringAgent,
   type DecisionOutcome,
 } from '../../electron/agent/runtime';
+import { MockModelClient } from '../../electron/agent/mock-client';
 import type { ModelClient, ModelResult } from '../../electron/agent/model-client';
 import { loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
 import { AGENT_PROMPT_VERSION, evaluate } from '../../src/engine/agent/decision';
@@ -31,6 +32,7 @@ import {
   agentEngine,
   agentRuntime,
   observationFor,
+  recordingSubmitter,
 } from './support';
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
@@ -451,6 +453,7 @@ describe('S-7 a failing provider is contained', () => {
         client: spyClient().client,
         prompts: loadPromptTemplates(REPO_ROOT),
         schema: loadDecisionSchema(REPO_ROOT),
+        submitter: { submit: () => ({ ok: false, reason: 'unused' }) },
       }),
     });
 
@@ -600,5 +603,72 @@ describe('C-17 a directive that vanishes without an event is a failure the Agent
     scheduler.pump();
 
     expect(decisions).toHaveLength(1); // the completion, not a spurious failure
+  });
+});
+
+describe('SC-4 a drained decision is applied, and a stale one is not', () => {
+  /** A provider that answers with a real `act`, so the flow reaches submission. */
+  const actingClient = (): ModelClient =>
+    new MockModelClient({
+      rules: [
+        {
+          label: 'act',
+          answer: { kind: 'decision', decision: { intent: 'act', choiceId: 'probe', reason: '去做。' } },
+        },
+      ],
+    });
+
+  const worldFor = () => {
+    const world = new FakeWorld();
+    const engine = agentEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    world.add({ id: explorer.id, observation: observationWithBand('reject') });
+    return { world, explorer };
+  };
+
+  it('submits the decision through the runtime and reports the result', async () => {
+    const { world, explorer } = worldFor();
+    const recorder = recordingSubmitter({ ok: true, reason: '' });
+    const applied: { agentId: string; status: string }[] = [];
+    const scheduler = new AgentScheduler({
+      world,
+      runtime: agentRuntime(actingClient(), undefined, recorder),
+      callsPerMinute: 5,
+      onApplied: (agentId, submission) => applied.push({ agentId, status: submission.status }),
+    });
+
+    scheduler.notify([trigger('admiral-message')]);
+    scheduler.pump();
+    await settle();
+    scheduler.pump();
+
+    expect(recorder.submitted).toHaveLength(1);
+    expect(recorder.submitted[0].agentId).toBe(explorer.id);
+    expect(applied).toEqual([{ agentId: explorer.id, status: 'submitted' }]);
+  });
+
+  it('does not submit an answer that arrived after the world moved on (§4.7)', async () => {
+    const { world } = worldFor();
+    const recorder = recordingSubmitter({ ok: true, reason: '' });
+    const applied: unknown[] = [];
+    const scheduler = new AgentScheduler({
+      world,
+      runtime: agentRuntime(actingClient(), undefined, recorder),
+      callsPerMinute: 5,
+      onApplied: (_agentId, submission) => applied.push(submission),
+    });
+
+    scheduler.notify([trigger('admiral-message')]);
+    scheduler.pump();
+    await settle();
+
+    // The model took real time. At 16x that is minutes of game time — far past the stale limit —
+    // and acting on an answer formed against the old world is the mistake the rule exists to stop.
+    world.clock = 100;
+    scheduler.pump();
+
+    expect(recorder.submitted).toEqual([]);
+    expect(applied).toEqual([]);
+    expect(world.logs.join(' ')).toContain('已过期');
   });
 });
