@@ -1,77 +1,102 @@
 # Claude → Codex 交接（CLAUDE_TO_CODEX）
 
-生成日期：2026-10-08
-阶段：Prompt 3（Implementation Plan + Codex Handoff）
-上一提交：`a089d95 feat(agent): define lv3 agent contracts`
+最后更新：2026-10-08，于提交 `c82e009`
+阶段：**P0 / P1 / P2 / P2.5 已实现并合入；下一步是 P3**
+
+> **先读这一份，再决定读什么。** 本文只讲「现在是什么状态」与「下一步做什么」。
+> 每个阶段的细节在各自的 `0N-*-status.md` 里，那是**数字与结论的事实来源**；本文出现的
+> 测试数、提交号一律**自带时间戳**（见 §5），若与状态文档冲突，以状态文档为准。
 
 ---
 
 ## 1. 一句话现状
 
-**Lv3 的架构、合同、Schema 与实施计划已全部就绪；Lv3 的业务代码一行都还没写。**
-本仓库当前是一个**完整可运行的 Lv1/Lv2 游戏**（存档 v10，184 个单测通过），Lv3 的全部产物是
-**文档 + JSON Schema**。
+**Lv3 的整条链路已经打通并在游戏中接线**：
+
+```text
+引擎既有分支 → AgentTrigger → 宿主帧 → Scheduler → DecisionRuntime
+             → 验证后的 AgentDecision → applyDecision → ControllerPort → SimulationEngine
+```
+
+`Agent.md` §50 的「过去经历影响下一次决策」现在是**可运行的回路**，不再是设计图。
+存档 **v11**，Lv1/Lv2 行为未改（重放断言 `tests/architecture.test.ts:39-60` 继续通过）。
+
+**尚未做的**：MVP 剧情本身（EVT-01…EVT-09 的接线、Promise/Override 对照路径、结算后的状态与
+记忆更新、游戏内闭环证明）。这是 P3 的全部内容。
+
+**最大的一条未验证项**：**游戏内从未观察到一次真实的 Agent 行动**。载入的世界默认 `paused`，
+所以整局调度器静默；无头冒烟只证明了「运行时能装配、应用不崩」（见 `08-scheduler-status.md` §8.1）。
 
 ---
 
 ## 2. 已实现的内容（分阶段）
 
-| 阶段 | 提交 | 产物 |
+| 阶段 | 内容 | 状态文档 |
 | --- | --- | --- |
-| Prompt 0 侦察 | `aa87bd3` | `docs/lv3/00-baseline-audit.md`、`00-baseline.md`、`00-code-map.md`、`00-test-baseline.md` |
-| Prompt 1 反构 | `15909bd` | `01-lv1-lv2-architecture.md`、`01-runtime-call-graph.md`、`01-state-and-command-map.md`、`01-agent-gap-analysis.md` |
-| Prompt 1+2 规格 | `0505438` | `Agent.md`（产品规格）、`docs/lv3/01-mvp-scenario.md`（MVP 场景） |
-| Prompt 2 架构与合同 | `a089d95` | `docs/lv3/02-architecture.md`、`02-domain-model.md`、`02-decision-flow.md`、`02-llm-boundary.md`、`02-persistence-strategy.md`、`02-mvp-traceability.md` + `schemas/*.json`（7 个） |
-| **Prompt 3 实施计划（本次）** | 本次提交 | `docs/lv3/03-implementation-plan.md`、`03-file-change-plan.md`、`03-api-contract.md`、`03-test-plan.md`、`CODEX_TASKS.md`、`CLAUDE_TO_CODEX.md`、`KNOWN_ISSUES.md` |
+| Prompt 0–3 | 侦察 / 反构 / 架构与合同 / 施工图（纯文档 + `schemas/*.json`） | `00-*` … `03-*` |
+| **P0** Domain Foundation | `src/engine/agent/**`（13 个纯领域模块）、存档 v11 + 链式迁移、4 名初始 Agent、`agentMessage` 命令 | `04-foundation-status.md` |
+| **P1** Mock Decision Runtime | `electron/agent/{model-client,mock-client,prompt,runtime}.ts`、`prompts/agent/*.md`、录制 fixture | `05-mock-runtime-status.md` |
+| **P2** Live DeepSeek Runtime | `electron/agent/openai-compatible.ts`（超时/重试/熔断/JSON 提取/结构化输出） | `06-deepseek-runtime-status.md` |
+| **P2.5** Scheduler（插入阶段） | `electron/agent/scheduler.ts`、`electron/agent-host.ts`、`AgentTrigger` 发射、`main.ts` 接线、`runtime.applyDecision` | `07-scheduler-plan.md`、`08-scheduler-status.md` |
 
-**重要**：`docs/lv3/` 与 `schemas/` 是**唯一**存在的 Lv3 产物。
-`src/engine/agent/`、`electron/agent/`、`prompts/` 三个目录**都不存在**。
+> **P2.5 为什么存在**：`03-implementation-plan.md` §3.2 把 Scheduler 划归 P1，但 P1 与 P2 的任务书
+> 都明令不含它，于是被两次跳过。它不是被取消，而是被挤掉的。规划见 `07-scheduler-plan.md`。
+
+**真实端点已实测**：`npm run test:llm` 对 `https://api.deepseek.com` 实跑通过，
+并因此发现并修复了一个真实缺陷（`KNOWN_ISSUES.md` `C-29`：提示词把 `act` 解释成「菜单里的任一动作」，
+与校验器冲突，导致模型的第一次回答被拒）。
 
 ---
 
-## 3. 本次改动（Prompt 3）
+## 3. 当前实际存在的目录
 
-**代码改动：无。** 本阶段是 docs-only。
-
-新增 7 个文件（全部在 `docs/lv3/`）：见上表最后一行。
-未修改任何 `src/`、`electron/`、`tests/`、`schemas/`、配置文件。
-
----
-
-## 4. 引入的合同
-
-本阶段**没有新增**业务合同（那已在 Prompt 2 完成）。本阶段**定稿**了 Prompt 2 显式留给 Prompt 3 的决策：
-
-| 决策 | 定稿 | 位置 |
-| --- | --- | --- |
-| Agent ↔ Operator 关联 | `Operator.agentId?: string`（显式字段） | `03-implementation-plan.md` §4.1 |
-| choiceId 解析位置 | Agent 层（`availableActions.find(...)`），**不扩展 port** | `03-implementation-plan.md` §4.2 |
-| AgentObservation 通路 | **加宽唯一那条观察通路**，无 Agent 的 operator 返回 `null` | `03-implementation-plan.md` §4.3 |
-| `AgentMessage.payload` | 必填但可 `null`（跟随已提交 JSON Schema） | `03-implementation-plan.md` §4.4 |
-| `agentMessage` 命令 | 追加式新命令 + 精确权限放宽 | `03-implementation-plan.md` §4.5 |
-| Override 路径 | 既有 `issueDirective` + `agentMessage{kind:'override'}` 两条命令 | `03-implementation-plan.md` §4.6 |
-| 非 `act` 意图路由 | `act` 才走 `submitAction`，其余走互动层 | `03-implementation-plan.md` §4.7、`03-api-contract.md` §3 |
-| choiceId 表 | 含 `team-accept:`/`team-decline:` | `03-implementation-plan.md` §5 |
-
-**已批准的既有合同（不得重写）**：`schemas/*.json` 的 7 个 schema、`02-*.md` 的 ADR-1…5 与 Rule 1–8 的落地约束。
+```text
+src/engine/agent/     13 个纯领域模块（types/schemas/personality/goals/state/memory/
+                      relationship/promise/score/actions/observation/decision/interactions）
+electron/agent/       model-client、mock-client、prompt、runtime、scheduler、openai-compatible
+electron/agent-host.ts  唯一同时认识引擎与 Agent 层的模块（寻址 + world 适配 + 装配）
+electron/main.ts      宿主循环接线：advanceFrame 之后 agentHost.frame(events)（独立 try/catch）
+prompts/agent/        system / decision / conversation / reflection，prompt_version = agent-v2
+schemas/*.json        7 个跨工具合同（**未因 Lv3 实现而改动**）
+tests/agent/          21 个测试文件 + fixtures/ 录制库
+```
 
 ---
 
-## 5. 测试现状（本阶段实测）
+## 4. Lv3 引入的合同（实现期定稿）
 
-| 命令 | 结果 | 说明 |
+| 合同 | 位置 | 说明 |
 | --- | --- | --- |
-| `npm test` | ✅ **PASS** | 13 test files / **184 tests** 通过（vitest 4.1.11，5.4s） |
-| `git diff --check` | ✅ 无输出 | 无空白错误 |
-| `npm run build` | ✅ **PASS** | `create-icon.mjs` → `tsc --noEmit` → `vite build` → `tsc -p tsconfig.electron.json` |
-| `npm run test:e2e` | ⏭ **NOT RUN** | docs-only 阶段；且运行时约 15 分钟并含 **2 项既存非引擎失败**（`mine-accidents.spec.ts:48` Windows 文件锁 flaky；`:130` 超时 15.000s vs 需求约 15.38s）。**未运行，不得视为通过** |
+| `AgentDecision` | `schemas/agent-decision.schema.json` + `src/engine/agent/schemas.ts` | 模型输出契约。`strict()`，多一个字段即作废 |
+| `ModelClient` / `DecisionRequest` / `ModelResult` / `ModelError`（六类） | `electron/agent/model-client.ts` | provider 边界。**不得重写**；DeepSeek 只是第二个实现 |
+| `AgentTrigger`（10 变体） | `src/engine/agent/types.ts` | 决策触发源。**不进 `WorldState`**，只走瞬时 `pendingEvents` |
+| `SchedulerWorld` | `electron/agent/scheduler.ts` | 调度器看世界的唯一窗口；唯一写权限是 `writeBeat` |
+| `ActionSubmitter` / `SubmissionOutcome` | `electron/agent/runtime.ts` | 决策变成动作的唯一通道。经**注入**而非 import 端口 |
+| `DecisionTrace` / `LlmAttemptTrace` | `runtime.ts` / `openai-compatible.ts` | 决策级与尝试级轨迹（**尚未持久化**） |
+| 提示词版本 `agent-v2` | `AGENT_PROMPT_VERSION` + `prompts/agent/*.md` | 改提示词措辞**必须**同步 bump |
 
-**没有 Lv3 的测试**——不存在 Lv3 代码，所以无法有。
+**已批准的既有合同（不得重写）**：`schemas/*.json` 的 7 个 schema、`02-*.md` 的 ADR-1…5 与 Rule 1–8。
 
-**运行 E2E 的两个坑**（记录以免重踩）：
+---
+
+## 5. 测试现状（**自带时间戳**，勿当作长期数字）
+
+于提交 `c82e009` 实测：
+
+| 命令 | 结果 |
+| --- | --- |
+| `npm test` | ✅ **PASS** — 34 files / **508 passed + 1 skipped**（skipped 是 `live-deepseek.test.ts`，无 key 时 `describe.skip`） |
+| `npm run build` | ✅ **PASS** — exit 0 |
+| `git diff --check` | ✅ 无输出 |
+| `npm run test:llm` | 需 `DEEPSEEK_API_KEY`；P2 已实跑通过（4/4）。**默认套件不依赖它** |
+| `npm run test:e2e` | ⏭ **未运行**——`03-test-plan.md` §12 决议：Lv3 不新增 E2E spec；且有 2 项既有非引擎失败 |
+
+**数字会变。** 要看最新实测，读各阶段状态文档的 §0 验证记录。
+
+**运行 E2E 的两个坑**（免得重踩）：
 
 ```bash
-# 1. shell 中若存在 ELECTRON_RUN_AS_NODE=1，全部 36 项 E2E 会以 bad option 失败
+# 1. shell 中若存在 ELECTRON_RUN_AS_NODE=1，全部 E2E 会以 bad option 失败
 env -u ELECTRON_RUN_AS_NODE npm run test:e2e
 
 # 2. 不要把输出管道给 tail —— 会吞掉真实退出码
@@ -79,41 +104,54 @@ env -u ELECTRON_RUN_AS_NODE npm run test:e2e
 
 ---
 
-## 6. Codex 不得重写的东西（红线）
+## 6. 不得重写的东西（红线）
+
+**Lv1/Lv2 侧**
 
 | 对象 | 原因 |
 | --- | --- |
-| `src/engine/legacy-v9/**` | 冻结契约（`docs/architecture.md:185`），且 `saves.ts:3` **活依赖**它 |
-| `src/engine/v9-schema.ts` | **被活 `save-schema.ts` 与冻结 `legacy-v9/save-schema.ts:8` 共用**；改动会同时污染两条契约 |
-| `src/engine/commands.ts` 的 `careerSchema`（`:79-86`） | 是 **Personnel** 的 6 值枚举，与 `AgentCareer` 无关（`KNOWN_ISSUES.md` `C-8`）。Agent 用新的 `agentCareerSchema` |
-| `SimulationEngine.step()` / `advanceFrame` 的控制流 | 确定性；`tests/architecture.test.ts:39-60` 的同 seed 重放断言 |
-| `AgentControllerPort` 的 key 集合 | 恰好 `['getObservation','submitAction']`；`tests/architecture.test.ts:13` 断言（`C-11`） |
-| `schemas/*.json` | 已批准的跨工具合同（CLAUDE.md §6）。**唯一**相关取舍是 `payload` 必填可空——改 Zod，不改 schema（`C-20`） |
-| `src/ui/**`（含 `StrategicMap.tsx`、`PersonnelView.tsx`、`lcars/**`） | CLAUDE.md §3 保护区域。Agent 发言经既有 `Communication` 流显示，**零 UI 改动** |
-| `electron/preload.ts`、`src/global.d.ts` | Lv3 **不新增 IPC 通道**，不让 Renderer 直连 provider |
-| `src/engine/fleet.ts` 的 `hasAdmiralWork` / 紧急脱离分支 | Lv1/Lv2 行为；`C-17` 是**计划级兼容**（调度器做存续检测），不是改它 |
-| `src/engine/projection.ts` 的 `snapshot()` 裁剪逻辑 | 被 `recon.test.ts` 与 `architecture.test.ts:85-102` 锁定 |
-| `src/engine/definitions/rules.ts` 的既有键（尤其 `decisionInterval`） | 改 `decisionInterval` 会改变**敌方 AI** 行为（`C-18`）。Agent 用新键 `agentDecisionInterval` |
-| `docs/lv3/00-*.md`、`01-*.md`、`02-*.md` | 已批准的历史阶段产物。冲突只登记在 `KNOWN_ISSUES.md`，**不静默修改** |
+| `src/engine/legacy-v9/**` | 冻结契约，且 `saves.ts` **活依赖**它 |
+| `src/engine/v9-schema.ts` | 被活 `save-schema.ts` 与冻结 `legacy-v9/save-schema.ts` 共用 |
+| `src/engine/commands.ts` 的 `careerSchema` | 是 **Personnel** 的枚举，与 `AgentCareer` 无关（`C-8`） |
+| `SimulationEngine.step()` / `advanceFrame` 的控制流 | 确定性；同 seed 重放断言锁定。**只允许在既有分支内追加行** |
+| `src/engine/fleet.ts` 的 `hasAdmiralWork` / 紧急脱离分支 | `C-17` 是**计划级兼容**（调度器做存续检测），不是改它 |
+| `src/engine/projection.ts` 的 `snapshot()` 裁剪 | 被 `recon.test.ts` 与 `architecture.test.ts` 锁定 |
+| `src/engine/definitions/rules.ts` 的既有键（尤其 `decisionInterval`） | 改它会改变**敌方 AI** 行为（`C-18`）。Agent 用 `agentDecisionInterval` |
+| `src/ui/**`、`electron/preload.ts`、`src/global.d.ts` | Lv3 **零 UI 改动、零新 IPC**。Agent 发言经既有 `Communication` 流显示 |
 | `src/engine/definitions/{factions,resources}.ts` | 死代码（零 import），不要在其上构建 |
+
+**Lv3 侧（本阶段新增的红线）**
+
+| 对象 | 原因 |
+| --- | --- |
+| `electron/agent/model-client.ts` 的契约 | provider 边界；P2 只允许**追加可选** `model?` |
+| `src/engine/agent/decision.ts` 的两层校验 | `validateDecisionShape`（结构+归属+可达）与 `validateDecision`（+stale）。`act` + 社交选项**必须**被拒 |
+| `AgentControllerPort` 的 key 集合 | 恰好 `['getObservation','submitAction']`（`C-11`）。**不得**加第三个方法 |
+| `scheduler.ts` 的**单一写入面** | 只允许写 `Agent.nextDecisionAt`，且只在 `pump()` 里写（`07-scheduler-plan.md` §13.2） |
+| `runtime.ts` 的两个入口划分 | `requestDecision` 保持纯、`applyDecision` 才提交。合并会推翻 B-10 的隔离断言 |
+| `boundary.test.ts` 的 B-2 / B-11 / B-13 | B-2：agent 层不得出现引擎名；B-11：只有 `openai-compatible.ts` 可联网；B-13：命令接缝只允许 `agent-host.ts` |
+| `docs/lv3/00-*` … `08-*`、`CODEX_TASKS.md` | 状态与计划文档。冲突只登记在 `KNOWN_ISSUES.md`，**不静默修改** |
 
 ---
 
 ## 7. 剩余工作
 
-全部剩余工作已拆成 **34 张任务卡**，见 `CODEX_TASKS.md`。
+**只剩 P3**，且**九张卡已拆好**——见 `CODEX_TASKS.md` 的 `# P3 — MVP Vertical Slice`（`P3-01` … `P3-09`）。
 
 ```text
-P0  Domain Foundation（16 卡，不依赖 LLM）      ← 从这里开始
-P1  Mock LLM（5 卡，仍不依赖网络）
-P2  Live DeepSeek Runtime（4 卡）
-P3  MVP Vertical Slice（9 卡，覆盖 EVT-01…EVT-09）
+P0  Domain Foundation      16 卡   ✅ 已完成（04-foundation-status.md）
+P1  Mock LLM                5 卡   ✅ 已完成（05-mock-runtime-status.md）
+P2  Live DeepSeek Runtime   4 卡   ✅ 已完成（06-deepseek-runtime-status.md）
+P2.5 Scheduler             5 卡   ✅ 已完成（07-scheduler-plan.md / 08-scheduler-status.md）
+P3  MVP Vertical Slice      9 卡   ⬜ 从这里开始
 ```
 
-**推荐的第一张卡**：`P0-01` 冻结 v10 存档 schema。
+P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用既有 `Action`**
+（`ESCORT`/`TRANSIT`/`SURVEY`/`RETURN`），**不得新增物理行为**（ADR-3）；
+全部验证用 `tests/agent/vertical-slice.test.ts` + mock provider（**不得**依赖 live LLM 做回归断言）。
 
-⚠️ `P0-02 → P0-03 → P0-04` 必须作为**一个连贯增量**：P0-02 把类型升到 v11 而 schema 尚未升级时，
-`npm test` 会**预期失败**；三张卡全部落地后再一次性跑测试。
+`08-scheduler-status.md` §6 列了本阶段**明确未做**的清单（`promise-changed` /
+`high-value-opportunity` / `no-decision-for` 触发、`DecisionTrace` 持久化），P3 按需补。
 
 ---
 
@@ -121,49 +159,45 @@ P3  MVP Vertical Slice（9 卡，覆盖 EVT-01…EVT-09）
 
 | # | 限制 | 影响 |
 | --- | --- | --- |
-| 1 | **无燃料系统** | EVT-04 的 Logistics 用「弹药 + 船体 + 路径预估」复合战备度替代（CONFLICT-1）。**不要新增燃料**——那会引入 Lv1/Lv2 从未有过且需重新平衡的经济系统 |
-| 2 | **Agent 只能在舰船完全空闲时提交动作** | `command-system.ts:557-558`。EVT-03/05/08 各是一次独立决策周期，依赖 `directive-completed` 重新触发（`N-1`） |
-| 3 | **Agent 指令可被静默清除** | Agent 指令 `source` 恒为 `'standing'`（`command-system.ts:393`），`fleet.ts:81-91` 的紧急脱离会直接 `s.current = null` 且无事件。调度器**必须**做存续检测（`C-17`），否则 Agent 永久停摆 |
-| 4 | **无 JSON Schema 运行时校验器** | `ajv@8.20.0` 仅作为 `app-builder-lib` 的传递依赖存在，**不得依赖**。用零依赖结构测试比对（`C-25`/`C-16`） |
-| 5 | **提示词未进打包** | `package.json` 的 `build.files` 不含 `prompts/**`，必须追加（`C-14`），否则打包后读不到 |
-| 6 | **Live LLM 不可重放** | 只有 Engine 重放与 mock provider 可重放。**不得声称**「同样输入 LLM 必得同样输出」（`02-llm-boundary.md` §8） |
-| 7 | **`restorePreviousDay` 会回滚 Agent 的 trust/memory** | 这是既有机制的自然结果，**MVP 接受**，不是 bug（`02-persistence-strategy.md` §6） |
-| 8 | **E2E 有 2 项既存非引擎失败** | 非本次引入，勿误判（见 §5） |
-| 9 | **Agent 与既有 `Personnel` 是两套并行系统** | `Personnel`（`types.ts:99-110`，UI 页 `PERSONNEL`）是船员/技能/岗位系统，Lv3 Agent 与之无关。绑定的想法属 POST-MVP（`C-9`） |
-| 10 | **ENCOURAGE 与 Quit 延后** | MVP 事件中无对应场合。但 **Lv3 完整交付前须补齐 ENCOURAGE**（`Agent.md` §60 的 DoD 含六类互动） |
+| 1 | **游戏内从未观察到真实 Agent 行动** | 载入世界默认 `paused`，调度器整局静默。P3 的垂直切片第一次解除暂停才真正验证。**在此之前不得声称「Agent 已在游戏里行动」** |
+| 2 | **无燃料系统** | EVT-04 用「弹药 + 船体 + 路径预估」复合战备度替代（CONFLICT-1）。**不要新增燃料** |
+| 3 | **Agent 只能在舰船完全空闲时提交动作** | `command-system.ts`。EVT-03/05/08 各是一次独立决策周期，依赖 `directive-completed` 重新触发（`N-1`） |
+| 4 | **Agent 指令可被静默清除** | `fleet.ts` 的紧急脱离直接 `s.current = null` 且无事件。调度器**已实现**存续检测（`C-17`，`scheduler.test.ts` 覆盖）——不要移除 |
+| 5 | **无 JSON Schema 运行时校验器** | `ajv` 仅作为传递依赖存在，**不得依赖**。运行时权威是 Zod（`C-25`） |
+| 6 | **Live LLM 不可重放** | 回归测试**只用 mock provider**。**不得声称**「同样输入 LLM 必得同样输出」（`02-llm-boundary.md` §8） |
+| 7 | **`restorePreviousDay` 会回滚 Agent 的 trust/memory** | 既有机制的自然结果，**MVP 接受**，不是 bug |
+| 8 | **Agent 与既有 `Personnel` 是两套并行系统** | `Personnel` 是船员/技能/岗位系统，与 Lv3 Agent 无关（`C-9`） |
+| 9 | **ENCOURAGE 与 Quit 延后** | 完整交付前须补齐 ENCOURAGE（`Agent.md` §60 的 DoD 含六类互动） |
+| 10 | **`no-decision-for` 触发无生产者** | 时间节拍兜底由 `pump()` 直接实现，未合成该触发（`08-scheduler-status.md` §5.7） |
+| 11 | **触发到调度器最多一帧延迟** | `step()` 才排空 `pendingEvents`；暂停时触发会累积到解除暂停 |
 
 ---
 
 ## 9. 从仓库理解一切（不依赖聊天记录）
 
-本阶段结束后，**仓库是唯一事实来源**。按下列顺序阅读即可获得完整图景：
-
 ```text
 1. CLAUDE.md / AGENTS.md                    项目规则与红线
-2. docs/lv3/00-baseline.md                  当前代码基线
-3. docs/lv3/01-lv1-lv2-architecture.md      Lv1/Lv2 架构
-4. docs/lv3/01-mvp-scenario.md              Lv3 的 MVP 故事（EVT-01…09）
-5. docs/lv3/02-architecture.md              批准的 Lv3 架构（目录、ADR、边界）
-6. docs/lv3/02-domain-model.md              逐字段领域模型
-7. docs/lv3/02-decision-flow.md             调度与决策
-8. docs/lv3/02-llm-boundary.md              LLM 边界
-9. docs/lv3/02-persistence-strategy.md      持久化
-10. docs/lv3/02-mvp-traceability.md         需求追溯 + CONFLICT-1…7
-11. schemas/*.json                          机器可读合同
-12. docs/lv3/03-implementation-plan.md      ★ 实施计划（含本阶段定稿的 10 项决策）
-13. docs/lv3/03-file-change-plan.md         ★ 改哪些文件、怎么改、不许改哪些
-14. docs/lv3/03-api-contract.md             ★ 模块间合同与状态变更权限
-15. docs/lv3/03-test-plan.md                ★ 测试矩阵
-16. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-25）+ 实施陷阱（N-1…N-9）
-17. docs/lv3/CODEX_TASKS.md                 ★ 34 张任务卡（从这里开始干活）
-18. docs/lv3/CLAUDE_TO_CODEX.md             本文件
+2. docs/lv3/CLAUDE_TO_CODEX.md              本文件（现状 + 下一步）
+3. docs/lv3/CODEX_TASKS.md                  ★ P3-01…P3-09（从这里开始干活）
+4. docs/lv3/01-mvp-scenario.md              MVP 故事（EVT-01…09）
+5. docs/lv3/02-mvp-traceability.md          ★ 链路 A/B 的验收依据
+6. docs/lv3/02-architecture.md              批准的 Lv3 架构（目录、ADR、边界）
+7. docs/lv3/02-domain-model.md              逐字段领域模型
+8. docs/lv3/02-decision-flow.md             调度与决策
+9. docs/lv3/02-llm-boundary.md              LLM 边界
+10. docs/lv3/02-persistence-strategy.md     持久化
+11. docs/lv3/03-api-contract.md             ★ 模块间合同与状态变更权限
+12. docs/lv3/03-test-plan.md                ★ 测试矩阵
+13. docs/lv3/04-* … 08-*-status.md          ★ 各阶段实测状态（数字的事实来源）
+14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-30）+ 实施陷阱（N-1…N-9）
+15. schemas/*.json                          机器可读合同
 ```
 
 **事实来源优先级**（冲突时按此判定，CLAUDE.md §15/§16）：
 
 ```text
 当前行为      → 源代码 + 测试
-Lv3 目标架构  → docs/lv3/（02-* 是设计，03-* 是施工图）
+Lv3 目标架构  → docs/lv3/（02-* 设计，03-* 施工图，04-*…08-* 实测状态）
 机器可读合同  → schemas/*.json
 Claude 工作流 → CLAUDE.md
 仓库级指令    → AGENTS.md
@@ -177,10 +211,13 @@ Proposed Resolution`，追加到 `docs/lv3/KNOWN_ISSUES.md`。
 ## 10. 下一张卡
 
 ```text
-P0-01 · 冻结 v10 存档 schema
-  Files to Create : src/engine/legacy-v10/save-schema.ts
-  Dependencies    : 无（必须是 P0 的第一张）
-  Done When       : 文件存在；npx tsc --noEmit 与 npm test 全绿；git diff --check 空
+P3-01 · EVT-01 Admiral 发布任务
+  Files to Modify : electron/agent/runtime.ts、electron/agent/scheduler.ts
+  Dependencies    : P1-04、P2-04（均已完成）
+  Input / Output  : 玩家的任务命令 → AgentMessage +（若 counteroffer）请求
+  API Contract    : intent ∈ {respond, request} ⇒ 不调用 submitAction
+  Tests           : tests/agent/vertical-slice.test.ts 的 I-2、I-3
+  Done When       : 测试通过
 ```
 
-完整 18 字段定义见 `docs/lv3/CODEX_TASKS.md` 的 P0-01 卡。
+完整 18 字段定义见 `docs/lv3/CODEX_TASKS.md` 的 P3-01 卡。

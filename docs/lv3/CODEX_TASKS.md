@@ -97,6 +97,8 @@ chore(agent): prepare codex handoff
 
 # P0 — Domain Foundation（不依赖真实 LLM）
 
+> **✅ 已完成（2026-10-08）** — 状态与实测见 `docs/lv3/04-foundation-status.md`。以下卡片保留作为施工依据。
+
 ## P0-01 · 冻结 v10 存档 schema
 
 - **Task ID**：P0-01
@@ -439,6 +441,9 @@ chore(agent): prepare codex handoff
 
 # P1 — Mock LLM（仍不依赖网络）
 
+> **✅ 已完成（2026-10-08）** — 状态与实测见 `docs/lv3/05-mock-runtime-status.md`。
+> 注意：P1-03 / P1-04 的宿主接线 / P1-05 当年被任务书排除，已作为 **P2.5** 补做，见 `docs/lv3/07-scheduler-plan.md`。
+
 ## P1-01 · `ModelClient` + `mock-client`
 
 - **Task ID**：P1-01
@@ -554,6 +559,9 @@ chore(agent): prepare codex handoff
 
 # P2 — Live DeepSeek Runtime
 
+> **✅ 已完成（2026-10-08）** — 状态与实测见 `docs/lv3/06-deepseek-runtime-status.md`。
+> 该阶段对真实端点实跑过，并因此发现并修复 `KNOWN_ISSUES.md` `C-29`。
+
 ## P2-01 · `openai-compatible.ts`
 
 - **Task ID**：P2-01
@@ -641,6 +649,9 @@ chore(agent): prepare codex handoff
 ---
 
 # P3 — MVP Vertical Slice
+
+> **⬜ 下一步从这里开始。** 前置阶段（P0 / P1 / P2 / P2.5）均已完成，无缺失前置。
+> 新上下文入口顺序见 `docs/lv3/CLAUDE_TO_CODEX.md` §9。
 
 > P3 的九张卡各自接线一个 MVP 事件。每张卡都必须**只用既有 `Action`**（`ESCORT`/`TRANSIT`/`SURVEY`/`RETURN`），
 > **不得新增物理行为**（ADR-3）。全部验证用 `tests/agent/vertical-slice.test.ts` + mock provider。
