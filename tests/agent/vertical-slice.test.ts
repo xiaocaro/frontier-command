@@ -23,9 +23,11 @@ import type {
 import { SimulationEngine } from '../../src/engine/engine';
 import { AGENT_PROMPT_VERSION, fallbackDecision } from '../../src/engine/agent/decision';
 import { decisionScore } from '../../src/engine/agent/score';
+import { AgentHost, agentEventsOf, agentTriggersOf } from '../../electron/agent-host';
 import { MockModelClient } from '../../electron/agent/mock-client';
 import { scoringAgent } from '../../electron/agent/runtime';
 import {
+  REPO_ROOT,
   agentByCareer,
   agentRuntime,
   agentShipOf,
@@ -469,6 +471,91 @@ describe('P3-01 a pending offer is answered, and answering consumes it', () => {
     const unread = engine.state.agentMessages.filter((m) => m.to === tactical.id && !m.read);
     // The team request is settled; the Admiral's offer is a different question and still stands.
     expect(unread.map((m) => m.kind)).toEqual(['command']);
+  });
+});
+
+describe('P3-00 the host frame is what closes the loop', () => {
+  it('settles the Agent from the engine’s own fact, on the production path', () => {
+    // No provider configured — the configuration the game actually runs in. Driving the real
+    // `AgentHost` (not a stand-in) is the point: this is the wiring `main.ts` uses.
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = agentByCareer(engine, 'explorer');
+    const shipId = agentShipOf(engine, agent);
+    issue(engine, { type: 'EXPLORE', sector: { q: 0, r: -1 }, approach: 'remote' }, shipId);
+
+    for (let i = 0; i < 6_000; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      if (agentById(engine, agent.id).state.experience > 0) break;
+    }
+
+    const settled = agentById(engine, agent.id);
+    // MISSION_SUCCESS_EFFECT reached the roster — through the event channel, the host, and the
+    // engine's own apply path, with the scheduler in the loop the whole time.
+    expect(settled.state.experience).toBe(10);
+    expect(memoryTags(settled)).toContainEqual(['mission-success']);
+    expect(settled.goal.progress).toBe(settled.state.goalProgress);
+  });
+
+  it('carries the Agent’s answer back to the Admiral with no provider configured', async () => {
+    // EVT-01 end to end on the production path: the Admiral's offer goes in as a real command, the
+    // trigger wakes the scheduler, the deterministic band answers, and the reply leaves as an
+    // agentMessage. No API key anywhere in this test.
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = agentByCareer(engine, 'explorer');
+    const offered = engine.dispatchCommand({
+      type: 'agentMessage',
+      from: 'admiral',
+      to: agent.id,
+      kind: 'command',
+      text: '穿越虫洞，寻找失联探测船。',
+      payload: null,
+    });
+    expect(offered.ok).toBe(true);
+
+    for (let i = 0; i < 200; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      // The decision is a promise; `frame()` never awaits it (CLAUDE.md §2.4), so the test has to let
+      // the microtask queue run before the next `pump()` can drain it.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (engine.state.agentMessages.some((m) => m.from === agent.id)) break;
+    }
+
+    const answer = engine.state.agentMessages.find((m) => m.from === agent.id);
+    expect(answer).toBeDefined();
+    expect(answer!.to).toBe('admiral');
+    expect(['report', 'negotiate']).toContain(answer!.kind);
+    // And the offer it answered is consumed, so this cannot repeat forever.
+    expect(engine.state.agentMessages.filter((m) => m.to === agent.id && !m.read)).toHaveLength(0);
+  });
+
+  it('extracts settlement facts from a frame, and triggers from the same frame', () => {
+    const frame: SimulationEvent[] = [
+      { type: 'agentTrigger', trigger: { kind: 'ship-idle', shipId: 'verity' } },
+      {
+        type: 'agentEvent',
+        event: {
+          kind: 'mission-settled',
+          shipId: 'verity',
+          directiveId: 'd-1',
+          actionType: 'EXPLORE',
+          outcome: 'success',
+        },
+      },
+    ];
+    expect(agentTriggersOf(frame)).toHaveLength(1);
+    expect(agentEventsOf(frame)).toEqual([
+      {
+        kind: 'mission-settled',
+        shipId: 'verity',
+        directiveId: 'd-1',
+        actionType: 'EXPLORE',
+        outcome: 'success',
+      },
+    ]);
   });
 });
 
