@@ -622,6 +622,50 @@ describe('P3-03 the Agent-Agent team-up is real game state (EVT-03)', () => {
   });
 });
 
+describe('P3-08 a real install fulfils a real promise (EVT-08)', () => {
+  it('flips the pending promise when the module is actually installed', () => {
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = agentByCareer(engine, 'explorer');
+    const beneficiaryShip = agentShipOf(engine, agent);
+    const base = engine.state.locations.find((l) => l.owner === 'starfleet' && l.hull > 0)!;
+    // The scenario needs a budget to exist; give the world what the module costs rather than hoping
+    // the starting stock happens to cover it.
+    engine.state.resources.credits = 10_000;
+    base.stock.materials = 1_000;
+    base.stock.specialFinds = 10;
+
+    settleFact(engine, {
+      kind: 'promise-made',
+      toAgentId: agent.id,
+      promiseType: 'equipment',
+      description: 'Deep Scan 优先权限',
+      fulfills: { kind: 'grant-module', key: 'deepScan' },
+    });
+    const before = agentById(engine, agent.id).state.trustInAdmiral;
+
+    // Flown by a *different* hull on purpose: the promise names a beneficiary, not a ship, which is
+    // why the settlement matches world-wide instead of per ship.
+    const flownBy = engine.state.ships.find((s) => s.id !== beneficiaryShip)!;
+    issue(
+      engine,
+      { type: 'REFIT', targetId: base.id, moduleId: 'deepScan', remove: false },
+      flownBy.id,
+    );
+    for (let i = 0; i < 600; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      if (agentById(engine, agent.id).promises.at(-1)!.status === 'fulfilled') break;
+    }
+
+    expect(flownBy.modules).toContain('deepScan');
+    const after = agentById(engine, agent.id);
+    expect(after.promises.at(-1)).toMatchObject({ status: 'fulfilled' });
+    expect(after.state.trustInAdmiral).toBeGreaterThan(before);
+    expect(memoryTags(after)).toContainEqual(['promise-kept']);
+  });
+});
+
 describe('P3-09 the closed loop (EVT-09, I-11)', () => {
   /** The same world, with only the Admiral's past behaviour differing. */
   const history = (kind: 'kept' | 'forced') => {

@@ -1,10 +1,10 @@
 # Claude → Codex 交接（CLAUDE_TO_CODEX）
 
 最后更新：2026-10-08，于提交 `c82e009`
-阶段：**P0 / P1 / P2 / P2.5 已实现并合入；下一步是 P3**
+阶段：**P0 / P1 / P2 / P2.5 已实现并合入；P3 已实现主体，剩 E2E 与 EVT-04**
 
-> 本次修订（**纯文档，零代码改动**）：追加 `PLAYBOOK_COVERAGE.md`（外部 playbook 提示 ↔ 仓库状态的
-> 对照记录）与 `KNOWN_ISSUES.md` 的 `C-31`/`C-32`。§5 的实测数字**未重新测量**，仍是提交 `c82e009` 的结果。
+> 本次修订（P3）：追加 `09-game-integration-status.md` 与 `KNOWN_ISSUES.md` 的 `C-33`/`C-34`。
+> §5 的实测数字**未重新测量**，仍是提交 `c82e009` 的结果；P3 的实测数字在 `09-*` §0。
 
 > **先读这一份，再决定读什么。** 本文只讲「现在是什么状态」与「下一步做什么」。
 > 每个阶段的细节在各自的 `0N-*-status.md` 里，那是**数字与结论的事实来源**；本文出现的
@@ -41,6 +41,7 @@
 | **P1** Mock Decision Runtime | `electron/agent/{model-client,mock-client,prompt,runtime}.ts`、`prompts/agent/*.md`、录制 fixture | `05-mock-runtime-status.md` |
 | **P2** Live DeepSeek Runtime | `electron/agent/openai-compatible.ts`（超时/重试/熔断/JSON 提取/结构化输出） | `06-deepseek-runtime-status.md` |
 | **P2.5** Scheduler（插入阶段） | `electron/agent/scheduler.ts`、`electron/agent-host.ts`、`AgentTrigger` 发射、`main.ts` 接线、`runtime.applyDecision` | `07-scheduler-plan.md`、`08-scheduler-status.md` |
+| **P3** Game Integration | `agentEvent` 结算接缝（`commands.ts`/`command-system.ts`/`agent/events.ts`）、`agent/events.ts` 规划器、`agent/dialogue.ts`（回复 + offer 分档）、记忆正负号、offer 消费与优先、REFIT/异常发射点 | `09-game-integration-status.md` |
 
 > **P2.5 为什么存在**：`03-implementation-plan.md` §3.2 把 Scheduler 划归 P1，但 P1 与 P2 的任务书
 > 都明令不含它，于是被两次跳过。它不是被取消，而是被挤掉的。规划见 `07-scheduler-plan.md`。
@@ -143,28 +144,37 @@ env -u ELECTRON_RUN_AS_NODE npm run test:e2e
 | `scheduler.ts` 的**单一写入面** | 只允许写 `Agent.nextDecisionAt`，且只在 `pump()` 里写（`07-scheduler-plan.md` §13.2） |
 | `runtime.ts` 的两个入口划分 | `requestDecision` 保持纯、`applyDecision` 才提交。合并会推翻 B-10 的隔离断言 |
 | `boundary.test.ts` 的 B-2 / B-11 / B-13 | B-2：agent 层不得出现引擎名；B-11：只有 `openai-compatible.ts` 可联网；B-13：命令接缝只允许 `agent-host.ts` |
-| `docs/lv3/00-*` … `08-*`、`CODEX_TASKS.md` | 状态与计划文档。冲突只登记在 `KNOWN_ISSUES.md`，**不静默修改** |
+| `docs/lv3/00-*` … `09-*`、`CODEX_TASKS.md` | 状态与计划文档。冲突只登记在 `KNOWN_ISSUES.md`，**不静默修改**（`C-34` 即一例：P3 卡片的 "Files to Modify" 指错了文件，未就地改写） |
 
 ---
 
 ## 7. 剩余工作
 
-**只剩 P3**，且**九张卡已拆好**——见 `CODEX_TASKS.md` 的 `# P3 — MVP Vertical Slice`（`P3-01` … `P3-09`）。
+**P3 主体已完成**，剩两项——详见 `09-game-integration-status.md` §6。
 
 ```text
 P0  Domain Foundation      16 卡   ✅ 已完成（04-foundation-status.md）
 P1  Mock LLM                5 卡   ✅ 已完成（05-mock-runtime-status.md）
 P2  Live DeepSeek Runtime   4 卡   ✅ 已完成（06-deepseek-runtime-status.md）
 P2.5 Scheduler             5 卡   ✅ 已完成（07-scheduler-plan.md / 08-scheduler-status.md）
-P3  MVP Vertical Slice      9 卡   ⬜ 从这里开始
+P3  MVP Vertical Slice      9 卡   🟡 EVT-01/02/03/07/08/09 PASS；EVT-04 未实现；
+                                      E2E spec 未写（09-game-integration-status.md）
 ```
+
+剩余：
+
+1. **E2E spec**（playbook §三十一）——`tests/e2e/vertical-slice.spec.ts` + 测试进程内的
+   OpenAI-compatible stub（`DEEPSEEK_BASE_URL` 指向它）。`03-test-plan.md` §12 的"不新增"决议已被用户
+   裁决覆盖，**但那行决议本身尚未就地更新**（同属红线文档）。
+2. **EVT-04**（`readiness.ts`）——先要决定战备结论挂在什么上；offer 没有结构化目标，见 `09-*` §6.1。
 
 P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用既有 `Action`**
 （`ESCORT`/`TRANSIT`/`SURVEY`/`RETURN`），**不得新增物理行为**（ADR-3）；
 全部验证用 `tests/agent/vertical-slice.test.ts` + mock provider（**不得**依赖 live LLM 做回归断言）。
 
-`08-scheduler-status.md` §6 列了本阶段**明确未做**的清单（`promise-changed` /
-`high-value-opportunity` / `no-decision-for` 触发、`DecisionTrace` 持久化），P3 按需补。
+`08-scheduler-status.md` §6 列了 P2.5 **明确未做**的清单（`promise-changed` /
+`high-value-opportunity` / `no-decision-for` 触发、`DecisionTrace` 持久化）。P3 **没有**补触发变体
+（`C-32` 已裁决：`Mission offered` 由 `admiral-message` 承载），`DecisionTrace` 持久化仍未做。
 
 ---
 
@@ -202,9 +212,10 @@ P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用�
 11. docs/lv3/03-api-contract.md             ★ 模块间合同与状态变更权限
 12. docs/lv3/03-test-plan.md                ★ 测试矩阵
 13. docs/lv3/04-* … 08-*-status.md          ★ 各阶段实测状态（数字的事实来源）
-14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-32）+ 实施陷阱（N-1…N-9）
+14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-34）+ 实施陷阱（N-1…N-9）
 15. docs/lv3/PLAYBOOK_COVERAGE.md           ★ 外部 playbook 提示 ↔ 仓库状态对照（按 Prompt 查，避免重做）
-16. schemas/*.json                          机器可读合同
+16. docs/lv3/09-game-integration-status.md  ★ P3 实测状态 + EVT-01…09 逐条结论
+17. schemas/*.json                          机器可读合同
 ```
 
 **事实来源优先级**（冲突时按此判定，CLAUDE.md §15/§16）：
@@ -225,13 +236,14 @@ Proposed Resolution`，追加到 `docs/lv3/KNOWN_ISSUES.md`。
 ## 10. 下一张卡
 
 ```text
-P3-01 · EVT-01 Admiral 发布任务
-  Files to Modify : electron/agent/runtime.ts、electron/agent/scheduler.ts
-  Dependencies    : P1-04、P2-04（均已完成）
-  Input / Output  : 玩家的任务命令 → AgentMessage +（若 counteroffer）请求
-  API Contract    : intent ∈ {respond, request} ⇒ 不调用 submitAction
-  Tests           : tests/agent/vertical-slice.test.ts 的 I-2、I-3
-  Done When       : 测试通过
+P3-09 收口 · E2E 垂直切片（09-game-integration-status.md §6.2）
+  Files to Create : tests/e2e/vertical-slice.spec.ts、tests/e2e/agent-stub.ts
+  Files to Modify : docs/lv3/03-test-plan.md §12（登记 E2E 决议反转）
+  Dependencies    : P3 主体（已完成）
+  Input / Output  : 本地 OpenAI-compatible stub（DEEPSEEK_BASE_URL 指向它）→ 真实 Electron 应用中的完整用户路径
+  API Contract    : 零新 IPC —— 既有 world:command 已能承载 agentMessage；零 UI 改动
+  Tests           : env -u ELECTRON_RUN_AS_NODE npm run test:e2e（不要管道给 tail）
+  Done When       : 新 spec 通过；总数 34+N / 2（那 2 项是 mine-accidents 的既存失败，不是回归）
 ```
 
-完整 18 字段定义见 `docs/lv3/CODEX_TASKS.md` 的 P3-01 卡。
+若 E2E 之前先做 EVT-04，则需要先做 §6.1 的设计决定。完整背景见 `09-game-integration-status.md`。

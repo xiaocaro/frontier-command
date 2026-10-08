@@ -1,0 +1,169 @@
+# Lv3 P3 游戏整合 / MVP 垂直切片实施状态（09-game-integration-status）
+
+生成日期：2026-10-08
+阶段：**P3 — Game Integration / MVP Vertical Slice**（施工图见 `docs/lv3/CODEX_TASKS.md` 的 `P3-01…P3-09`）
+范围：把已完成的决策侧（P0/P1/P2/P2.5）接到游戏状态上，并跑通 `01-mvp-scenario.md` 的 EVT-01…09
+
+> **文件名的由来**：playbook §三十五 要求 `07-game-integration-status.md`，但 `07-` 与 `08-` 已被
+> P2.5 的 `07-scheduler-plan.md` / `08-scheduler-status.md` 占用。P3 顺位取 `09-`。
+
+---
+
+## 0. 验证记录（实际执行）
+
+| 命令 | 结果 |
+| --- | --- |
+| `npx tsc --noEmit` | **PASS**（0 error） |
+| `npm test` | **PASS** — 34 files / **532 tests，531 passed + 1 skipped** |
+| `npm run build` | **PASS** — exit 0 |
+| `git diff --check` | **无输出** |
+| `npm run test:llm`（真实端点） | **PASS** — `deepseek-flash` 与 `deepseek-chat` 均 `outcome=ok:respond`；**并因此发现并修复 `C-33`** |
+| `npm run test:e2e` | **未运行本阶段** —— 见 §6「未完成」 |
+| `npm run test:package` | **未运行** |
+
+改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
+**本阶段新增 23 个通过用例**，全部落在 `tests/agent/vertical-slice.test.ts`。
+
+---
+
+## 1. 本阶段建立的闭环（实际可执行）
+
+```text
+引擎分支（complete() / execution.ts 的 REFIT、SURVEY）
+   └─ pendingEvents.push({ type:'agentEvent', event })        ← 瞬时通道，不进 WorldState
+electron/agent-host.ts  frame(events)
+   ├─ agentEventsOf(events) → engine.dispatchCommand({type:'agentEvent', event})
+   │     └─ command-system.ts validate() → apply()
+   │          └─ src/engine/agent/events.ts 纯规划器 → 状态 / 记忆 / 目标 / 关系 / 承诺
+   ├─ scheduler.notify(agentTriggersOf(events)) → pump()
+   │     └─ DecisionRuntime.requestDecision（异步、不 await）
+   │          └─ applyDecision
+   │               ├─ intent==='act' → ActionSubmitter → controllerPort.submitAction
+   │               └─ 社交意图        → MessageSubmitter → agentMessage 命令
+   └─ ← 回复消息反过来消费掉它所回答的 offer（consumeAnswered）
+```
+
+**结算仍然只经 Command 这一道门**（CLAUDE.md §2.1）——与既有的 `agentMessage` 分支同一条规矩，
+而不是在 `complete()` 里直接改 `WorldState`。
+
+**游戏内第一次真正跑起来了。** `08-scheduler-status.md` §8.1 记录的「游戏内从未观察到一次真实的
+Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用**真实 `AgentHost`**、
+**不配任何 API key**（也就是游戏实际运行的配置），断言 Admiral 的 offer 经命令进入 → 触发唤醒调度器
+→ 确定性分档作答 → 回复以 `agentMessage` 离开。整条链路没有一处 mock。
+
+---
+
+## 2. 实际创建的文件
+
+| 文件 | 行数 | 职责 |
+| --- | ---: | --- |
+| `src/engine/agent/events.ts` | 244 | 结算规划器：`AgentEvent` 的一种 kind 一个函数，组合既有纯函数产出 delta/记忆/关系 |
+| `src/engine/agent/dialogue.ts` | 114 | 社交决策 → `agentMessage`；以及 offer 的确定性分档 |
+| `tests/agent/vertical-slice.test.ts` | 718 | 25 个用例：P3-00 接缝、EVT-01/02/03/08/09、宿主闭环 |
+
+## 3. 实际修改的文件
+
+| 文件 | 改动 |
+| --- | --- |
+| `src/engine/commands.ts` | `agentEventSchema`（5 个 kind）+ 加入 `commandSchema`；`promiseType`/`promiseFulfillment` 移入（避免循环依赖） |
+| `src/engine/types.ts` | `SimulationEvent` 与 `Command` 各追加一个成员 |
+| `src/engine/command-system.ts` | `agentEvent` 的 validate + apply 分支；`consumeAnswered`；`team-resolved` 发射 |
+| `src/engine/engine.ts` | `complete()` 内追加 `mission-settled` 发射（**仅 `source === 'admiral'`**） |
+| `src/engine/execution.ts` | REFIT 装入模块处追加 `module-installed`；SURVEY 命中异常处追加 `discovery` |
+| `src/engine/agent/score.ts` | **`MEMORY_VALENCE`：给记忆加正负号** |
+| `src/engine/agent/decision.ts` | 确定性回退**先回答待答 offer** |
+| `src/engine/agent/actions.ts` | 用 `isTaskOfferKind` 取代重复的 kind 列表 |
+| `src/engine/agent/schemas.ts` | 改为从 `../commands` 再导出 promise 两个枚举 |
+| `src/engine/agent/types.ts` | 再导出 `AgentEvent` |
+| `electron/agent/runtime.ts` | 新增注入式 `MessageSubmitter`（**必需**选项）与两个 `SubmissionOutcome` |
+| `electron/agent-host.ts` | 保存 `engine` 引用；`agentEventsOf` + 派发；绑定 messenger |
+| `electron/agent/openai-compatible.ts` | `DEFAULT_MAX_TOKENS` 1200 → 4096（`C-33`） |
+| `tests/agent/{support,submission,scheduler,runtime}.test.ts` | 脚手架补 messenger；两处编码了旧行为的断言**反转而非删除** |
+
+**未修改**：`src/ui/**`、`electron/preload.ts`、`src/global.d.ts`、`schemas/*.json`、
+`src/engine/save-schema.ts`、`legacy-v9|v10/**`、`AgentControllerPort` 的 key 集合、
+`scheduler.ts` 的判定与单一写入面。
+
+---
+
+## 4. MVP 事件逐条结论
+
+| EVT | 结论 | 证据 |
+| --- | --- | --- |
+| 01 Admiral 发布任务 | **PASS** | 经真实 `AgentHost`、无 key，Agent 产出 `respond` 并把回复发回 Admiral；offer 随后被消费 |
+| 02 反报价 | **PASS** | `counteroffer` → `kind:'negotiate'`，payload `{requestType, targetAgentId}`（`AgentRequest.type` 映射为 `requestType`） |
+| 03 Agent-Agent 组队 | **PASS** | `team-reply` 成消息 → `team-resolved` 结算**双方**关系各 ±10 → 另起一次 `act` 决策真正提交 `ESCORT`（`source:'standing'`） |
+| 04 Logistics 战备评估 | **NOT IMPLEMENTED** | 见 §6 |
+| 05 穿越 + 发现异常 | **PARTIAL** | 结算侧完成（`discovery` 记忆 + 目标进度 + `subjectId` 去重）；**`TRANSIT`/`SURVEY` 的整段集成测试未写** |
+| 06 四方分歧 | **PARTIAL** | 既有 `runtime.test.ts` 的 EVT-06 用例已断言四条不同答案；**未在本阶段补充** |
+| 07A Promise 创建 | **PASS** | `promise-made` 造出 `pending` / `resolvedAt:null` 的承诺 |
+| 07B Override 代价 | **PASS** | 沿用 P0 路径；EVT-09 的 Path B 断言了 −10 trust 与 `admiral-override` 记忆 |
+| 08 任务结算 | **PASS** | `mission-settled` 状态/记忆/目标镜像；**真跑一次 REFIT**（由另一艘舰执行）→ pending 承诺转 `fulfilled` + `PROMISE_KEPT_EFFECT` + `promise-kept` 记忆 |
+| 09 闭环 | **PASS** | 同一 Agent、同一新任务，Path A（信任↑ + `promise-kept`）与 Path B（信任↓ + `admiral-override`）⇒ `trustInAdmiral` **与** `choiceId` 同时不同；mock provider 与**纯确定性评分**两种证法都成立 |
+
+---
+
+## 5. 本阶段发现并修复的真实缺陷
+
+三条都不是"看起来不对"，而是**实测到的、会让 Lv3 在真实配置下不成立**的问题。
+
+### 5.1 `memoryContribution` 没有正负号（已修复）
+
+`score.ts` 返回记忆**权重**，而权重没有方向。于是 `admiral-override`（权重 90）比 `promise-kept`
+（权重 70）得分更高——**最坏的事反而把 Agent 推向接受**。`Agent.md` §50 的闭环一直在跑，方向是反的。
+新增 `MEMORY_VALENCE`（±1），贡献取"最有决定性的那条带符号记忆"。这正是 `score.ts` 与
+`04-foundation-status.md` §6 item 1 都写明留给 P3 的校准。**没有这个修复，EVT-09 的 A/B 只能"大小不同"，
+不可能"方向相反"。**
+
+### 5.2 三个社交候选分数完全相同（已修复）
+
+`accept`/`reject`/`counteroffer` 的 risk/reward/goalKinds 一致 ⇒ `decisionScore` 分解完全一致 ⇒
+`rankCandidates` 落到 id 平局 ⇒ **只能选出 `accept`**。无 key 的默认配置下，Agent **永远不会拒绝**。
+`dialogue.offerResponse` 改为**对 offer 整体评分一次**，由 Agent.md §46 的分档决定答案。
+
+### 5.3 待答 offer 压不过自主行动 + 消息从不标已读（已修复）
+
+实测：待答 offer 得分 **8.9–28.9**，而一个 survey 候选排在它前面 ⇒ 确定性回退**去测绘了，根本不回答
+Admiral**（EVT-01 在离线路径下不成立）。而它无法简单地被赋予优先级，因为 `agentMessages` **从不标记
+`read`** —— offer 会永久留在菜单上，"先回答 Admiral"会把 Agent 永久锁死。
+
+两半一起修：`fallbackDecision` 先回答待答 offer；引擎在收到回复时消费掉它所回答的 offer
+（`consumeAnswered`）。
+
+### 5.4 `C-33`：推理模型的 token 预算不足导致 live 路径**静默**全量降级（已修复）
+
+`DEFAULT_MAX_TOKENS = 1200` 对非推理模型够用，对**推理**模型不够：`deepseek-flash` 把预算全花在
+`reasoning_content` 上，`content` 返回空串，provider 归类 `invalid-json` 且不重试。**失败是静默的**
+——世界照常运行、测试照常全绿，而模型贡献为零。实测 2048 起才有可能成功，默认改为 4096。
+详见 `KNOWN_ISSUES.md` `C-33`。
+
+---
+
+## 6. 未完成 / 已知限制
+
+| # | 项 | 说明 |
+| --- | --- | --- |
+| 1 | **EVT-04 未实现** | `readiness.ts` 未建。原因：offer 没有**结构化目标**（目标只出现在自由文本里），所以"判断这趟够不够"缺一个可判定的输入。需要先决定战备结论挂在什么上（候选的 `requirements`？offer 的分档？），**不宜由实施者单方面发明**。不影响阶段退出判据 |
+| 2 | **E2E spec 未写** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。仓库 `03-test-plan.md` §12 原决议为"不新增"，用户已裁决全量覆盖，但**尚未落地**：需要一个测试进程内的 OpenAI-compatible stub（`DEEPSEEK_BASE_URL` 指向它）与一个约 10 步的 spec。**注意**：整条链路已用真实 `AgentHost`（`main.ts` 驱动的同一代码路径）在进程内证明过，Playwright spec 的增量价值是"打包后的真实应用"，不是"链路能否跑通" |
+| 3 | **`promiseMemory`（kind `'promise'`）无生产者** | `memoryContribution` 只读 **episodic** 记忆，所以承诺兑现写的是 `episodicMemory{tags:['promise-kept'], subjectId:<promiseId>}`。`promiseMemory` 携带 `promiseId` 但没有 tags，写它不会影响任何分数。**要么**在别处用它（例如承诺详情 UI），**要么**承认它多余 |
+| 4 | **team-accept / team-decline 仍然同分** | 两个候选的分解一致，平局由 id 决定 ⇒ 离线永远接受组队。要做成"关系差就拒绝"，需要一个 per-peer 的候选项（现有 `teamFit` 用的是**平均**合作度） |
+| 5 | **offer 消费是钝的** | 给 Admiral 的一条回复会消费该 Agent **全部**未读任务 offer，而不只是被回答的那条。替代方案是让回复携带 message id，那会让 Agent 层知道它不该看见的消息日志 |
+| 6 | **`escort:` 候选上限 4** | `CANDIDATE_CAPS.escort` 意味着请求组队的那艘舰**不一定**在对方的护航菜单上。测试因此从菜单里挑同伴而不是假定配对 |
+| 7 | **结算的触发面仍窄** | `mission-settled` 只对 `source === 'admiral'` 的指令发射；Agent 自己提交的 `standing` 指令不结算。这是有意的（否则每次普通移动都会刷任务记忆），但意味着 EVT-05 里 Agent 自己发起的 SURVEY 只靠 `discovery` 事件留下痕迹 |
+| 8 | **`no-decision-for` 仍无生产者** | 沿用 `08-scheduler-status.md` §5.7 |
+
+---
+
+## 7. 推荐下一步
+
+1. **E2E spec**（§6.2）——playbook §三十一 是唯一尚未兑现的硬性要求。
+2. **EVT-04 的设计决定**（§6.1），然后实现 `readiness.ts`。
+3. **P3-09 的收口**：`CODEX_TASKS.md` 的 P3-01…P3-08 都写着 "Files to Modify: `electron/agent/runtime.ts`"，
+   **那是错的**——`runtime.ts` 按构造不能写回（B-2 禁止它命名引擎，它也不持有引擎引用）。
+   正确文件集是引擎发射点 + `commands.ts` + `command-system.ts` + `electron/agent-host.ts`。
+   `CODEX_TASKS.md` 属红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），故**未就地改写卡片**，
+   更正登记为 `KNOWN_ISSUES.md` `C-34`。
+
+**不要重写**：`scheduler.ts` 的判定与单一写入面、`agent-host.ts` 的寻址、
+`src/engine/agent/events.ts` 的"事实而非数字"分工、`AgentControllerPort` 的 key 集合、
+`tests/agent/boundary.test.ts` 的 B-2/B-11/B-13。

@@ -324,6 +324,16 @@
 | **Proposed Resolution** | **已修复**：`DEFAULT_MAX_TOKENS` 1200 → **4096**（`max_tokens` 是上限而非花费，加大无额外成本），并在常量处附上上述实测表。**不保证成功**：同一模型在 4096 仍出现过 `schema-mismatch`，这正是所有失败路径都落到确定性回退、而非崩溃的原因（playbook §三十二：不得把"LLM 必须输出 X"作为稳定测试条件） |
 | **教训** | 与 `C-29` 同类：**离线 fixture 是盲区**。录制决策由人写成，不会犯"把答案全写进 reasoning_content"这种错。模型换成一个推理模型、或 provider 改一个默认值，都只有真实端点能暴露。任何改动 provider 默认值或更换模型的提交，都应重跑 `npm run test:llm` |
 
+### C-34 — P3 卡片的 "Files to Modify" 指错了文件 🟡 MEDIUM（**不改卡片，只登记**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `CODEX_TASKS.md` 的 `P3-01…P3-08` 全部写着 `- **Files to Modify**：electron/agent/runtime.ts`；而 P3 的结算写入**不可能**由该文件完成 |
+| **Current Code** | `tests/agent/boundary.test.ts` 的 B-2 禁止 `electron/agent/**` 出现 `SimulationEngine` 等引擎名，且 `runtime.ts` 按构造不持有引擎引用（它只经注入的 `ActionSubmitter` 触达）。真正落地的文件集是：`src/engine/{commands,types,command-system,engine,execution}.ts`、`src/engine/agent/{events,dialogue,score,decision,schemas,actions,types}.ts`、`electron/agent-host.ts`，以及 `runtime.ts` 的**一处**改动（新增注入式 `MessageSubmitter`） |
+| **Approved Design** | 卡片写于 Prompt 3，当时尚未确定"结算经 Command 还是引擎内直写" |
+| **Impact** | 若实施者照卡片执行，会在 `runtime.ts` 里试图写 `WorldState`，直接撞上 B-2 —— 而 B-2 是**不可放宽**的边界断言。实测确认：本阶段 `runtime.ts` 的净改动仅 56 行，且全部是注入端口与 `SubmissionOutcome`，没有一行世界写入 |
+| **Proposed Resolution** | **不改 `CODEX_TASKS.md`**：它与 `00-*`…`08-*` 同属红线文档（"冲突只登记在 `KNOWN_ISSUES.md`，不静默修改"）。以本条目 + `09-game-integration-status.md` §7 为准。P3 的**实际**文件清单见 `09-game-integration-status.md` §2/§3 |
+
 ---
 
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
