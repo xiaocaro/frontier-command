@@ -248,7 +248,7 @@ tests/architecture.test.ts:39-60                          ← 必须继续通过
 | SC-2 | ✅ **完成**（2026-10-08） | 5 个引擎文件共 **+44 行、0 删除**（纯追加，约束 ⑤ 满足）；`tests/agent/triggers.test.ts`（10 用例） |
 | SC-3 | ✅ **完成**（2026-10-08） | **新增 `electron/agent-host.ts`**（见下方偏离说明）、`main.ts` 接线、`tests/agent/host.test.ts`（14 用例） |
 | SC-4 | ✅ **完成**（2026-10-08） | `runtime.ts` 的 `applyDecision` + `ActionSubmitter`、`scheduler.ts` 的 drain/提交前 stale 复核、`agent-host.ts` 绑定端口；`tests/agent/submission.test.ts`（7 用例）+ `scheduler.test.ts` 追加 2 例 |
-| SC-5 | ⬜ 未开始 | 阶段文档 |
+| SC-5 | ✅ **完成**（2026-10-08） | `docs/lv3/08-scheduler-status.md` |
 
 **SC-4 的三个设计决定**（批准文件未规定，实现时定，均可被测试固定）：
 
