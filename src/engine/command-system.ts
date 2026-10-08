@@ -16,6 +16,16 @@ import type {
   WorldState,
 } from './types';
 import { GOODS } from './types';
+import {
+  AGENT_INTERACTION_CAP,
+  AGENT_MESSAGE_CAP,
+  applyInteraction,
+  createMessage,
+  createsInteraction,
+  interactionOutcomeFor,
+  overrideMemory,
+} from './agent/interactions';
+import { remember } from './agent/memory';
 import { actionSchema, commandSchema } from './commands';
 import { emptyStock } from './data';
 import { capabilities, cargoUsed } from './capabilities';
@@ -183,7 +193,10 @@ export function validate(
       c.type === 'issueDirective' &&
       c.shipIds.length === 1 &&
       w.assignments.some((a) => a.operatorId === actorId && a.shipId === c.shipIds[0])
-    )
+    ) &&
+    // Lv3: the single relaxation, and it is exactly as wide as "an Agent may speak as itself".
+    // Widening it further would let an Agent impersonate the Admiral or another Agent.
+    !(c.type === 'agentMessage' && c.from === actorId && c.from !== 'admiral')
   )
     return no('该操作者无此命令权限');
   if (c.type === 'issueDirective') {
@@ -230,6 +243,14 @@ export function validate(
   if (c.type === 'dismissMapMarker') {
     const reason = markerRemovalReason(w, c.entityId);
     return reason ? no(reason) : ok();
+  }
+  if (c.type === 'agentMessage') {
+    if (c.from !== 'admiral' && !w.agents.some((a) => a.id === c.from))
+      return no('发送方不是有效的 Agent');
+    if (c.to !== 'admiral' && !w.agents.some((a) => a.id === c.to))
+      return no('接收方不是有效的 Agent');
+    if (c.from === c.to) return no('不能向自己发送消息');
+    return ok();
   }
   const frontierResult = validateFrontierCommand(this, c);
   if (frontierResult) return frontierResult;
@@ -566,7 +587,94 @@ export function dispatchCommand(
     this.record('repair', l.name + ' 消耗 ' + amount + ' 本地 Materials', l.id);
     return ok('设施维修完成');
   }
+  if (c.type === 'agentMessage') {
+    // The only door through which Agent social writes reach the world (CLAUDE.md §2.1). Going
+    // through a Command rather than a runtime-side mutation keeps `dispatchCommand` the single
+    // validation entry point.
+    const from =
+      c.from === 'admiral'
+        ? w.commander.name
+        : (w.agents.find((a) => a.id === c.from)?.name ?? c.from);
+    const target = w.agents.find((a) => a.id === c.to) ?? null;
+    const to = target?.name ?? w.commander.name;
+    const message = createMessage({
+      id: 'agent-message-' + w.nextId++,
+      at: w.time,
+      from: c.from,
+      to: c.to,
+      kind: c.kind,
+      text: c.text,
+      payload: c.payload,
+    });
+    w.agentMessages = boundMessages([...w.agentMessages, message]);
+
+    if (target && createsInteraction(c.kind)) {
+      const outcome = interactionOutcomeFor(c.kind, c.payload);
+      const { agent, effects } = applyInteraction(target, c.kind, outcome);
+      const index = w.agents.findIndex((a) => a.id === target.id);
+      w.agents[index] = agent;
+      w.agentInteractions = boundInteractions([
+        ...w.agentInteractions,
+        {
+          id: 'agent-interaction-' + w.nextId++,
+          at: w.time,
+          kind: c.kind,
+          actorId: c.from,
+          targetAgentId: target.id,
+          messageId: message.id,
+          outcome,
+          effects,
+        },
+      ]);
+      if (c.kind === 'override')
+        w.agents[index] = {
+          ...w.agents[index],
+          memories: remember(
+            w.agents[index].memories,
+            overrideMemory({
+              id: 'agent-memory-' + w.nextId++,
+              at: w.time,
+              actionType:
+                c.payload && 'directiveActionType' in c.payload
+                  ? c.payload.directiveActionType
+                  : 'DIRECTIVE',
+            }),
+          ),
+        };
+    }
+
+    // N-6: Agent speech is mirrored into the existing Communication feed so the existing UI shows
+    // it with zero UI changes.
+    const line =
+      c.from === 'admiral' ? from + ' → ' + to + '：' + c.text : to + ' ← ' + from + '：' + c.text;
+    this.report(line, target?.id ?? null, c.kind === 'override' ? 'high' : 'normal', 'decision');
+    return ok('消息已送达');
+  }
   return ok();
+}
+/**
+ * Keeps the message log bounded: already-read messages are dropped first, oldest first, and only
+ * then the oldest unread ones. Ordering is array order, never Map/Set iteration, so the result is a
+ * pure function of the list and cannot destabilise the same-seed replay assertion.
+ */
+function boundMessages(messages: AgentMessage[]): AgentMessage[] {
+  const excess = messages.length - AGENT_MESSAGE_CAP;
+  if (excess <= 0) return messages;
+  const doomed = new Set<string>();
+  for (const m of messages) {
+    if (doomed.size >= excess) break;
+    if (m.read) doomed.add(m.id);
+  }
+  for (const m of messages) {
+    if (doomed.size >= excess) break;
+    doomed.add(m.id);
+  }
+  return messages.filter((m) => !doomed.has(m.id));
+}
+/** Bounded FIFO audit trail; oldest interactions are dropped first. */
+function boundInteractions(interactions: AgentInteraction[]): AgentInteraction[] {
+  const excess = interactions.length - AGENT_INTERACTION_CAP;
+  return excess > 0 ? interactions.slice(excess) : interactions;
 }
 export function submitAction(this: SimulationEngine, operatorId: string, input: Action) {
   const parsed = actionSchema.safeParse(input);

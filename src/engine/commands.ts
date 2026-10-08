@@ -287,4 +287,15 @@ export const commandSchema = z.discriminatedUnion('type', [
       speed: z.union([z.literal(1), z.literal(4), z.literal(16)]),
     })
     .strict(),
+  // Lv3: the single structured entry point for Agent social writes (docs/lv3/03-implementation-plan.md §4.5).
+  z
+    .object({
+      type: z.literal('agentMessage'),
+      from: id,
+      to: id,
+      kind: agentMessageKindSchema,
+      text: z.string().max(800),
+      payload: messagePayloadSchema.nullable(),
+    })
+    .strict(),
 ]);
