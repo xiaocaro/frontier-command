@@ -877,8 +877,8 @@ describe('P3-09 the closed loop (EVT-09, I-11)', () => {
   });
 
   it('the deterministic score separates the two histories without any provider', () => {
-    // The same claim with the model removed: the settled state is enough for the *score* to differ in
-    // the right direction, which is what Agent.md §50 asks for even offline.
+    // The mechanism underneath the answer above: with no model at all, the settled state is enough
+    // for the score to move in opposite directions, which is what Agent.md §50 asks for offline.
     const kept = history('kept');
     const forced = history('forced');
     const scored = (engine: SimulationEngine) => {
@@ -890,5 +890,87 @@ describe('P3-09 the closed loop (EVT-09, I-11)', () => {
     expect(scored(kept).recentMemoryScore).toBeGreaterThan(0);
     expect(scored(forced).recentMemoryScore).toBeLessThan(0);
     expect(scored(kept).score).toBeGreaterThan(scored(forced).score);
+  });
+
+  it('the deterministic fallback answers the two histories differently, with no provider at all', () => {
+    // The configuration the game actually runs in. `runtime.test.ts`'s EVT-09 test and the one above
+    // both impose the differing answer with a provider keyed on trust; this one does not, so it is the
+    // closer claim: the *band* separates the histories on its own.
+    const answer = (engine: SimulationEngine) => {
+      const explorer = agentByCareer(engine, 'explorer');
+      const observation = observationFor(engine, explorer.id);
+      return fallbackDecision(scoringAgent(observation), observation);
+    };
+    const keptAnswer = answer(history('kept'));
+    const forcedAnswer = answer(history('forced'));
+
+    expect(keptAnswer.intent).toBe('respond');
+    expect(forcedAnswer.intent).toBe('respond');
+    expect(keptAnswer.choiceId).toBeDefined();
+    expect(forcedAnswer.choiceId).toBeDefined();
+    expect(keptAnswer.choiceId).not.toBe(forcedAnswer.choiceId);
+  });
+
+  it('the two histories reach different answers through the real host, with no provider', async () => {
+    // The whole loop, production-shaped: real `SimulationEngine`, real `AgentHost`, real scheduler,
+    // no provider. The history on one side is produced by the game (a real REFIT fulfilling a real
+    // promise); on the other it is the real Override command. Neither is patched in.
+    const replyAfter = async (engine: SimulationEngine, agentId: string) => {
+      const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+      engine.dispatchCommand({
+        type: 'agentMessage',
+        from: 'admiral',
+        to: agentId,
+        kind: 'command',
+        text: '又出现一个高风险调查机会，你去不去？',
+        payload: null,
+      });
+      for (let i = 0; i < 400; i++) {
+        engine.dispatchCommand({ type: 'pause', paused: false });
+        host.frame(engine.step());
+        // `frame()` never awaits the decision (CLAUDE.md §2.4), so the microtask queue must run
+        // before the next `pump()` can drain it.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (engine.state.agentMessages.some((m) => m.from === agentId)) break;
+      }
+      return engine.state.agentMessages.filter((m) => m.from === agentId).at(-1) ?? null;
+    };
+
+    /** Path A, produced by the game: promise made, then a real REFIT installs the module. */
+    const keptByRefit = async () => {
+      const engine = quietEngine();
+      const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+      const explorer = agentByCareer(engine, 'explorer');
+      const base = engine.state.locations.find((l) => l.owner === 'starfleet' && l.hull > 0)!;
+      engine.state.resources.credits = 10_000;
+      base.stock.materials = 1_000;
+      base.stock.specialFinds = 10;
+      settleFact(engine, {
+        kind: 'promise-made',
+        toAgentId: explorer.id,
+        promiseType: 'equipment',
+        description: 'Deep Scan 优先权限',
+        fulfills: { kind: 'grant-module', key: 'deepScan' },
+      });
+      const flownBy = engine.state.ships.find((s) => s.id !== agentShipOf(engine, explorer))!;
+      issue(engine, { type: 'REFIT', targetId: base.id, moduleId: 'deepScan', remove: false }, flownBy.id);
+      for (let i = 0; i < 600; i++) {
+        engine.dispatchCommand({ type: 'pause', paused: false });
+        host.frame(engine.step());
+        if (agentById(engine, explorer.id).promises.at(-1)!.status === 'fulfilled') break;
+      }
+      expect(agentById(engine, explorer.id).promises.at(-1)!.status).toBe('fulfilled');
+      return { engine, explorerId: explorer.id };
+    };
+
+    const kept = await keptByRefit();
+    const forcedEngine = history('forced');
+    const keptReply = await replyAfter(kept.engine, kept.explorerId);
+    const forcedReply = await replyAfter(forcedEngine, agentByCareer(forcedEngine, 'explorer').id);
+
+    expect(keptReply).not.toBeNull();
+    expect(forcedReply).not.toBeNull();
+    // Same Agent, same question, same configuration — different answer, because the past differs.
+    expect(keptReply!.kind).not.toBe(forcedReply!.kind);
   });
 });
