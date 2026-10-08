@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "promptVersion": "agent-v1",
+  "note": "录制决策库：P1 Decision Runtime 的 fixture。键为 docs/lv3/01-mvp-scenario.md 的事件编号（EVT-07/EVT-09 带 variant）。数组顺序即 rule 顺序。这不是 MVP 剧情脚本——Runtime 不认识 scenario，测试把某条录制喂给 provider，Runtime 只负责校验与降级。",
+  "tokens": {
+    "#first:<prefix>": "AgentObservation.availableActions 中第一个以该前缀开头的 id",
+    "#team-accept:<career>": "team-accept:<该职业 Agent 的 id>",
+    "#team-decline:<career>": "team-decline:<该职业 Agent 的 id>",
+    "#agent:<career>": "该职业 Agent 的 id（用于 request.targetAgentId）"
+  },
+  "decisions": {
+    "EVT-01": {
+      "explorer": {
+        "intent": "respond",
+        "choice": "counteroffer",
+        "reason": "虫洞另一侧正合我的目标，但独自深入未知空域风险太高——我需要支援才愿意接。",
+        "say": "我可以接这个任务，但要深入未知区域，我需要 Tactical 护航。"
+      }
+    },
+    "EVT-02": {
+      "explorer": {
+        "intent": "request",
+        "reason": "我的好奇心推着我去，但船体只到六成，一个人进去回不来。",
+        "say": "任务我接。但我要 Noah 随行——那片空域上次有 Orion 活动，我一个人压不住。",
+        "request": { "type": "teammate", "targetAgentId": "#agent:tactical" }
+      }
+    },
+    "EVT-03": {
+      "tactical": {
+        "intent": "respond",
+        "choice": "#team-accept:explorer",
+        "reason": "风险可控，而且薇拉上次替我挡过一次，我信她的判断。",
+        "say": "我跟他一起去。有我在，他不会独自面对那种信号。"
+      }
+    },
+    "EVT-04": {
+      "logistics": {
+        "intent": "wait",
+        "reason": "现有余量够完成主任务，但不支持额外深入；现在提出比事后救援便宜。",
+        "say": "当前资源足够完成任务，但不建议额外深入未知区域。"
+      }
+    },
+    "EVT-05": {
+      "explorer": {
+        "intent": "act",
+        "choice": "#first:survey:",
+        "reason": "这个信号不在任何已知目录里。距离够近，值得靠近调查。",
+        "say": "我在虫洞另一侧发现了不明能量信号，先做近距调查。"
+      }
+    },
+    "EVT-06": {
+      "explorer": {
+        "intent": "request",
+        "reason": "失联探测船的线索还没断，现在返航等于放弃。",
+        "say": "再给我一点时间，我要把那条线索追到底。",
+        "request": { "type": "extension" }
+      },
+      "scientist": {
+        "intent": "request",
+        "reason": "异常数据只采到一半，现在离开就再也拿不到了。",
+        "say": "我需要研究权限，把这个异常弄明白再走。",
+        "request": { "type": "equipment" }
+      },
+      "tactical": {
+        "intent": "request",
+        "reason": "我陪他去，但不能没有撤退线——上次就是没有撤退线才出事。",
+        "say": "我可以随行，但你得先定一个撤退条件。",
+        "request": { "type": "teammate", "targetAgentId": "#agent:explorer" }
+      },
+      "logistics": {
+        "intent": "wait",
+        "reason": "船体已经不足，再往里走我们回不来。这件事没有值得冒的险。",
+        "say": "我建议先返航补给。现在继续，是在拿整支舰队赌。"
+      }
+    },
+    "EVT-07": {
+      "promise": {
+        "explorer": {
+          "intent": "respond",
+          "choice": "accept",
+          "reason": "他给了明确的交换条件，而且这次是我自己要去的。",
+          "say": "好，我接。任务完成之后我要那次 Deep Scan 权限。"
+        }
+      },
+      "override": {
+        "explorer": {
+          "intent": "respond",
+          "choice": "counteroffer",
+          "reason": "我的判断没有被采纳，但我仍然要留下记录：这是被命令执行的，不是我要去的。",
+          "say": "这是命令，我执行。但我不同意这个决定。"
+        }
+      }
+    },
+    "EVT-09": {
+      "promise-kept": {
+        "explorer": {
+          "intent": "respond",
+          "choice": "accept",
+          "reason": "上次他答应的事真的做到了。这个人说话算数，这次我信他。",
+          "say": "我接。上次的条件你兑现了，这次不用多说。"
+        }
+      },
+      "override": {
+        "explorer": {
+          "intent": "respond",
+          "choice": "counteroffer",
+          "reason": "上次被强制之后我就知道，在这个位置上我的判断不算数。那这次我至少要一个明确的撤退条件。",
+          "say": "我可以去，但这次我要先把撤退条件写清楚。"
+        }
+      }
+    }
+  },
+  "failures": {
+    "timeout": { "kind": "error", "error": "timeout" },
+    "http-error": { "kind": "error", "error": "http-error" },
+    "unavailable": { "kind": "error", "error": "unavailable" },
+    "invalid-json": { "kind": "text", "text": "{\"intent\": \"act\", \"reason\":" },
+    "schema-mismatch": {
+      "kind": "text",
+      "text": "{\"intent\":\"act\",\"reason\":\"忘了给 choiceId\",\"promptVersion\":\"agent-v1\",\"observationTick\":0,\"provider\":\"llm\"}"
+    },
+    "invalid-choice-id": {
+      "kind": "decision",
+      "decision": {
+        "intent": "act",
+        "choiceId": "explore:99/99",
+        "reason": "这个选项根本不存在。"
+      }
+    },
+    "inaccessible-target": {
+      "kind": "decision",
+      "decision": {
+        "intent": "request",
+        "reason": "我要一个看不见的同伴。",
+        "request": { "type": "teammate", "targetAgentId": "agent-999" }
+      }
+    },
+    "social-as-act": {
+      "kind": "decision",
+      "decision": { "intent": "act", "choiceId": "counteroffer", "reason": "把社交选项当成物理动作。" }
+    },
+    "throws": { "kind": "throw", "message": "socket hang up" }
+  }
+}
