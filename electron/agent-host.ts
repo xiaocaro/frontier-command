@@ -25,7 +25,7 @@ import type { AgentEvent, AgentTrigger, SimulationEvent, WorldState } from '../s
 import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
-import { createDeepSeekClient } from './agent/openai-compatible';
+import { createDeepSeekClient, deepSeekConfigFromEnv, describeDeepSeekConfig } from './agent/openai-compatible';
 import { DecisionRuntime, type ActionSubmitter, type DecisionTrace, type MessageSubmitter } from './agent/runtime';
 
 /** The ship an Agent commands, via the existing operator/assignment binding. */
@@ -179,7 +179,30 @@ export class AgentHost {
     // No key configured is the normal state of a checkout, and it must not mean "no Agents": an
     // offline client that always declines gives the runtime its deterministic path, so every Agent
     // still decides — just without a model (docs/lv3/06-deepseek-runtime-status.md §5.5).
+    const config = deepSeekConfigFromEnv(env);
     const client = createDeepSeekClient(env) ?? new MockModelClient({ rules: [] });
+    // Say which mode this run is in, out loud, once.
+    //
+    // Both modes produce valid decisions and are indistinguishable from inside the game — which is
+    // how a whole stage went by with the model contributing nothing while every test stayed green
+    // (`KNOWN_ISSUES.md` `C-33`). A startup line is the cheapest way to make the state visible
+    // instead of inferred. `describeDeepSeekConfig` reduces the key to a boolean, so this cannot leak
+    // it even by accident (`02-llm-boundary.md` §7).
+    //
+    // **`console.error`, not `console.log`** — measured, not stylistic. On Windows the Electron main
+    // process is a GUI-subsystem binary: its stdout is not delivered to the launching console, so a
+    // `console.log` here is written and never seen. stderr is. Both lines below were verified by
+    // launching the app and reading the terminal.
+    //
+    // And **not** `engine.log`: the world log lives in `WorldState`, and making persisted state depend
+    // on whether the environment happens to hold an API key is precisely the environment-dependence
+    // the same-seed replay assertion exists to keep out. (It would also buy nothing — `snapshot().logs`
+    // is carried to the renderer but no component displays it.)
+    console.error(
+      config
+        ? '[agent] 模型已配置 — ' + JSON.stringify(describeDeepSeekConfig(config))
+        : '[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型',
+    );
     const runtime = new DecisionRuntime({
       client,
       prompts: loadPromptTemplates(options.root),

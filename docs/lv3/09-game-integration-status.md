@@ -22,6 +22,7 @@
 | `npm run test:e2e`（`lcars.spec.ts`） | **未运行** —— 见 §6.2b。**这是本次最大的未验证风险**：新增面板可能移动 LCARS 布局 |
 | `npm run test:e2e`（全套） | **未重跑**（上一次全套是 P3 结束时：35 / 37 / 14.7m） |
 | `npm run test:package` | **未运行** |
+| **实际启动应用**（无头、读终端） | **PASS** —— 无 key 时终端出现 `[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型`；带 key 时出现 `[agent] 模型已配置 — {...hasApiKey:true}`，且**输出中不含密钥**（实测 0 处匹配）。顺带确认：Windows 上主进程的 `console.log` **不送到终端**，`console.error` 会——所以那行用 stderr |
 
 改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
 **本阶段新增 30 个通过用例**，全部落在 `tests/agent/vertical-slice.test.ts`（另加 1 个 E2E spec）。

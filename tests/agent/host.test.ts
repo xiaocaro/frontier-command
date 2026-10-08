@@ -13,7 +13,7 @@
  * Driven against a real `SimulationEngine`: the addressing is the engine's own binding rules, so a
  * hand-built fake would be testing the fake.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { AgentHost, agentsForTrigger, agentTriggersOf, schedulerWorld } from '../../electron/agent-host';
 import { quietEngine, issue } from '../helpers';
 import { makeEnemy } from '../../src/engine/data';
@@ -165,6 +165,35 @@ describe('the read window the scheduler is handed', () => {
 });
 
 describe('assembly puts the right provider behind the runtime', () => {
+  it('announces which provider mode it is in, and never prints the key', () => {
+    // Both modes produce valid decisions and look identical from inside the game, which is how a
+    // stage went by with the model contributing nothing while every test stayed green (C-33).
+    // `console.error` because stdout from an Electron main process is not delivered to the launching
+    // console on Windows — see the note at the emit site.
+    const lines: string[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      lines.push(args.map(String).join(' '));
+    });
+    const SECRET = 'sk-live-SECRET-abcdef';
+    try {
+      new AgentHost(quietEngine(), { root: REPO_ROOT, env: {} });
+      expect(lines.join('\n')).toContain('确定性模式');
+
+      lines.length = 0;
+      new AgentHost(quietEngine(), {
+        root: REPO_ROOT,
+        env: { DEEPSEEK_API_KEY: SECRET, DEEPSEEK_MODEL: 'deepseek-chat' },
+      });
+      const said = lines.join('\n');
+      expect(said).toContain('模型已配置');
+      expect(said).toContain('deepseek-chat');
+      // `describeDeepSeekConfig` reduces the key to a boolean, so a startup line cannot leak it.
+      expect(said).not.toContain(SECRET);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('runs deterministically with no key, but still decides', async () => {
     const engine = quietEngine();
     const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });

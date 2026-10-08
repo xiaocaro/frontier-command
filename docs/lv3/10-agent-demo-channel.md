@@ -74,6 +74,29 @@ override 另给一个 `directiveActionType` 选择器；一个 **`承诺 Deep Sc
 
 ---
 
+### 2.4 启动时说明自己在哪种模式
+
+`AgentHost` 构造时往 **stderr** 打一行：
+
+```text
+[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型
+[agent] 模型已配置 — {"provider":"deepseek","baseUrl":"https://api.deepseek.com","model":"deepseek-chat",…,"hasApiKey":true}
+```
+
+两个理由，都是实测来的：
+
+- **两种模式在游戏里完全一样**——都产出合法决策、都让 Agent 应答、都写世界状态。没人分得清自己在看哪一个，
+  而这正是 `C-33` 那一整段"模型贡献为零、测试全绿"能发生的原因。启动时说一句，是最便宜的可观测性。
+- **用 `console.error` 而不是 `console.log`**：Windows 上 Electron 主进程是 GUI 子系统程序，
+  **stdout 不送到启动它的终端**，`console.log` 写了也没人看见；stderr 会。两支都实际启动应用读过终端确认过。
+
+**不写 `engine.log`**：world log 属于 `WorldState`，让持久化状态取决于"环境里有没有 key"正是同 seed 重放断言
+要排除的环境依赖。（而且写了也没用——`snapshot().logs` 虽然被送到渲染层，**但没有任何组件显示它**。）
+
+**key 只以布尔出现**（`describeDeepSeekConfig` 的 `hasApiKey`），已实测输出中不含密钥。
+
+---
+
 ## 3. 边界与红线（本次显式改动）
 
 `tests/agent/boundary.test.ts` 里那条断言原为
