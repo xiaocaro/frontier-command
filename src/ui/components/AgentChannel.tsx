@@ -1,0 +1,213 @@
+/**
+ * The Admiral's channel to the Agents (docs/lv3/10-agent-demo-channel.md).
+ *
+ * Two things this exists for, both of which were impossible before it:
+ *
+ *  1. **Sending.** Every command-sending control in the console issues an `issueDirective`. There was
+ *     no way for a player to say anything *to an Agent* — no offer, no negotiation, no promise, no
+ *     Override — so the MVP's central loop could only be driven from the test harness.
+ *  2. **Seeing.** `snapshot()` carries no Agent state, so trust, morale, goals, promises and the
+ *     memory tags that distinguish Path A from Path B were invisible. The MVP asks "did my earlier
+ *     decision change how much he trusts me?" and there was nowhere to look.
+ *
+ * **Read-only, deliberately.** Nothing here writes: every action is a `Command` the engine validates
+ * (CLAUDE.md §2.1). The roster is a snapshot from `agents:get`, not a handle on the world.
+ *
+ * Collapsed by default. The console's geometry is asserted at six window sizes by
+ * `tests/e2e/lcars.spec.ts`, so a panel that is only needed while demonstrating should cost about one
+ * line when it is not.
+ */
+import { useCallback, useEffect, useState } from 'react';
+import type { RosterAgent } from '../../engine/agent/roster';
+import type { CommandSender } from '../types';
+import { LcarsButton, LcarsTextBar } from './Lcars';
+
+const CAREER_LABELS: Record<string, string> = {
+  explorer: '探索',
+  scientist: '科学',
+  tactical: '战术',
+  logistics: '后勤',
+};
+
+/** The message kinds the MVP needs. `ENCOURAGE` is deferred (`02-mvp-traceability.md` §1). */
+const KINDS = ['command', 'ask', 'negotiate', 'override'] as const;
+type Kind = (typeof KINDS)[number];
+
+/** Only `override` needs a payload — the action the Admiral is forcing. */
+const OVERRIDE_ACTIONS = ['TRANSIT', 'SURVEY', 'EXPLORE', 'RETURN', 'ESCORT'] as const;
+
+const PROMISE_TEXT = '完成这次任务后，我给你一次 Deep Scan 优先权限。';
+
+export function AgentChannel({ command }: { command: CommandSender }) {
+  const [open, setOpen] = useState(false);
+  const [roster, setRoster] = useState<RosterAgent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [target, setTarget] = useState('');
+  const [kind, setKind] = useState<Kind>('command');
+  const [overrideAction, setOverrideAction] = useState<string>('TRANSIT');
+  const [text, setText] = useState('穿越虫洞，寻找失联探测船。');
+
+  const refresh = useCallback(async () => {
+    const api = window.frontier?.agents;
+    if (!api) {
+      setError('本构建没有 agents 通道（preload 未更新？）');
+      return;
+    }
+    try {
+      const next = await api();
+      setRoster(next);
+      setTarget((current) => current || (next[0]?.id ?? ''));
+      setError(null);
+    } catch (failure) {
+      setError(String(failure));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) void refresh();
+  }, [open, refresh]);
+
+  const send = async () => {
+    if (!target) return;
+    const result = await command(
+      {
+        type: 'agentMessage',
+        from: 'admiral',
+        to: target,
+        kind,
+        text,
+        payload: kind === 'override' ? { directiveActionType: overrideAction } : null,
+      },
+      true,
+    );
+    setNote(result.ok ? '已发出 · ' + kind : '被拒：' + result.reason);
+    await refresh();
+  };
+
+  /**
+   * A promise is **two** commands, and the id in the middle is the reason.
+   *
+   * `agentMessage{kind:'promise'}` carries a bare `promiseId` and has nowhere to put the `fulfills`
+   * condition, so it cannot create the promise — `agentEvent{promise-made}` does, and the engine mints
+   * the id. So: create, read the id back from the roster, then tell the Agent. If the second step
+   * fails the promise still exists, and the panel says so rather than pretending otherwise.
+   */
+  const promiseDeepScan = async () => {
+    if (!target) return;
+    const made = await command(
+      {
+        type: 'agentEvent',
+        event: {
+          kind: 'promise-made',
+          toAgentId: target,
+          promiseType: 'equipment',
+          description: 'Deep Scan 优先权限',
+          fulfills: { kind: 'grant-module', key: 'deepScan' },
+        },
+      },
+      true,
+    );
+    if (!made.ok) {
+      setNote('承诺创建被拒：' + made.reason);
+      return;
+    }
+    const after = await window.frontier.agents();
+    const promise = after.find((agent) => agent.id === target)?.promises.at(-1);
+    if (!promise) {
+      setNote('承诺已创建，但读不回 id —— 未向 Agent 发出通知');
+      await refresh();
+      return;
+    }
+    const told = await command(
+      { type: 'agentMessage', from: 'admiral', to: target, kind: 'promise', text: PROMISE_TEXT, payload: { promiseId: promise.id } },
+      true,
+    );
+    setNote(told.ok ? '承诺已创建，并已通知' : '承诺已创建，但通知被拒：' + told.reason);
+    await refresh();
+  };
+
+  return (
+    <details className="agent-channel" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>
+        AGENT CHANNEL · 舰桥通讯
+        {roster.length > 0 && <span className="agent-count">{roster.length}</span>}
+      </summary>
+      <div className="agent-channel-body">
+        {error && <p className="muted">{error}</p>}
+        {!error && roster.length === 0 && <p className="muted">尚未读取</p>}
+        {roster.map((agent) => (
+          <div key={agent.id} className={'agent-row' + (agent.id === target ? ' is-selected' : '')}>
+            <LcarsButton
+              shape="text"
+              sound="navigation"
+              className="agent-pick"
+              aria-pressed={agent.id === target}
+              onClick={() => setTarget(agent.id)}
+            >
+              <b>{agent.name}</b>
+              <span>{CAREER_LABELS[agent.career] ?? agent.career}</span>
+            </LcarsButton>
+            <span className="agent-stats">
+              信任 <b>{Math.round(agent.state.trustInAdmiral)}</b> · 士气{' '}
+              <b>{Math.round(agent.state.morale)}</b> · 目标 <b>{Math.round(agent.goal.progress)}</b>
+              {agent.promises.some((p) => p.status === 'pending') && <em> · 有未兑现承诺</em>}
+            </span>
+            {/* Tags only — the roster view withholds memory text on purpose (N-7). The tag is what
+                distinguishes a kept promise from an Override, which is the whole point of showing it. */}
+            <span className="agent-memory">
+              {agent.memories
+                .flatMap((memory) => memory.tags)
+                .slice(0, 4)
+                .join(' · ') || '（无标注记忆）'}
+            </span>
+          </div>
+        ))}
+
+        <div className="agent-compose">
+          <label>
+            类型
+            <select value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
+              {KINDS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          {kind === 'override' && (
+            <label>
+              强制执行
+              <select value={overrideAction} onChange={(e) => setOverrideAction(e.target.value)}>
+                {OVERRIDE_ACTIONS.map((action) => (
+                  <option key={action} value={action}>
+                    {action}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <input
+            aria-label="发往 Agent 的消息"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={800}
+          />
+          <LcarsButton sound="navigation" disabled={!target} onClick={() => void send()}>
+            发送
+          </LcarsButton>
+          <LcarsButton tone="secondary" sound="navigation" disabled={!target} onClick={() => void promiseDeepScan()}>
+            承诺 Deep Scan 优先权限
+          </LcarsButton>
+          <LcarsButton tone="secondary" sound="navigation" onClick={() => void refresh()}>
+            刷新
+          </LcarsButton>
+        </div>
+        {note && <p className="muted">{note}</p>}
+        <LcarsTextBar className="agent-hint">
+          只读视图 · 一切变更仍经引擎校验；记忆只显示标注（tag），不显示文本
+        </LcarsTextBar>
+      </div>
+    </details>
+  );
+}

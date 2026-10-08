@@ -6,6 +6,7 @@ import { createWorld } from '../src/engine/data';
 import { HOST_FRAME_MS } from '../src/engine/clock';
 import { SaveStore } from './persistence';
 import { AgentHost } from './agent-host';
+import { agentRosterView } from '../src/engine/agent/roster';
 import { z } from 'zod';
 
 protocol.registerSchemesAsPrivileged([
@@ -86,6 +87,23 @@ app.whenReady().then(async () => {
     },
   });
   window.removeMenu();
+  /**
+   * A real debug control.
+   *
+   * The playbook let Lv3 skip a UI on the grounds that "the MVP can be validated through the existing
+   * UI or debug controls" — but `window.frontier` was unreachable from a running app (no menu, no
+   * shortcut, `sandbox: true`), so that exemption did not actually hold for a human. This makes the
+   * debug control real: the console opens, and `window.frontier.command({ type: 'agentMessage', … })`
+   * works in it.
+   */
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    const toggle =
+      input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i');
+    if (!toggle) return;
+    event.preventDefault();
+    window?.webContents.toggleDevTools();
+  });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => {
     if (
@@ -113,6 +131,19 @@ app.whenReady().then(async () => {
       saveBlocked,
       timeline: store.status(engine.state.tick),
     };
+  });
+  /**
+   * The read-only Agent roster (docs/lv3/10-agent-demo-channel.md).
+   *
+   * A **separate channel**, deliberately, rather than adding `agents` to `snapshot()`: the snapshot is
+   * cropped by `projection.ts` and guarded by `tests/recon.test.ts`, and widening it would push Agent
+   * memory text toward the renderer — the leak vector `KNOWN_ISSUES.md` `N-7` warns about. A second
+   * channel with its own explicit crop (`src/engine/agent/roster.ts`) is easier to audit than a bigger
+   * first one. Read-only: the renderer still changes nothing except through `world:command`.
+   */
+  ipcMain.handle('agents:get', (event) => {
+    trusted(event);
+    return agentRosterView(engine.state);
   });
   ipcMain.handle('world:command', (event, command: unknown) => {
     trusted(event);

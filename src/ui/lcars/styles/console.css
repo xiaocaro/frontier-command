@@ -151,6 +151,70 @@
   overflow: auto;
   flex: 1;
 }
+/* Admiral → Agent channel (docs/lv3/10-agent-demo-channel.md). Lives inside `.communications` and is
+   collapsed by default: the console's geometry is asserted at six window sizes, so a panel only
+   needed while demonstrating should cost about one line when it is not. */
+.agent-channel {
+  flex: none;
+  margin-top: 0.3em;
+  color: var(--almond-creme);
+  font-size: 0.9em;
+}
+.agent-channel > summary {
+  cursor: pointer;
+  color: var(--barley);
+  letter-spacing: 0.08em;
+  padding: 0.2em 0;
+}
+.agent-channel .agent-count {
+  margin-left: 0.4em;
+  color: var(--muted);
+}
+.agent-channel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  max-height: 40vh;
+  overflow: auto;
+  padding: 0.3em 0;
+}
+.agent-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  padding: 0.2em 0;
+}
+.agent-row.is-selected {
+  border-left: 3px solid var(--orange);
+  padding-left: 0.4em;
+}
+.agent-row .agent-stats,
+.agent-row .agent-memory {
+  color: var(--muted);
+}
+.agent-memory {
+  font-size: 0.85em;
+}
+.agent-compose {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35em;
+}
+.agent-compose label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  color: var(--muted);
+}
+.agent-compose input {
+  flex: 1;
+  min-width: 8em;
+}
+.agent-channel .agent-hint {
+  color: var(--muted);
+  font-size: 0.8em;
+}
 .comms-item {
   display: flex;
   min-width: 0;

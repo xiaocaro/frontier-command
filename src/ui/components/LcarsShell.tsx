@@ -6,6 +6,7 @@ import { gameCalendar } from '../../engine/clock';
 import { ACTION_LABELS } from '../format';
 import { actionProgress } from '../format';
 import { LcarsBar, LcarsButton, LcarsElbow, LcarsTextBar } from './Lcars';
+import { AgentChannel } from './AgentChannel';
 import { DataCascade } from '../lcars/DataCascade';
 import { usePanelFocus } from '../lcars/usePanelFocus';
 export const PAGES: Page[] = [
@@ -179,6 +180,7 @@ export function LcarsShell({
                   <p className="muted">CHANNEL CLEAR · 暂无待处理通信</p>
                 )}
               </div>
+              <AgentChannel command={command} />
             </section>
             <section className="clock-panel" aria-label="Simulation controls">
               <strong data-testid="game-clock">

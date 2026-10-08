@@ -164,10 +164,28 @@ describe('B-11 only the named provider module may touch the network', () => {
     expect(code).toMatch(/options\.fetch\s*\?\?/);
   });
 
-  it('leaves the renderer surface untouched: no new IPC channel', () => {
+  it('keeps the renderer surface to exactly the channels the design names', () => {
+    // This began as "the renderer surface is untouched: no new IPC channel", from the era when P3's
+    // plan was zero UI and zero IPC. `docs/lv3/10-agent-demo-channel.md` changed that on purpose: the
+    // MVP could not be demonstrated by a human at all, because nothing in the UI could speak to an
+    // Agent and no Agent state reached the renderer. The rule is **inverted rather than dropped**,
+    // the same way this file inverted B-11 for the scheduler: naming every channel makes the surface
+    // auditable, which the old "contains no agent words" check never was.
     const preload = read('electron/preload.ts');
-    expect(preload).not.toMatch(/agent|model|llm|decision/i);
-    expect(preload.match(/ipcRenderer\.invoke\(/g) ?? []).toHaveLength(5);
+    const channels = [...preload.matchAll(/ipcRenderer\.invoke\(\s*'([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    expect(channels.sort()).toEqual([
+      'agents:get',
+      'display:zoom',
+      'world:command',
+      'world:get',
+      'world:save',
+      'world:timeline',
+    ]);
+    // The exemption is for one read-only roster channel. Nothing here may reach a model, and the
+    // renderer may not learn how a decision is made.
+    expect(preload).not.toMatch(/model|llm|prompt/i);
   });
 
   it('wires the Agent loop into the host frame — guarded, and never awaited', () => {

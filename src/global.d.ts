@@ -6,6 +6,7 @@ import type {
   PublicSimulationEvent,
 } from './engine/types';
 import type { TimelineStatus } from './engine/timeline';
+import type { RosterAgent } from './engine/agent/roster';
 declare global {
   interface Window {
     frontier: {
@@ -15,6 +16,8 @@ declare global {
         saveBlocked: boolean;
         timeline: TimelineStatus;
       }>;
+      /** Read-only Agent roster. The only channel that carries Agent state to the renderer. */
+      agents(): Promise<RosterAgent[]>;
       command(command: Command | SessionCommand): Promise<CommandResult>;
       save(): Promise<CommandResult>;
       timeline(): Promise<TimelineStatus>;

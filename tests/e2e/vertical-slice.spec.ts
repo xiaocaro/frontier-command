@@ -122,3 +122,32 @@ test('the Admiral offers a mission and the Agent answers it, in the real app', a
   expect(after.status).toBe('active');
   expect(after.tick).toBeGreaterThan(0);
 });
+
+test('the Agent channel shows the roster, and a message sent from it reaches the engine', async () => {
+  // Until this panel existed, none of the above could be done by a human: nothing in the console could
+  // speak to an Agent, and no Agent state reached the renderer. This is the check that the door is
+  // real — the roster renders through `agents:get`, and the composer's send lands in the same place
+  // the harness's does.
+  test.setTimeout(120_000);
+  const { page } = await launch();
+
+  await page.locator('.agent-channel > summary').click();
+
+  // The roster: four Agents, with the numbers the MVP asks the player to watch.
+  await expect(page.locator('.agent-row')).toHaveCount(4);
+  await expect(page.locator('.agent-row').first()).toContainText('信任');
+  // Memory tags only — the crop withholds text on purpose (`KNOWN_ISSUES.md` N-7).
+  await expect(page.locator('.agent-channel')).not.toContainText('我完成了');
+
+  // Send from the panel. The default kind is `command`, i.e. the Admiral offering a task.
+  await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
+  await page.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
+  await expect(page.locator('.agent-channel')).toContainText('已发出');
+
+  // …and it really reached the engine: the offer is mirrored into the normal Communications feed.
+  await expect(page.locator('.communications')).toContainText('→');
+
+  // The promise button is the two-command path (create, then notify). It must not fail silently.
+  await page.locator('.agent-channel').getByRole('button', { name: '承诺 Deep Scan 优先权限' }).click();
+  await expect(page.locator('.agent-channel')).toContainText('承诺已创建');
+});
