@@ -26,7 +26,7 @@ import {
   overrideMemory,
 } from './agent/interactions';
 import { remember } from './agent/memory';
-import { settleAgentEvent } from './agent/events';
+import { settleAgentEvent, agentOfShip } from './agent/events';
 import { actionSchema, commandSchema } from './commands';
 import { emptyStock } from './data';
 import { capabilities, cargoUsed } from './capabilities';
@@ -255,14 +255,31 @@ export function validate(
   }
   if (c.type === 'agentEvent') {
     // Settlement facts are engine-originated, but they arrive through the same `dispatchCommand` door
-    // as everything else (CLAUDE.md §2.1). Bounded here to facts this world can actually settle: a
-    // ship that exists and an Agent standing behind it. Anything else is refused rather than ignored.
-    if (!w.ships.some((s) => s.id === c.event.shipId)) return no('结算目标舰船不存在');
-    const assignment = w.assignments.find((a) => a.shipId === c.event.shipId);
-    const operator = w.operators.find((o) => o.id === assignment?.operatorId);
-    if (!operator?.agentId || !w.agents.some((a) => a.id === operator.agentId))
-      return no('该舰船没有对应的 Agent');
-    return ok();
+    // as everything else (CLAUDE.md §2.1). Each kind is bounded to facts this world can actually
+    // settle; anything else is refused rather than silently ignored.
+    const event = c.event;
+    switch (event.kind) {
+      case 'mission-settled':
+      case 'discovery':
+        // Addressed by ship — and a ship only settles an Agent if one stands behind it.
+        if (!w.ships.some((s) => s.id === event.shipId)) return no('结算目标舰船不存在');
+        if (!agentOfShip(w, event.shipId)) return no('该舰船没有对应的 Agent');
+        return ok();
+      case 'promise-made':
+        return w.agents.some((a) => a.id === event.toAgentId)
+          ? ok()
+          : no('承诺对象不是有效的 Agent');
+      case 'team-resolved':
+        if (event.aAgentId === event.bAgentId) return no('不能与自己组队');
+        return w.agents.some((a) => a.id === event.aAgentId) &&
+          w.agents.some((a) => a.id === event.bAgentId)
+          ? ok()
+          : no('组队双方不是有效的 Agent');
+      case 'module-installed':
+        // World-scoped: whoever holds the matching pending promise is settled, and it is legitimate
+        // for that to be nobody.
+        return ok();
+    }
   }
   const frontierResult = validateFrontierCommand(this, c);
   if (frontierResult) return frontierResult;
@@ -653,6 +670,19 @@ export function dispatchCommand(
           effects,
         },
       ]);
+      // A team reply settles an Agent-to-Agent pairing: both sides' regard moves, in one write
+      // (docs/lv3/01-mvp-scenario.md EVT-03). Emitted here because this is where the engine already
+      // decided what the answer was — the settlement planner must not re-derive it from the payload.
+      if (c.kind === 'team-reply')
+        this.pendingEvents.push({
+          type: 'agentEvent',
+          event: {
+            kind: 'team-resolved',
+            aAgentId: c.from,
+            bAgentId: target.id,
+            accepted: outcome === 'accepted',
+          },
+        });
       if (c.kind === 'override')
         w.agents[index] = {
           ...w.agents[index],

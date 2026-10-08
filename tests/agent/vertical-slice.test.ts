@@ -12,10 +12,19 @@
  */
 import { describe, it, expect } from 'vitest';
 import { quietEngine, issue } from '../helpers';
-import type { Agent, AgentDecision, AgentObservation, SimulationEvent } from '../../src/engine/types';
+import type {
+  Agent,
+  AgentActionCandidate,
+  AgentDecision,
+  AgentEvent,
+  AgentObservation,
+  SimulationEvent,
+} from '../../src/engine/types';
 import { SimulationEngine } from '../../src/engine/engine';
 import { AGENT_PROMPT_VERSION } from '../../src/engine/agent/decision';
+import { decisionScore } from '../../src/engine/agent/score';
 import { MockModelClient } from '../../electron/agent/mock-client';
+import { scoringAgent } from '../../electron/agent/runtime';
 import {
   agentByCareer,
   agentRuntime,
@@ -30,6 +39,20 @@ import {
 
 /** A client that only ever declines — `applyDecision` never consults it. */
 const silent = () => new MockModelClient({ rules: [] });
+
+/** Applies one settlement fact through the engine's own door, and insists it was accepted. */
+function settleFact(engine: SimulationEngine, event: AgentEvent) {
+  const result = engine.dispatchCommand({ type: 'agentEvent', event });
+  if (!result.ok) throw new Error('结算被拒：' + result.reason);
+  return result;
+}
+
+/** The `accept` option — the social candidate EVT-09 is really about. */
+function candidateIn(observation: AgentObservation): AgentActionCandidate {
+  const candidate = observation.availableActions.find((option) => option.id === 'accept');
+  if (!candidate) throw new Error('菜单里没有 accept 选项');
+  return candidate;
+}
 
 function decisionFor(
   observation: AgentObservation,
@@ -301,5 +324,194 @@ describe('P3-01/P3-02 the Agent answers the Admiral (EVT-01, EVT-02)', () => {
       applyFor(engine, observation, decisionFor(observation, { intent: 'respond', choiceId: 'team-accept:' })),
     ).toEqual({ status: 'not-an-action', intent: 'respond' });
     expect(engine.state.agentMessages).toHaveLength(before);
+  });
+});
+
+describe('P3-03/P3-05/P3-08 settlement reaches state, memory, goals and relationships', () => {
+  it('a promise is created pending, and a real module install fulfils it', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    const before = agentById(engine, agent.id);
+
+    settleFact(engine, {
+      kind: 'promise-made',
+      toAgentId: agent.id,
+      promiseType: 'equipment',
+      description: 'Deep Scan 优先权限',
+      fulfills: { kind: 'grant-module', key: 'deepScan' },
+    });
+    const pending = agentById(engine, agent.id).promises.at(-1)!;
+    expect(pending).toMatchObject({ status: 'pending', resolvedAt: null, to: agent.id });
+    expect(pending.fulfills).toEqual({ kind: 'grant-module', key: 'deepScan' });
+
+    settleFact(engine, { kind: 'module-installed', moduleId: 'deepScan' });
+
+    const after = agentById(engine, agent.id);
+    expect(after.promises.at(-1)).toMatchObject({ status: 'fulfilled' });
+    expect(after.promises.at(-1)!.resolvedAt).not.toBeNull();
+    // PROMISE_KEPT_EFFECT: trust +10, loyalty +5, morale +10.
+    expect(after.state.trustInAdmiral).toBeGreaterThan(before.state.trustInAdmiral);
+    expect(after.state.morale).toBeGreaterThan(before.state.morale);
+    // Episodic, tagged — that is the carrier `memoryContribution` scores, so the kept promise
+    // reaches the *next* decision rather than only the audit trail.
+    expect(memoryTags(after).at(-1)).toEqual(['promise-kept']);
+  });
+
+  it('an installed module only settles a promise it actually matches', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    settleFact(engine, {
+      kind: 'promise-made',
+      toAgentId: agent.id,
+      promiseType: 'equipment',
+      description: 'Deep Scan 优先权限',
+      fulfills: { kind: 'grant-module', key: 'deepScan' },
+    });
+
+    settleFact(engine, { kind: 'module-installed', moduleId: 'expandedCargo' });
+    expect(agentById(engine, agent.id).promises.at(-1)!.status).toBe('pending');
+  });
+
+  it('moves both sides of a team-up, and both sides of a refusal', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    const tactical = agentByCareer(engine, 'tactical');
+    const regard = (from: string, to: string) =>
+      agentById(engine, from).relationships.find((r) => r.targetAgentId === to)!;
+
+    expect(regard(explorer.id, tactical.id).value).toBe(0);
+
+    settleFact(engine, {
+      kind: 'team-resolved',
+      aAgentId: explorer.id,
+      bAgentId: tactical.id,
+      accepted: true,
+    });
+    // `teamUp` returns both lists together, so "A changed but B did not" cannot happen.
+    expect(regard(explorer.id, tactical.id).value).toBe(10);
+    expect(regard(tactical.id, explorer.id).value).toBe(10);
+
+    settleFact(engine, {
+      kind: 'team-resolved',
+      aAgentId: explorer.id,
+      bAgentId: tactical.id,
+      accepted: false,
+    });
+    expect(regard(explorer.id, tactical.id).value).toBe(0);
+    expect(regard(tactical.id, explorer.id).value).toBe(0);
+  });
+
+  it('a discovery is remembered once and moves the goal, however often it is reported', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    const shipId = agentShipOf(engine, agent);
+    const fact = { kind: 'discovery', shipId, bodyId: 'body-anomaly-1' } as const;
+
+    settleFact(engine, fact);
+    const once = agentById(engine, agent.id);
+    expect(once.goal.progress).toBeGreaterThan(0);
+    expect(once.goal.progress).toBe(once.state.goalProgress);
+    expect(memoryTags(once)).toEqual([['discovery']]);
+
+    // Re-surveying the same anomaly must not farm goal progress.
+    settleFact(engine, fact);
+    const twice = agentById(engine, agent.id);
+    expect(twice.goal.progress).toBe(once.goal.progress);
+    expect(memoryTags(twice)).toEqual([['discovery']]);
+  });
+});
+
+describe('P3-09 the closed loop (EVT-09, I-11)', () => {
+  /** The same world, with only the Admiral's past behaviour differing. */
+  const history = (kind: 'kept' | 'forced') => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    if (kind === 'kept') {
+      settleFact(engine, {
+        kind: 'promise-made',
+        toAgentId: explorer.id,
+        promiseType: 'equipment',
+        description: 'Deep Scan 优先权限',
+        fulfills: { kind: 'grant-module', key: 'deepScan' },
+      });
+      settleFact(engine, { kind: 'module-installed', moduleId: 'deepScan' });
+    } else {
+      engine.dispatchCommand({
+        type: 'agentMessage',
+        from: 'admiral',
+        to: explorer.id,
+        kind: 'override',
+        text: '这是命令，继续执行。',
+        payload: { directiveActionType: 'RETURN' },
+      });
+    }
+    offerMission(engine, explorer.id, '又出现一个高风险调查机会，你去不去？');
+    return engine;
+  };
+
+  const answerAfter = async (engine: SimulationEngine, threshold: number) => {
+    const explorer = agentByCareer(engine, 'explorer');
+    const observation = observationFor(engine, explorer.id);
+    const client = new MockModelClient({
+      rules: [
+        {
+          label: '信任高：接受',
+          match: (o) => o.self.state.trustInAdmiral >= threshold,
+          answer: { kind: 'decision', decision: { intent: 'respond', choiceId: 'accept', reason: '信任 Admiral' } },
+        },
+        {
+          label: '信任低：反报价',
+          match: (o) => o.self.state.trustInAdmiral < threshold,
+          answer: {
+            kind: 'decision',
+            decision: {
+              intent: 'respond',
+              choiceId: 'counteroffer',
+              reason: '需要额外保障',
+              request: { type: 'teammate' },
+            },
+          },
+        },
+      ],
+    });
+    const outcome = await agentRuntime(client).requestDecision(observation);
+    if (outcome.status !== 'decided') throw new Error('决策被丢弃：' + outcome.error);
+    return outcome.decision;
+  };
+
+  it('the same Agent decides differently after a kept promise than after an Override', async () => {
+    const kept = history('kept');
+    const forced = history('forced');
+    const keptAgent = agentById(kept, agentByCareer(kept, 'explorer').id);
+    const forcedAgent = agentById(forced, agentByCareer(forced, 'explorer').id);
+
+    // The past actually moved the state, and in opposite directions.
+    expect(keptAgent.state.trustInAdmiral).toBeGreaterThan(forcedAgent.state.trustInAdmiral);
+    expect(memoryTags(keptAgent).at(-1)).toEqual(['promise-kept']);
+    expect(memoryTags(forcedAgent).at(-1)).toEqual(['admiral-override']);
+
+    const threshold = (keptAgent.state.trustInAdmiral + forcedAgent.state.trustInAdmiral) / 2;
+    const keptAnswer = await answerAfter(kept, threshold);
+    const forcedAnswer = await answerAfter(forced, threshold);
+
+    // Both halves of the acceptance criterion, in one test: the state differs *and* the decision does.
+    expect(keptAnswer.choiceId).toBe('accept');
+    expect(forcedAnswer.choiceId).toBe('counteroffer');
+  });
+
+  it('the deterministic score separates the two histories without any provider', () => {
+    // The same claim with the model removed: the settled state is enough for the *score* to differ in
+    // the right direction, which is what Agent.md §50 asks for even offline.
+    const kept = history('kept');
+    const forced = history('forced');
+    const scored = (engine: SimulationEngine) => {
+      const explorer = agentByCareer(engine, 'explorer');
+      const observation = observationFor(engine, explorer.id);
+      const candidate = candidateIn(observation);
+      return decisionScore(scoringAgent(observation), observation, candidate);
+    };
+    expect(scored(kept).recentMemoryScore).toBeGreaterThan(0);
+    expect(scored(forced).recentMemoryScore).toBeLessThan(0);
+    expect(scored(kept).score).toBeGreaterThan(scored(forced).score);
   });
 });

@@ -151,16 +151,28 @@ export type AgentMessageKind = z.infer<typeof agentMessageKindSchema>;
 export type AgentRequestType = z.infer<typeof agentRequestTypeSchema>;
 export type MessagePayload = z.infer<typeof messagePayloadSchema>;
 /**
+ * Lv3 promise vocabulary. Declared here, like the message payloads above, because `agentEventSchema`
+ * needs it and `src/engine/agent/schemas.ts` imports **from** this module — the dependency only ever
+ * runs one way, which is what keeps `commandSchema` free of an evaluation-order cycle.
+ * `src/engine/agent/schemas.ts` re-exports these, so the domain still owns their meaning.
+ */
+export const promiseTypeSchema = z.enum(['reward', 'equipment', 'research', 'leadership', 'rest']);
+export const promiseFulfillmentSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('grant-module'), key: moduleSchema }).strict(),
+  z.object({ kind: z.literal('grant-upgrade'), key: upgradeSchema }).strict(),
+  z.object({ kind: z.literal('grant-rest') }).strict(),
+  z.object({ kind: z.literal('grant-credits'), amount: z.number().finite().min(0) }).strict(),
+]);
+export type PromiseType = z.infer<typeof promiseTypeSchema>;
+export type PromiseFulfillment = z.infer<typeof promiseFulfillmentSchema>;
+
+/**
  * Lv3 settlement events: the **facts** an engine branch reports so that Agent state, memory, goals,
  * relationships and promises can be settled from them (docs/lv3/09-game-integration-status.md).
  *
  * An event carries what happened — "this directive ended", "this module was installed" — and never a
  * precomputed number. Every magnitude stays in `src/engine/agent/**`, so there is one source of truth
  * and the change actually applied can be recorded on `AgentInteraction.effects`.
- *
- * Declared here rather than in `src/engine/agent/` for the same evaluation-order reason as the
- * payloads above: `agentEventSchema` is a member of `commandSchema`, and the agent layer imports
- * from this module — not the other way round.
  */
 export const agentEventSchema = z.discriminatedUnion('kind', [
   z
@@ -178,6 +190,38 @@ export const agentEventSchema = z.discriminatedUnion('kind', [
       outcome: z.enum(['success', 'failure']),
     })
     .strict(),
+  /**
+   * The Admiral has promised an Agent something. Carries the whole promise, because
+   * `agentMessage{kind:'promise'}` cannot: its payload is a bare `promiseId` with nowhere to put the
+   * `fulfills` condition, so on its own it could never express what was actually promised. Following
+   * the Override precedent (P3-07), the social record and the state change are two commands.
+   */
+  z
+    .object({
+      kind: z.literal('promise-made'),
+      toAgentId: id,
+      promiseType: promiseTypeSchema,
+      description: z.string().max(300),
+      fulfills: promiseFulfillmentSchema,
+    })
+    .strict(),
+  /**
+   * A module was actually installed on a ship. **World-scoped**, not ship-scoped: a promise names a
+   * beneficiary, and the ship that flies the REFIT need not be that beneficiary's — keying the match
+   * on the installing ship would silently miss the fulfilment.
+   */
+  z.object({ kind: z.literal('module-installed'), moduleId: moduleSchema }).strict(),
+  /** Two Agents agreed to fly together, or one declined. Both sides move, in one write. */
+  z
+    .object({
+      kind: z.literal('team-resolved'),
+      aAgentId: id,
+      bAgentId: id,
+      accepted: z.boolean(),
+    })
+    .strict(),
+  /** An Agent's ship found something worth remembering. */
+  z.object({ kind: z.literal('discovery'), shipId: id, bodyId: id }).strict(),
 ]);
 export type AgentEvent = z.infer<typeof agentEventSchema>;
 const members = z

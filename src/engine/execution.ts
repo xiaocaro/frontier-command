@@ -347,6 +347,14 @@ export function advanceShip(e: SimulationEngine, s: Ship, dt: number) {
         target.name + ' / ' + a.approach + (a.deep ? ' / DEEP SCAN' : ''),
         target.id,
       );
+      // Lv3 settlement fact: the survey found an anomaly at close range (docs/lv3/01-mvp-scenario.md
+      // EVT-05). Only for a real anomaly at tier 2 — a routine scan of a planet is not a discovery.
+      // Re-surveying is harmless: the settlement is idempotent by `subjectId`.
+      if (b && b.kind === 'anomaly' && tier === 2)
+        e.pendingEvents.push({
+          type: 'agentEvent',
+          event: { kind: 'discovery', shipId: s.id, bodyId: b.id },
+        });
       e.complete(s, a.deep ? '隐藏异常已进入星图' : '调查完成；信息与矿藏持久保存');
       for (const body of w.bodies.filter(
         (body) =>
@@ -707,6 +715,14 @@ export function advanceShip(e: SimulationEngine, s: Ship, dt: number) {
           s.name + ' ' + (a.remove ? '拆除' : '安装') + ' ' + MODULES[a.moduleId].label,
           s.id,
         );
+        // Lv3 settlement fact: a module really got installed. This is what a promise like "after this
+        // mission, Deep Scan priority is yours" was waiting for (docs/lv3/01-mvp-scenario.md EVT-08).
+        // World-scoped, so the ship that flew the REFIT need not be the beneficiary's.
+        if (!a.remove)
+          e.pendingEvents.push({
+            type: 'agentEvent',
+            event: { kind: 'module-installed', moduleId: a.moduleId },
+          });
         e.complete(s, '模块能力已改变下一轮活动');
       }
     }

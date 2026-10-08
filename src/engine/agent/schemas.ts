@@ -18,8 +18,8 @@ import {
   actionSchema,
   agentMessageKindSchema,
   messagePayloadSchema,
-  moduleSchema,
-  upgradeSchema,
+  promiseFulfillmentSchema,
+  promiseTypeSchema,
 } from '../commands';
 import type { Action } from '../types';
 import { MEMORY_CAP } from './memory';
@@ -43,13 +43,6 @@ export const memoryTagSchema = z.enum([
   'conflict',
   'near-death',
   'risk-taken',
-]);
-export const promiseTypeSchema = z.enum([
-  'reward',
-  'equipment',
-  'research',
-  'leadership',
-  'rest',
 ]);
 export const promiseStatusSchema = z.enum(['pending', 'fulfilled', 'broken']);
 export const agentIntentSchema = z.enum([
@@ -160,12 +153,11 @@ export const agentRelationshipSchema = z
   })
   .strict();
 
-export const promiseFulfillmentSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('grant-module'), key: moduleSchema }).strict(),
-  z.object({ kind: z.literal('grant-upgrade'), key: upgradeSchema }).strict(),
-  z.object({ kind: z.literal('grant-rest') }).strict(),
-  z.object({ kind: z.literal('grant-credits'), amount: z.number().finite().min(0) }).strict(),
-]);
+/**
+ * Re-exported from `../commands` (see the note there): `agentEventSchema` needs both, and this module
+ * already imports from that one, so declaring them twice would be the only way to keep them here.
+ */
+export { promiseFulfillmentSchema, promiseTypeSchema };
 
 export const agentPromiseSchema = z
   .object({
