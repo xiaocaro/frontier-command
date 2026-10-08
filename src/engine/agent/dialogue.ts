@@ -41,9 +41,6 @@ function spoken(decision: AgentDecision, fallbackKey: string): string {
   return said.length > 0 ? said : (DEFAULT_LINE[fallbackKey] ?? '……');
 }
 
-/** The three answers to a task offer, in the order the menu lists them. */
-export const OFFER_ANSWERS: readonly string[] = Object.freeze(['accept', 'reject', 'counteroffer']);
-
 export type OfferResponse = 'accept' | 'counteroffer' | 'reject';
 
 /**
@@ -67,19 +64,6 @@ export function offerResponse(agent: Agent, observation: AgentObservation): Offe
   // The middle bands are the ones whose fallback is a deliberate `wait` or a bare `request` — exactly
   // the bands a negotiation is for. An offer is not merely deferred; it is answered with terms.
   return 'counteroffer';
-}
-
-/**
- * Which of the three answers the deterministic fallback should give, given the candidate that won the
- * ranking. A team answer (`team-accept:<id>`) is not an offer answer and passes through untouched.
- */
-export function offerAnswerChoiceId(
-  rankedChoiceId: string,
-  agent: Agent,
-  observation: AgentObservation,
-): string {
-  if (!OFFER_ANSWERS.includes(rankedChoiceId)) return rankedChoiceId;
-  return offerResponse(agent, observation) ?? rankedChoiceId;
 }
 
 /**

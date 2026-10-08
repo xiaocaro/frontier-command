@@ -26,6 +26,7 @@ import { visibleIntel } from '../sensors';
 import { frontierSectors, sectorCenter } from '../world-generation';
 import type { Location, ModuleId, Point, Ship, WorldState } from '../types';
 import { GOODS } from '../types';
+import { isTaskOfferKind } from './interactions';
 import type { Agent, AgentActionCandidate, GoalKind } from './types';
 
 /** Caps keep one decision affordable and the prompt bounded. */
@@ -431,7 +432,7 @@ function socialCandidates(w: WorldState, agent: Agent, ship: Ship): AgentActionC
   const unread = w.agentMessages.filter((m) => !m.read && m.to === agent.id);
   const result: AgentActionCandidate[] = [];
 
-  if (unread.some((m) => ['command', 'ask', 'negotiate', 'promise'].includes(m.kind))) {
+  if (unread.some((m) => isTaskOfferKind(m.kind))) {
     result.push(
       socialCandidate(ship, 'accept', '接受 Admiral 的任务'),
       socialCandidate(ship, 'reject', '拒绝 Admiral 的任务'),

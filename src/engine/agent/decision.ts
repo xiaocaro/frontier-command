@@ -16,7 +16,7 @@
  */
 import { RULES } from '../definitions/rules';
 import { isSocialChoiceId } from './actions';
-import { offerAnswerChoiceId } from './dialogue';
+import { offerResponse } from './dialogue';
 import { scoreBand, rankCandidates, type DecisionBand } from './score';
 import { agentDecisionSchema } from './schemas';
 import type { Agent, AgentActionCandidate, AgentDecision, AgentObservation } from './types';
@@ -183,31 +183,42 @@ export function fallbackDecision(
   observation: AgentObservation,
   promptVersion = AGENT_PROMPT_VERSION,
 ): AgentDecision {
-  const best = rankCandidates(agent, observation)[0] ?? null;
   const base = {
     promptVersion,
     observationTick: observation.tick,
     provider: 'deterministic' as const,
   };
-  if (!best) return { ...base, intent: 'wait', reason: '当前没有可执行的行动。' };
-  const score = best.breakdown.score;
-  if (isSocialChoiceId(best.candidate.id)) {
-    // The three answers to a task offer score identically, so the ranking cannot choose between them
-    // — `dialogue.offerResponse` scores the offer once and lets the band decide.
-    const choiceId = offerAnswerChoiceId(best.candidate.id, agent, observation);
+  // An unanswered Admiral offer is answered before autonomous work is chosen. AGENTS.md: "明确的
+  // Admiral 命令优先于 Standing Orders" — and a question left unanswered is not a decision the Agent
+  // is entitled to make silently. Measured, not assumed: an offer scores 9–29 against a survey
+  // candidate with no key configured, so without this the default configuration never answers the
+  // Admiral at all. It cannot trap the Agent: the reply itself consumes the offer
+  // (`command-system.ts` `consumeAnswered`), so the next beat is free again.
+  const offer = offerResponse(agent, observation);
+  if (offer !== null)
     return {
       ...base,
       intent: 'respond',
-      choiceId,
+      choiceId: offer,
       reason:
-        choiceId === 'counteroffer'
-          ? '这项任务值得接，但按当前状态我需要额外条件。'
-          : choiceId === 'reject'
-            ? '按确定性的目标与状态评估，我不该接这项任务。'
-            : '按确定性的目标与状态评估，先回应收到的消息。',
-      ...(choiceId === 'counteroffer' ? { request: { type: 'equipment' as const } } : {}),
+        offer === 'counteroffer'
+          ? 'Admiral 在等一个答复；这项任务值得接，但按当前状态我需要额外条件。'
+          : offer === 'reject'
+            ? 'Admiral 在等一个答复；按确定性的目标与状态评估，我不该接这项任务。'
+            : 'Admiral 在等一个答复；按确定性的目标与状态评估，我接受。',
+      ...(offer === 'counteroffer' ? { request: { type: 'equipment' as const } } : {}),
     };
-  }
+
+  const best = rankCandidates(agent, observation)[0] ?? null;
+  if (!best) return { ...base, intent: 'wait', reason: '当前没有可执行的行动。' };
+  const score = best.breakdown.score;
+  if (isSocialChoiceId(best.candidate.id))
+    return {
+      ...base,
+      intent: 'respond',
+      choiceId: best.candidate.id,
+      reason: '按确定性的目标与状态评估，先回应收到的消息。',
+    };
   // Agent.md §46's "<25 = REJECT" band. `reject` is not one of the seven intents in
   // `schemas/agent-decision.schema.json` and that contract is not ours to edit, so a rejection is
   // expressed the way the flow already routes refusals: as a social response. With no offer on the

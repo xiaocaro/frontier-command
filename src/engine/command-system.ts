@@ -8,6 +8,7 @@ import type {
   Action,
   AgentInteraction,
   AgentMessage,
+  AgentMessageKind,
   Command,
   CommandResult,
   Cost,
@@ -23,6 +24,7 @@ import {
   createMessage,
   createsInteraction,
   interactionOutcomeFor,
+  isTaskOfferKind,
   overrideMemory,
 } from './agent/interactions';
 import { remember } from './agent/memory';
@@ -636,6 +638,9 @@ export function dispatchCommand(
       payload: c.payload,
     });
     w.agentMessages = boundMessages([...w.agentMessages, message]);
+    // An answer consumes the question it answers — see `consumeAnswered`. Only an Agent's own words
+    // settle anything: the Admiral is not answerable to anyone here.
+    if (c.from !== 'admiral') consumeAnswered(w, c.from, c.to, c.kind);
 
     // The only door for both social triggers (docs/lv3/02-domain-model.md §14). Emitted only when
     // the message is actually addressed to an Agent — a message to the Admiral wakes nobody.
@@ -719,6 +724,31 @@ export function dispatchCommand(
   }
   return ok();
 }
+/**
+ * Which unread messages a reply settles.
+ *
+ * An answer consumes the question it answers. Without this an offer stays on the Agent's menu
+ * forever, so `actions.ts` keeps offering accept/reject/counteroffer on every beat and the Agent can
+ * never get back to its own work — and a policy of "answer the Admiral first" would lock it out
+ * permanently (docs/lv3/01-mvp-scenario.md EVT-01).
+ *
+ * Deliberately blunt: a reply to the Admiral consumes *every* unread task offer that Agent is
+ * holding, not only the one being answered. The alternative is the reply carrying a message id, which
+ * would mean the Agent layer knowing about the message log it is not allowed to see.
+ */
+function consumeAnswered(w: WorldState, from: string, to: string, kind: AgentMessageKind): void {
+  const answersTask = kind === 'report' || kind === 'negotiate';
+  const answersTeam = kind === 'team-reply';
+  if (!answersTask && !answersTeam) return;
+  w.agentMessages = w.agentMessages.map((message) => {
+    if (message.read || message.to !== from) return message;
+    const settled =
+      (answersTask && isTaskOfferKind(message.kind)) ||
+      (answersTeam && message.kind === 'team-request' && message.from === to);
+    return settled ? { ...message, read: true } : message;
+  });
+}
+
 /**
  * Keeps the message log bounded: already-read messages are dropped first, oldest first, and only
  * then the oldest unread ones. Ordering is array order, never Map/Set iteration, so the result is a

@@ -21,7 +21,7 @@ import type {
   SimulationEvent,
 } from '../../src/engine/types';
 import { SimulationEngine } from '../../src/engine/engine';
-import { AGENT_PROMPT_VERSION } from '../../src/engine/agent/decision';
+import { AGENT_PROMPT_VERSION, fallbackDecision } from '../../src/engine/agent/decision';
 import { decisionScore } from '../../src/engine/agent/score';
 import { MockModelClient } from '../../electron/agent/mock-client';
 import { scoringAgent } from '../../electron/agent/runtime';
@@ -418,6 +418,57 @@ describe('P3-03/P3-05/P3-08 settlement reaches state, memory, goals and relation
     const twice = agentById(engine, agent.id);
     expect(twice.goal.progress).toBe(once.goal.progress);
     expect(memoryTags(twice)).toEqual([['discovery']]);
+  });
+});
+
+describe('P3-01 a pending offer is answered, and answering consumes it', () => {
+  const fallbackFor = (engine: SimulationEngine) => {
+    const observation = observationFor(engine, agentByCareer(engine, 'explorer').id);
+    return fallbackDecision(scoringAgent(observation), observation);
+  };
+
+  it('answers the Admiral before choosing its own work, and only while the offer is pending', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+
+    // With nothing waiting, the deterministic Agent does its own work.
+    expect(fallbackFor(engine).intent).not.toBe('respond');
+
+    offerMission(engine, agent.id);
+    const decision = fallbackFor(engine);
+    expect(decision.intent).toBe('respond');
+    expect(['accept', 'counteroffer', 'reject']).toContain(decision.choiceId);
+  });
+
+  it('a reply consumes the offer, so the Agent is not trapped answering forever', () => {
+    const engine = quietEngine();
+    const agent = agentByCareer(engine, 'explorer');
+    offerMission(engine, agent.id);
+    const before = observationFor(engine, agent.id);
+    expect(before.availableActions.some((c) => c.id === 'accept')).toBe(true);
+
+    applyFor(engine, before, decisionFor(before, { intent: 'respond', choiceId: 'accept' }));
+
+    // The offer is gone from the menu and from the unread set, so the next beat is free again.
+    const after = observationFor(engine, agent.id);
+    expect(after.availableActions.some((c) => c.id === 'accept')).toBe(false);
+    expect(engine.state.agentMessages.filter((m) => m.to === agent.id && !m.read)).toHaveLength(0);
+    expect(fallbackFor(engine).intent).not.toBe('respond');
+  });
+
+  it('a team reply consumes the request it answers, and only that one', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    const tactical = agentByCareer(engine, 'tactical');
+    requestTeamUp(engine, explorer.id, tactical.id);
+    offerMission(engine, tactical.id);
+    const observation = observationFor(engine, tactical.id);
+
+    applyFor(engine, observation, decisionFor(observation, { intent: 'respond', choiceId: 'team-accept:' + explorer.id }));
+
+    const unread = engine.state.agentMessages.filter((m) => m.to === tactical.id && !m.read);
+    // The team request is settled; the Admiral's offer is a different question and still stands.
+    expect(unread.map((m) => m.kind)).toEqual(['command']);
   });
 });
 
