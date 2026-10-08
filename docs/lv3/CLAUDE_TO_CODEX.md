@@ -157,7 +157,7 @@ P0  Domain Foundation      16 卡   ✅ 已完成（04-foundation-status.md）
 P1  Mock LLM                5 卡   ✅ 已完成（05-mock-runtime-status.md）
 P2  Live DeepSeek Runtime   4 卡   ✅ 已完成（06-deepseek-runtime-status.md）
 P2.5 Scheduler             5 卡   ✅ 已完成（07-scheduler-plan.md / 08-scheduler-status.md）
-P3  MVP Vertical Slice      9 卡   ✅ 完成（EVT-01…09 全部 PASS 或 PARTIAL；09-game-integration-status.md）
+P3  MVP Vertical Slice      9 卡   ✅ 完成（EVT-01…09 全部 PASS；09-game-integration-status.md）
 ```
 
 剩余：

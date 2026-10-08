@@ -734,6 +734,70 @@ describe('P3-04 readiness is deterministic and has no fuel (EVT-04)', () => {
   });
 });
 
+describe('P3-05 a real survey of an anomaly reaches the Agent (EVT-05)', () => {
+  it('emits the discovery fact from the survey branch and settles it', () => {
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = agentByCareer(engine, 'explorer');
+    const shipId = agentShipOf(engine, agent);
+    const ship = engine.state.ships.find((s) => s.id === shipId)!;
+    // Deterministic: put a known anomaly where the scenario needs one rather than hoping generation
+    // produced a discovered one, and sit on it so the test is about the settlement, not travel time.
+    const body = engine.state.bodies.find((b) => b.discovered)!;
+    body.kind = 'anomaly';
+    body.hazard = 0;
+    ship.x = body.x;
+    ship.y = body.y;
+
+    // Close approach is what makes it a discovery (`execution.ts` emits at tier 2 only) — a remote
+    // scan of the same body is not one.
+    issue(engine, { type: 'SURVEY', targetId: body.id, approach: 'close', deep: false }, shipId);
+    for (let i = 0; i < 600; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      if (agentById(engine, agent.id).goal.progress > 0) break;
+    }
+
+    const after = agentById(engine, agent.id);
+    // The ordinary engine branch produced the fact, the host relayed it, and the engine settled it —
+    // this is the emission point, not the settlement, which is covered separately in P3-00.
+    //
+    // Note that the Admiral-ordered survey emits **two** facts, and both are right: the survey branch
+    // reports the discovery, and `complete()` reports the directive ending. They compose; neither
+    // suppresses the other.
+    const discovery = after.memories.find(
+      (memory) => memory.kind === 'episodic' && memory.tags.includes('discovery'),
+    );
+    expect(discovery).toMatchObject({ subjectId: body.id });
+    expect(memoryTags(after)).toContainEqual(['mission-success']);
+    expect(after.goal.progress).toBeGreaterThan(0);
+    expect(after.goal.progress).toBe(after.state.goalProgress);
+  });
+
+  it('does not call a remote scan of the same body a discovery', () => {
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = agentByCareer(engine, 'explorer');
+    const shipId = agentShipOf(engine, agent);
+    const ship = engine.state.ships.find((s) => s.id === shipId)!;
+    const body = engine.state.bodies.find((b) => b.discovered)!;
+    body.kind = 'anomaly';
+    body.hazard = 0;
+    ship.x = body.x;
+    ship.y = body.y;
+
+    issue(engine, { type: 'SURVEY', targetId: body.id, approach: 'remote', deep: false }, shipId);
+    for (let i = 0; i < 600; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      if (ship.current === null) break;
+    }
+
+    expect(ship.current).toBeNull(); // the survey really completed
+    expect(memoryTags(agentById(engine, agent.id))).not.toContainEqual(['discovery']);
+  });
+});
+
 describe('P3-09 the closed loop (EVT-09, I-11)', () => {
   /** The same world, with only the Admiral's past behaviour differing. */
   const history = (kind: 'kept' | 'forced') => {

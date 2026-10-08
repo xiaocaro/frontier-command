@@ -14,7 +14,7 @@
 | 命令 | 结果 |
 | --- | --- |
 | `npx tsc --noEmit` | **PASS**（0 error） |
-| `npm test` | **PASS** — 34 files / **532 tests，531 passed + 1 skipped** |
+| `npm test` | **PASS** — 34 files / **538 tests，537 passed + 1 skipped** |
 | `npm run build` | **PASS** — exit 0 |
 | `git diff --check` | **无输出** |
 | `npm run test:llm`（真实端点） | **PASS** — `deepseek-flash` 与 `deepseek-chat` 均 `outcome=ok:respond`；**并因此发现并修复 `C-33`** |
@@ -23,7 +23,7 @@
 | `npm run test:package` | **未运行** |
 
 改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
-**本阶段新增 23 个通过用例**，全部落在 `tests/agent/vertical-slice.test.ts`。
+**本阶段新增 30 个通过用例**，全部落在 `tests/agent/vertical-slice.test.ts`（另加 1 个 E2E spec）。
 
 ---
 
@@ -60,10 +60,10 @@ Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用*
 | --- | ---: | --- |
 | `src/engine/agent/events.ts` | 244 | 结算规划器：`AgentEvent` 的一种 kind 一个函数，组合既有纯函数产出 delta/记忆/关系 |
 | `src/engine/agent/dialogue.ts` | 114 | 社交决策 → `agentMessage`；以及 offer 的确定性分档 |
-| `src/engine/agent/readiness.ts` | 62 | EVT-04 的确定性战备评估（弹药 + 船体 + 路径），**无 fuel** |
-| `tests/agent/vertical-slice.test.ts` | 718 | 25 个用例：P3-00 接缝、EVT-01/02/03/08/09、宿主闭环 |
-| `tests/e2e/vertical-slice.spec.ts` | 113 | 真实 Electron 应用中的 EVT-01（playbook §三十一） |
-| `tests/e2e/agent-stub.ts` | 92 | 测试进程内的 OpenAI-compatible stub provider，确定性 |
+| `src/engine/agent/readiness.ts` | 61 | EVT-04 的确定性战备评估（弹药 + 船体 + 路径），**无 fuel** |
+| `tests/agent/vertical-slice.test.ts` | 894 | 30 个用例：P3-00 接缝、EVT-01/02/03/04/05/08/09、宿主闭环 |
+| `tests/e2e/vertical-slice.spec.ts` | 124 | 真实 Electron 应用中的 EVT-01（playbook §三十一） |
+| `tests/e2e/agent-stub.ts` | 88 | 测试进程内的 OpenAI-compatible stub provider，确定性 |
 
 ## 3. 实际修改的文件
 
@@ -98,8 +98,8 @@ Agent 行动」在本阶段被证伪：`tests/agent/vertical-slice.test.ts` 用*
 | 02 反报价 | **PASS** | `counteroffer` → `kind:'negotiate'`，payload `{requestType, targetAgentId}`（`AgentRequest.type` 映射为 `requestType`） |
 | 03 Agent-Agent 组队 | **PASS** | `team-reply` 成消息 → `team-resolved` 结算**双方**关系各 ±10 → 另起一次 `act` 决策真正提交 `ESCORT`（`source:'standing'`） |
 | 04 Logistics 战备评估 | **PASS** | `readiness.ts` 是纯函数，输入恰为卡片指定的三项（弹药 / 船体 / `routeEstimate`），**仓库中仍无 `fuel`**（以剥注释后的源码扫描断言，不靠注释自称）。结论经候选的 `requirements` 进入观察，决策与提示词都看得到 |
-| 05 穿越 + 发现异常 | **PARTIAL** | 结算侧完成（`discovery` 记忆 + 目标进度 + `subjectId` 去重）；**`TRANSIT`/`SURVEY` 的整段集成测试未写** |
-| 06 四方分歧 | **PARTIAL** | 既有 `runtime.test.ts` 的 EVT-06 用例已断言四条不同答案；**未在本阶段补充** |
+| 05 穿越 + 发现异常 | **PASS** | **发射点已端到端验证**：真实执行一次 `SURVEY`（贴近、hazard 0 的异常天体）→ 引擎在调查分支发射 `discovery` → 宿主派发 → 记忆 + `goal.progress ↑`，且 `subjectId` 指向该天体。**反面也断言**：同一目标的远程扫描**不算**发现。未写成单测的是"先 `TRANSIT` 再 `SURVEY` 的一次连续跑"，因为 `TRANSIT` 是既有 Action，Lv3 侧只负责"选得出来"（`actions.test.ts` 覆盖）。另注：Admiral 下的调查会**同时**发射 `discovery` 与 `mission-settled`，两者合法共存 |
+| 06 四方分歧 | **PASS** | 既有用例 `tests/agent/runtime.test.ts:256-278` 正是本卡验收：四个职业、四份观察、fixture `EVT-06`，断言 `new Set(answers).size === 4`（四种不同答案）且 ≥2 种不同 intent。**本阶段未新写测试是刻意的**——重复一条已在跑且断言更强的用例没有价值 |
 | 07A Promise 创建 | **PASS** | `promise-made` 造出 `pending` / `resolvedAt:null` 的承诺 |
 | 07B Override 代价 | **PASS** | 沿用 P0 路径；EVT-09 的 Path B 断言了 −10 trust 与 `admiral-override` 记忆 |
 | 08 任务结算 | **PASS** | `mission-settled` 状态/记忆/目标镜像；**真跑一次 REFIT**（由另一艘舰执行）→ pending 承诺转 `fulfilled` + `PROMISE_KEPT_EFFECT` + `promise-kept` 记忆 |
