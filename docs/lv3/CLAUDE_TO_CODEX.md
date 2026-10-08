@@ -3,6 +3,9 @@
 最后更新：2026-10-08，于提交 `c82e009`
 阶段：**P0 / P1 / P2 / P2.5 已实现并合入；下一步是 P3**
 
+> 本次修订（**纯文档，零代码改动**）：追加 `PLAYBOOK_COVERAGE.md`（外部 playbook 提示 ↔ 仓库状态的
+> 对照记录）与 `KNOWN_ISSUES.md` 的 `C-31`/`C-32`。§5 的实测数字**未重新测量**，仍是提交 `c82e009` 的结果。
+
 > **先读这一份，再决定读什么。** 本文只讲「现在是什么状态」与「下一步做什么」。
 > 每个阶段的细节在各自的 `0N-*-status.md` 里，那是**数字与结论的事实来源**；本文出现的
 > 测试数、提交号一律**自带时间戳**（见 §5），若与状态文档冲突，以状态文档为准。
@@ -41,6 +44,11 @@
 
 > **P2.5 为什么存在**：`03-implementation-plan.md` §3.2 把 Scheduler 划归 P1，但 P1 与 P2 的任务书
 > 都明令不含它，于是被两次跳过。它不是被取消，而是被挤掉的。规划见 `07-scheduler-plan.md`。
+
+> **若你在按外部 playbook 逐条施工**：先读 `PLAYBOOK_COVERAGE.md`。playbook 自己把 Scheduler 划在
+> **P3**（Prompt 6 §25），所以它的 **Prompt 7**（§四/§五 建立 AgentScheduler、event-driven 触发）
+> 与已完成的 P2.5 **重叠**。该 Prompt 的调度器部分**已满足，不要重建**（`KNOWN_ISSUES.md` `C-31`）；
+> 其中 `Mission offered` 一条是真实缺口，但**尚未做设计决定**（`C-32`）。
 
 **真实端点已实测**：`npm run test:llm` 对 `https://api.deepseek.com` 实跑通过，
 并因此发现并修复了一个真实缺陷（`KNOWN_ISSUES.md` `C-29`：提示词把 `act` 解释成「菜单里的任一动作」，
@@ -189,8 +197,9 @@ P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用�
 11. docs/lv3/03-api-contract.md             ★ 模块间合同与状态变更权限
 12. docs/lv3/03-test-plan.md                ★ 测试矩阵
 13. docs/lv3/04-* … 08-*-status.md          ★ 各阶段实测状态（数字的事实来源）
-14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-30）+ 实施陷阱（N-1…N-9）
-15. schemas/*.json                          机器可读合同
+14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-32）+ 实施陷阱（N-1…N-9）
+15. docs/lv3/PLAYBOOK_COVERAGE.md           ★ 外部 playbook 提示 ↔ 仓库状态对照（按 Prompt 查，避免重做）
+16. schemas/*.json                          机器可读合同
 ```
 
 **事实来源优先级**（冲突时按此判定，CLAUDE.md §15/§16）：

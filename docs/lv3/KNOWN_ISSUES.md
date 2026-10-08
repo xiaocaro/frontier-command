@@ -281,6 +281,33 @@
 
 ---
 
+## 2c. Prompt 覆盖审计新增条目（C-31 … C-32）
+
+来源：把外部 playbook 的 Prompt 7（AgentScheduler / event-driven）与仓库实际状态逐条对照，
+结论记录在 `docs/lv3/PLAYBOOK_COVERAGE.md`。两条均为**记录性**条目，**未改任何代码**。
+
+### C-31 — playbook 把 Scheduler 划在 P3，仓库已在 P2.5 完成 🟡 MEDIUM
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | 外部 playbook 的 Prompt 6 §25 逐字写着「不要在 P2 实现 Scheduler …… **真正 Scheduler 在 P3。**」，Prompt 7 §二 也把 `AgentScheduler` 列为 P3 职责；而仓库已把 Scheduler 作为插入阶段 **P2.5** 完成并合入（`07-scheduler-plan.md` SC-1…SC-5 全 ✅） |
+| **Current Code** | `electron/agent/scheduler.ts`、`electron/agent-host.ts`、`electron/agent/runtime.ts#applyDecision`、`electron/main.ts` 的接线均已存在并有测试覆盖（`tests/agent/scheduler.test.ts` 等） |
+| **Approved Design** | playbook 的分层（Prompt 6 §25、Prompt 7 §二）说 Scheduler 属 P3。**Prompt 7 正文未随仓库进度更新**，仍写着「现在实现 Prompt 2 已批准的 Scheduler」——只在阅读清单里补了 P2.5 的文档 |
+| **Impact** | 若下一个会话严格按 playbook 顺序执行 Prompt 7，会**重复实现**一个已存在、且被 `boundary.test.ts` 的 B-2/B-11/B-13 与 `scheduler.test.ts` 的 S-1…S-11 锁死的调度器。这是跨工具（playbook ↔ 仓库）的**流程**冲突，非代码缺陷 |
+| **Proposed Resolution** | **不改代码。** 以 `docs/lv3/PLAYBOOK_COVERAGE.md` 为对照事实来源：Prompt 7 的 §四/§五/§六 视为**已由 P2.5 满足**，不重做。后续 Prompt 到达时先查该文件再决定施工范围。若 playbook 之后更新了分层，应同步更新该文件而不是改本条目 |
+
+### C-32 — `Mission offered` 无触发生产者，Admiral 下达指令不唤醒 Agent 🟡 MEDIUM（**需要设计决定**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | Prompt 7 §五 的 MVP 触发清单要求至少支持 `Mission offered`；仓库的 `AgentTrigger`（`src/engine/agent/types.ts:114-131`）**没有任何承载它的变体**，`directive-issued` 类触发不存在 |
+| **Current Code** | 触发发射点共 7 处：`engine.ts:141-142`（`directive-completed`/`directive-failed`）、`engine.ts:144` 与 `fleet.ts:158`（`ship-idle`）、`sensors.ts:124-127`（`danger`）、`world-events.ts:55`（`world-event`）、`command-system.ts:617-624`（`admiral-message`/`agent-request`）。**下达指令（`issueDirective`）不产生任何触发**——Agent 只在任务**结算后**（完成/失败）才被叫醒 |
+| **Approved Design** | **尚未决定。** `02-domain-model.md` §14 的联合类型里没有该变体；`07-scheduler-plan.md` §3.3 的触发清单也未列它。Prompt 7 提出了要求，但仓库侧从未做过对应的设计决定 |
+| **Impact** | 语义上**可能正确**：按 `AGENTS.md`「明确的 Admiral 命令优先于 Standing Orders」，Admiral 下达指令后舰船直接执行，Agent 的"决定做什么"在此时并无决策空间，等到 `directive-completed`/`directive-failed` 再唤醒是合理的。**但也可能不正确**：Agent 无法在接到指令的当刻表达反报价 / 拒绝 / 请求协作者（`interactions.ts` 的 `team-request`/`negotiate` 等 kind 已存在）。**两种解读都有依据，故不做单方面判定** |
+| **Proposed Resolution** | **留待显式设计决定**（CLAUDE.md §15：不得静默择一）。若决定支持，最小改法是给 `issueDirective` 的既有分支追加一次 push（与 P2.5 的 7 处同形，**零删除**）；若决定不支持，应在 `PLAYBOOK_COVERAGE.md` 中写明「`Mission offered` 由 `admiral-message` 语义覆盖，不新增变体」并给出理由。**在此之前不要新增触发变体**——P2.5 的边界测试与 `AgentTrigger` 形状是冻结的 |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |
