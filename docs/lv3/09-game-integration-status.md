@@ -14,12 +14,13 @@
 | 命令 | 结果 |
 | --- | --- |
 | `npx tsc --noEmit` | **PASS**（0 error） |
-| `npm test` | **PASS** — 34 files / **538 tests，537 passed + 1 skipped** |
+| `npm test` | **PASS** — 35 files / **546 tests，545 passed + 1 skipped**（含 P3 后的演示通道：`roster.test.ts` 6 例 + `vertical-slice.test.ts` 的 2 条新闭环断言） |
 | `npm run build` | **PASS** — exit 0 |
 | `git diff --check` | **无输出** |
 | `npm run test:llm`（真实端点） | **PASS** — `deepseek-flash` 与 `deepseek-chat` 均 `outcome=ok:respond`；**并因此发现并修复 `C-33`** |
-| `npm run test:e2e`（仅新增 spec） | **PASS** — `tests/e2e/vertical-slice.spec.ts`，1 passed，**5.6s** |
-| `npm run test:e2e`（全套） | **35 passed / 2 failed / 14.7m** —— 37 用例（原 36 + 新增）。两项失败：`mine-accidents.spec.ts:130`（既存阈值问题）与 `recon.spec.ts:216` 的 **200%** 档（**P3 新观察到的满载时序 flake**，单独重跑通过）。新增的 `vertical-slice.spec.ts` 通过（5.1s）。详见 `KNOWN_ISSUES.md` §4 |
+| `npm run test:e2e`（`vertical-slice.spec.ts`） | **PASS** — **2 passed / 12.8s**（EVT-01 + 演示通道：面板渲染名单、从面板发消息到达引擎、承诺两步不静默失败） |
+| `npm run test:e2e`（`lcars.spec.ts`） | **未运行** —— 见 §6.2b。**这是本次最大的未验证风险**：新增面板可能移动 LCARS 布局 |
+| `npm run test:e2e`（全套） | **未重跑**（上一次全套是 P3 结束时：35 / 37 / 14.7m） |
 | `npm run test:package` | **未运行** |
 
 改动前实测基线：`npm test` = **34 files / 508 passed + 1 skipped**（`08-scheduler-status.md` §0）。
@@ -178,7 +179,8 @@ ship(弹药/船体)  +  candidate 的目标点  ──assessReadiness──▶  
 | # | 项 | 说明 |
 | --- | --- | --- |
 | 1 | **战备结论是"选项级"的，不是"任务级"的** | §5.4 的决定：`readiness` 评估的是"这艘船能不能跑完**这个候选**"，而不是"能不能跑完 Admiral 心里那趟任务"。后者需要 offer 携带结构化目标，而那会改动 `agent-message.schema.json` 这个跨工具合同。**这是有意选择的代价**，不是遗漏 |
-| 2 | **E2E 只覆盖 EVT-01** | playbook §三十一 要求 `npm run test:e2e` 覆盖垂直切片。`tests/e2e/vertical-slice.spec.ts` **已通过**（5.1s），全套也已跑过（35/37），但它只走"Admiral 发布 → Agent 作答"这一段：反报价 / 组队 / 执行 / 结算的更深处断言在 `tests/agent/vertical-slice.test.ts` 里，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案 |
+| 2 | **E2E 覆盖两条** | `tests/e2e/vertical-slice.spec.ts` 有两条：EVT-01（Admiral 发布 → Agent 作答）与**演示通道**（面板渲染名单、从面板发消息真的到达引擎、承诺两步不静默失败）。反报价 / 组队 / 执行 / 结算的更深处断言仍在 `tests/agent/vertical-slice.test.ts`，那里是确定性的。**驱动一个 stub provider 无法强制"必须反报价"**（playbook §三十二），所以 E2E 断言的是"产出合法决策 → 变成玩家可见的真实变化 → 应用没崩"，而不是某个具体答案 |
+| 2b | **EVT-04…09 的人类可演示性** | P3 结束时 MVP **无法由人演示**（UI 既发不出 `agentMessage` 也看不到 Agent 状态，且应用里没有控制台）。已由用户授权解开 §二十五 冻结并补上通道，见 `KNOWN_ISSUES.md` `C-35` 与 `10-agent-demo-channel.md` 的 runbook。**`lcars.spec.ts` 的几何回归尚未验证**——见 §7 |
 | 3 | **`promiseMemory`（kind `'promise'`）无生产者** | `memoryContribution` 只读 **episodic** 记忆，所以承诺兑现写的是 `episodicMemory{tags:['promise-kept'], subjectId:<promiseId>}`。`promiseMemory` 携带 `promiseId` 但没有 tags，写它不会影响任何分数。**要么**在别处用它（例如承诺详情 UI），**要么**承认它多余 |
 | 4 | **team-accept / team-decline 仍然同分** | 两个候选的分解一致，平局由 id 决定 ⇒ 离线永远接受组队。要做成"关系差就拒绝"，需要一个 per-peer 的候选项（现有 `teamFit` 用的是**平均**合作度） |
 | 5 | **offer 消费是钝的** | 给 Admiral 的一条回复会消费该 Agent **全部**未读任务 offer，而不只是被回答的那条。替代方案是让回复携带 message id，那会让 Agent 层知道它不该看见的消息日志 |
@@ -190,13 +192,16 @@ ship(弹药/船体)  +  candidate 的目标点  ──assessReadiness──▶  
 
 ## 7. 推荐下一步
 
-1. **跑一次全套 `env -u ELECTRON_RUN_AS_NODE npm run test:e2e`**，确认新增 spec 与既有的 8 个 spec
-   共存（期望 `34+1 / 2`，那 2 项是既存失败 + 一项满载 flake，见 §0）。
-2. **`03-test-plan.md` §12 的决议仍未就地更新** —— 那一行写着"❌ 不新增 Lv3 E2E spec（本阶段决议）"，
-   而用户已裁决全量覆盖、spec 也已通过。它是红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），
-   故未就地改写；反转登记在 `PLAYBOOK_COVERAGE.md` §3.2 与本文 §6.2。
-   （`CODEX_TASKS.md` 的同类问题已由用户显式授权后就地更正，见 `C-34`。）
-3. **若要"任务级"战备**（§6.1），需要先决定是否让 offer 携带结构化目标——那是一次跨工具合同变更。
+1. **跑 `lcars.spec.ts`（或全套 E2E）** —— 演示通道新增了一个面板，而该 spec 在六种窗口尺寸下断言
+   地图占比与各区域不溢出。面板已刻意做成**默认折叠**且**不新增 `.command-deck` 栅格子元素**以把风险
+   压到最小，但**未验证**。这一步需要人工放行（本次尝试运行时被权限分类器拒绝，未绕过）。
+   若失败，先判断是"布局真的变了"还是"断言过紧"，**不要为了让测试变绿而放宽断言**。
+   跑完记得 `git checkout -- docs/verification`（`KNOWN_ISSUES.md` §4 记的坑）。
+2. **按 `10-agent-demo-channel.md` §4 的 runbook 人工走一遍** —— 尤其是第 5–8 步的 Path A（承诺 → REFIT
+   兑现 → 下一次决策）与 Path B（Override → 下一次决策）。这是 MVP 唯一尚未由人跑过的部分。
+3. **`03-test-plan.md` §12 的决议仍未就地更新** —— 那一行写着"❌ 不新增 Lv3 E2E spec"，而 spec 早已存在
+   且通过。它是红线文档（"冲突只登记在 `KNOWN_ISSUES.md`"），故未就地改写。
+   （`CODEX_TASKS.md` 的同类问题已获授权后就地更正，见 `C-34`。）
 4. **P3 之后的常规走向**：稳定化 / 平衡 / UI 打磨 / Codex 交接。
 
 **不要重写**：`scheduler.ts` 的判定与单一写入面、`agent-host.ts` 的寻址、

@@ -313,6 +313,18 @@
 
 来源：P3 实施期对**真实端点**的实测，以及与计划不符之处。
 
+### C-35 — §二十五 的「零 UI / 零新 IPC」冻结被显式解开 🔵 设计决定（**不是缺陷**）
+
+| 项 | 内容 |
+| --- | --- |
+| **背景** | playbook §二十五 把 UI/IPC 列为条件项，并自带豁免：**「若 MVP 可先用现有 UI / debug controls 验证，则不要为了展示而重做 UI」**。P3 据此决定**零 UI 改动、零新 IPC**（`PLAYBOOK_COVERAGE.md` §3.2、`09-game-integration-status.md` §4） |
+| **问题** | 该豁免在实践中**并未成立**。所谓 debug control 是 `window.frontier.command(...)`，而 `main.ts` 用 `removeMenu()` + `contextIsolation:true` + `sandbox:true`，全仓库无 `openDevTools`/`before-input-event`/`globalShortcut` —— **人在运行中的应用里够不到它**。同时 UI 既**发不出** `agentMessage`（`src/ui/**` 不含 "agent" 一词），也**看不到**任何 Agent 状态（`snapshot()` 不含 `agents`）。于是 MVP 的核心体验「他为什么拒绝？」「我之前的决定是否影响了他的信任？」**无处可看**，整个 MVP 只能由测试harness 演示 |
+| **决定** | **2026-10-08，用户显式授权解开冻结**，做最小可演示化。落地见 `10-agent-demo-channel.md`：新增只读 IPC `agents:get` + `src/engine/agent/roster.ts` 的显式裁剪、`src/ui/components/AgentChannel.tsx`（默认折叠）、`main.ts` 的 devtools 快捷键 |
+| **边界** | **没有**放大 `snapshot()`（那会撞 `recon.test.ts` 的隐私断言并把 memory 文本推向渲染层）；改走**新通道 + 自己的裁剪**，记忆**只给 tag 不给 text**（`N-7`）。`tests/agent/boundary.test.ts` 的「无新 IPC」断言按仓库惯例**反转而非删除**，改为逐一列出渲染层通道。`B-2`/`B-11`/`B-13`、`projection.ts`、存档版本、物理规则均未动 |
+| **教训** | 「有 debug controls 就够」这条豁免，必须先确认那个 control **人够不够得到**。够不到时，豁免是纸面的，而测试会掩盖这一点——P3 的所有断言当时都全绿 |
+
+---
+
 ### C-33 — 推理模型的 `max_tokens` 预算不足，导致 live 路径**静默**全量降级 🔴 BLOCKER（**已修复**）
 
 | 项 | 内容 |

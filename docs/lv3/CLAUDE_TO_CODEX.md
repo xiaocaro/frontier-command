@@ -131,7 +131,7 @@ env -u ELECTRON_RUN_AS_NODE npm run test:e2e
 | `src/engine/fleet.ts` 的 `hasAdmiralWork` / 紧急脱离分支 | `C-17` 是**计划级兼容**（调度器做存续检测），不是改它 |
 | `src/engine/projection.ts` 的 `snapshot()` 裁剪 | 被 `recon.test.ts` 与 `architecture.test.ts` 锁定 |
 | `src/engine/definitions/rules.ts` 的既有键（尤其 `decisionInterval`） | 改它会改变**敌方 AI** 行为（`C-18`）。Agent 用 `agentDecisionInterval` |
-| `src/ui/**`、`electron/preload.ts`、`src/global.d.ts` | Lv3 **零 UI 改动、零新 IPC**。Agent 发言经既有 `Communication` 流显示 |
+| `src/ui/**`、`electron/preload.ts`、`src/global.d.ts` | 曾是「Lv3 **零 UI 改动、零新 IPC**」。**该冻结已由用户显式解开**（`KNOWN_ISSUES.md` `C-35`，`10-agent-demo-channel.md`）：现在恰好有**一个只读通道** `agents:get` + 一个**默认折叠**的 `AgentChannel` 面板。**不要再加第二个通道或第二个面板**——除非同样有显式授权 |
 | `src/engine/definitions/{factions,resources}.ts` | 死代码（零 import），不要在其上构建 |
 
 **Lv3 侧（本阶段新增的红线）**
@@ -216,7 +216,8 @@ P3 的硬约束（`CODEX_TASKS.md` P3 段开头已写明）：每张卡**只用�
 14. docs/lv3/KNOWN_ISSUES.md                ★ 冲突登记（C-1…C-34）+ 实施陷阱（N-1…N-9）
 15. docs/lv3/PLAYBOOK_COVERAGE.md           ★ 外部 playbook 提示 ↔ 仓库状态对照（按 Prompt 查，避免重做）
 16. docs/lv3/09-game-integration-status.md  ★ P3 实测状态 + EVT-01…09 逐条结论
-17. schemas/*.json                          机器可读合同
+17. docs/lv3/10-agent-demo-channel.md       ★ Agent 演示通道的决定记录 + 人类演示 runbook（含 Path A/B）
+18. schemas/*.json                          机器可读合同
 ```
 
 **事实来源优先级**（冲突时按此判定，CLAUDE.md §15/§16）：
