@@ -171,7 +171,7 @@ test('real UI: discoveries, construction cargo, directives, refit, strategic upg
   expect(restored.ships).toEqual(saved.ships);
   expect(restored.projects).toEqual(saved.projects);
   expect(restored.history).toEqual(saved.history);
-  expect(restored.version).toBe(10);
+  expect(restored.version).toBe(11);
   expect(restored.paused).toBe(true);
   expect('factions' in restored || 'seed' in restored || 'enemies' in restored).toBe(false);
 });
@@ -236,7 +236,7 @@ test('midnight snapshot and permanent ship loss survive restart', async () => {
   await waitFor(page, (s) => s.tick >= 14400);
   await page.getByRole('button', { name: '暂停', exact: true }).click();
   const daily = JSON.parse(
-    readFileSync(join(dir, 'frontiers-v10', 'frontier-000001', 'day-2.json'), 'utf8'),
+    readFileSync(join(dir, 'frontiers-v11', 'frontier-000001', 'day-2.json'), 'utf8'),
   );
   expect(daily.tick).toBe(14400);
   expect(daily.losses).toHaveLength(1);

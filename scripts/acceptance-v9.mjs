@@ -85,7 +85,7 @@ try {
   await page.context().setOffline(true);
   await page.evaluate(() => document.fonts.ready);
   const initial = await state();
-  assert.equal(initial.version, 10);
+  assert.equal(initial.version, 11);
   assert.equal(initial.ships.length, 6);
   assert.equal(initial.locations.find((l) => l.id === 'mine').capacity.materials, 3000);
   await capture('start');
@@ -116,7 +116,7 @@ try {
   writeFileSync(
     join(output, `acceptance-${seed}.json`),
     JSON.stringify(
-      { seed, version: 10, complete: true, isolatedUserData: directory, steps, errors },
+      { seed, version: 11, complete: true, isolatedUserData: directory, steps, errors },
       null,
       2,
     ),

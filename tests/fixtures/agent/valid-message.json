@@ -1,0 +1,10 @@
+{
+  "id": "agent-message-1",
+  "at": 150,
+  "from": "admiral",
+  "to": "agent-1",
+  "kind": "promise",
+  "text": "任务完成后授予你 Deep Scan 权限。",
+  "payload": { "promiseId": "promise-1" },
+  "read": false
+}

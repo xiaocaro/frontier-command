@@ -1,0 +1,9 @@
+{
+  "id": "explore:0/-1",
+  "label": "测绘 UNKNOWN SPACE 0/-1",
+  "action": { "type": "EXPLORE", "sector": { "q": 0, "r": -1 }, "approach": "remote" },
+  "risk": 35,
+  "reward": 60,
+  "goalKinds": ["discovery", "research"],
+  "requirements": ["需要已测绘星区在跳跃范围内"]
+}

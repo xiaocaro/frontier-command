@@ -76,6 +76,12 @@ export const actionSchema = z.discriminatedUnion('type', [
     .object({ type: z.literal('REFIT'), targetId: id, moduleId: moduleSchema, remove: z.boolean() })
     .strict(),
 ]);
+/**
+ * `careerSchema` below is the pre-existing **Personnel** career enum (six values) and is unrelated
+ * to the Lv3 `AgentCareer` (explorer/scientist/tactical/logistics). Lv3 defines its own
+ * `agentCareerSchema` in `src/engine/agent/schemas.ts` and must not reuse or edit this one
+ * (docs/lv3/KNOWN_ISSUES.md C-8).
+ */
 export const careerSchema = z.enum([
   'battle',
   'science',
@@ -103,6 +109,47 @@ export const standingSchema = z
     serviceWhenDocked: z.boolean(),
   })
   .strict();
+/**
+ * Lv3 structured message payloads. Deliberately declared here rather than in `src/engine/agent/`
+ * because `commandSchema` needs them and `src/engine/agent/schemas.ts` imports `actionSchema` from
+ * this module — putting them on the agent side would create an evaluation-order cycle
+ * (commands -> agent/schemas -> commands) where `actionSchema` would still be in its temporal dead
+ * zone. The agent layer re-exports these types, so the domain still owns their meaning.
+ * Shape follows `schemas/agent-message.schema.json`.
+ */
+export const agentMessageKindSchema = z.enum([
+  'command',
+  'ask',
+  'negotiate',
+  'promise',
+  'encourage',
+  'override',
+  'team-request',
+  'team-reply',
+  'report',
+]);
+export const agentRequestTypeSchema = z.enum([
+  'teammate',
+  'equipment',
+  'reward',
+  'rest',
+  'extension',
+]);
+export const messagePayloadSchema = z.union([
+  z.object({ promiseId: id }).strict(),
+  z.object({ directiveActionType: id }).strict(),
+  z.object({ requestingAgentId: id, accept: z.boolean() }).strict(),
+  z
+    .object({
+      requestType: agentRequestTypeSchema,
+      targetAgentId: id.optional(),
+      value: n.optional(),
+    })
+    .strict(),
+]);
+export type AgentMessageKind = z.infer<typeof agentMessageKindSchema>;
+export type AgentRequestType = z.infer<typeof agentRequestTypeSchema>;
+export type MessagePayload = z.infer<typeof messagePayloadSchema>;
 const members = z
   .array(id)
   .min(1)

@@ -1,8 +1,12 @@
 import type {
+  Agent,
+  AgentState,
   Enemy,
   FacilityKind,
   FactionId,
+  GoalKind,
   Location,
+  Operator,
   Point,
   Ship,
   Stock,
@@ -13,6 +17,9 @@ import { INITIAL_FLEET, SHIP_CLASSES, type ShipClassId } from './definitions/shi
 import { FACILITIES } from './definitions/progression';
 import { materialize } from './world-generation';
 import { DEFAULT_STANDING, STORAGE } from './definitions/frontier';
+import { createGoal } from './agent/goals';
+import { initialPersonality } from './agent/personality';
+import { blankRelationships } from './agent/relationship';
 export { BASE } from './definitions/locations';
 export const emptyStock = (): Stock => ({
   materials: 0,
@@ -157,12 +164,94 @@ export function makeLocation(
         : null,
   };
 }
+/**
+ * The Lv3 starting roster (Agent.md §9–§12, docs/lv3/01-mvp-scenario.md §3).
+ *
+ * Four careers, four personalities, one ship each. The remaining two ships keep `kind: 'rules'`
+ * operators and act as the control group: nothing in Lv3 changes how a rules-driven ship behaves.
+ *
+ * Binding is `Operator.agentId` rather than a naming convention, because `Agent.id` is `'agent-<n>'`
+ * and shares no name with `operatorId` (docs/lv3/03-implementation-plan.md §4.1).
+ */
+const INITIAL_AGENTS: readonly {
+  career: Agent['career'];
+  name: string;
+  shipId: string;
+  goalKind: GoalKind;
+}[] = [
+  { career: 'explorer', name: 'LYRA VOSS / 薇拉', shipId: 'vigil', goalKind: 'discovery' },
+  { career: 'tactical', name: 'NOAH KESTREL / 诺亚', shipId: 'verity', goalKind: 'command' },
+  { career: 'scientist', name: 'IRIS NAKAMURA / 艾瑞斯', shipId: 'horizon', goalKind: 'research' },
+  { career: 'logistics', name: 'OMAR ZAYID / 奥马尔', shipId: 'meridian', goalKind: 'logistics' },
+];
+
+/**
+ * Starting psychological state. Agent.md fixes the variables and their ranges but not their initial
+ * values; these are proposals (a fresh crew, rested, cautiously trusting) to be calibrated in P3.
+ */
+function initialAgentState(): AgentState {
+  return {
+    fatigue: 0,
+    stress: 0,
+    morale: 75,
+    trustInAdmiral: 60,
+    loyaltyToCompany: 75,
+    experience: 0,
+    reputation: 0,
+    goalProgress: 0,
+  };
+}
+
 export function createWorld(seed = 236807): WorldState {
   const ships = INITIAL_FLEET.map((s, i) =>
     makeShip(s.id, s.name, s.classId, 'starfleet', { x: BASE.x + (i - 1.5) * 28, y: BASE.y + 45 }),
   );
+  // Agent ids are allocated after every pre-existing id in this function, and the relationships are
+  // filled in a second pass because each Agent needs the whole roster. `nextId` therefore advances
+  // by exactly four, shifting later runtime ids (`directive-5`, ...) — no existing save or test
+  // depends on a new world's first generated id.
+  let nextId = 1;
+  const agents: Agent[] = INITIAL_AGENTS.map((definition, index) => {
+    const id = 'agent-' + nextId++;
+    return {
+      id,
+      name: definition.name,
+      career: definition.career,
+      personality: initialPersonality(definition.career),
+      state: initialAgentState(),
+      goal: createGoal('goal:' + id, definition.goalKind),
+      relationships: [],
+      memories: [],
+      promises: [],
+      // Staggered so a fresh load does not fire the whole roster on the same beat (analogous to
+      // Enemy.nextDecision).
+      nextDecisionAt: (index + 1) * 5,
+    };
+  });
+  const agentIds = agents.map((a) => a.id);
+  for (const agent of agents) agent.relationships = blankRelationships(agent.id, agentIds);
+  const agentByShip = new Map(
+    INITIAL_AGENTS.map((definition, index) => [definition.shipId, agents[index].id]),
+  );
+  const operators: Operator[] = ships.map((s) => {
+    const agentId = agentByShip.get(s.id);
+    return agentId
+      ? {
+          id: 'ops-' + s.id,
+          name: s.name + ' · 值班指挥组',
+          kind: 'agent',
+          agentId,
+          availability: 'available',
+        }
+      : {
+          id: 'ops-' + s.id,
+          name: s.name + ' · 值班指挥组',
+          kind: 'rules',
+          availability: 'available',
+        };
+  });
   const w: WorldState = {
-    version: 10,
+    version: 11,
     tick: 0,
     time: 0,
     seed: seed >>> 0,
@@ -172,12 +261,7 @@ export function createWorld(seed = 236807): WorldState {
     status: 'active',
     pauseReasons: [],
     commander: { id: 'commander', name: 'Dawn Frontier Command', rank: 'ADMIRAL' },
-    operators: ships.map((s) => ({
-      id: 'ops-' + s.id,
-      name: s.name + ' · 值班指挥组',
-      kind: 'rules',
-      availability: 'available',
-    })),
+    operators,
     assignments: ships.map((s) => ({ operatorId: 'ops-' + s.id, shipId: s.id, since: 0 })),
     losses: [],
     ships,
@@ -233,7 +317,10 @@ export function createWorld(seed = 236807): WorldState {
     logs: [],
     history: [],
     beams: [],
-    nextId: 1,
+    agents,
+    agentMessages: [],
+    agentInteractions: [],
+    nextId,
     nextLog: 1,
     nextComms: 1,
     nextHistory: 1,

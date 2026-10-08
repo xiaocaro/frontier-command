@@ -25,7 +25,7 @@ try {
   );
   await page.context().setOffline(true);
   const initial = (await page.evaluate(() => window.frontier.getState())).state;
-  assert.equal(initial.version, 10);
+  assert.equal(initial.version, 11);
   assert.equal(initial.ships.length, 6);
   assert.equal(initial.contacts.length, 0);
   const result = await page.evaluate(() =>

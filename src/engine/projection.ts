@@ -1,6 +1,8 @@
 import { productionQuotes } from './production';
 import type { SimulationEngine } from './engine';
-import type { Observation, Opportunity, Snapshot, Stock } from './types';
+import type { AgentObservation, Opportunity, Snapshot, Stock } from './types';
+import { availableActions } from './agent/actions';
+import { buildObservation } from './agent/observation';
 import { visibleIntel } from './sensors';
 import { frontierSectors, sectorId } from './world-generation';
 import { available } from './command-system';
@@ -196,33 +198,47 @@ export function snapshot(this: SimulationEngine): Snapshot {
     },
   });
 }
-export function getObservation(this: SimulationEngine, operatorId: string): Observation | null {
-  const a = this.state.assignments.find((a) => a.operatorId === operatorId),
-    s = this.state.ships.find((s) => s.id === a?.shipId);
-  if (!s) return null;
+/**
+ * The single observation channel, widened in place to the per-Agent view
+ * (docs/lv3/03-implementation-plan.md §4.3).
+ *
+ * World-level cropping is already done by `snapshot()` and is not repeated here; this adds the
+ * "what may *this* Agent know" layer and the affordances it may choose from. An operator with no
+ * Agent (`kind: 'rules'`) has no Agent view to hand out, so it returns `null` — callers must treat
+ * that as "no decision to make", never as an empty world.
+ *
+ * `availableActions` is derived from the live world state rather than the cropped snapshot; that is
+ * safe because every candidate source is already limited to what is discovered or owned (see
+ * `src/engine/agent/actions.ts`).
+ */
+export function getObservation(
+  this: SimulationEngine,
+  operatorId: string,
+): AgentObservation | null {
+  const w = this.state;
+  const assignment = w.assignments.find((a) => a.operatorId === operatorId),
+    ship = w.ships.find((s) => s.id === assignment?.shipId);
+  if (!ship) return null;
+  const operator = w.operators.find((o) => o.id === operatorId);
+  if (!operator?.agentId) return null;
+  const agent = w.agents.find((a) => a.id === operator.agentId);
+  if (!agent) return null;
   const snap = this.snapshot();
-  return structuredClone({
-    time: snap.time,
-    operatorId,
-    ship: s,
-    contacts: snap.contacts,
-    systems: snap.systems,
-    bodies: snap.bodies,
-    opportunities: snap.opportunities,
-    legalActions: s.current
-      ? []
-      : [
-          'MOVE',
-          'EXPLORE',
-          'SURVEY',
-          'HAUL',
-          'PATROL',
-          'RETREAT',
-          'RETURN',
-          'ASSIST_EVENT',
-          'TRANSIT',
-          'CAPTURE',
-          'HAIL',
-        ],
-  });
+  return structuredClone(
+    buildObservation(agent, {
+      time: snap.time,
+      tick: snap.tick,
+      operatorId,
+      agentId: agent.id,
+      ship,
+      contacts: snap.contacts,
+      systems: snap.systems,
+      bodies: snap.bodies,
+      opportunities: snap.opportunities,
+      credits: w.resources.credits,
+      tension: w.tension,
+      messages: w.agentMessages,
+      availableActions: availableActions(w, agent),
+    }),
+  );
 }

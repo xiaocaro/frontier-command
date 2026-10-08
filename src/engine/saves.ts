@@ -1,12 +1,21 @@
 import { worldSchema } from './save-schema';
 import type { WorldState } from './types';
 import { worldSchema as legacyV9Schema } from './legacy-v9/save-schema';
+import { worldSchema as legacyV10Schema } from './legacy-v10/save-schema';
 import { pairedSector, fixedPassage } from './wormhole-pairs';
-export const CURRENT_SAVE_VERSION = 10;
+export const CURRENT_SAVE_VERSION = 11;
 export class UnsupportedSaveVersionError extends Error {}
+/**
+ * v9 -> v10. The v9 shape is upgraded exactly as before; the only Lv3 change is the tail, which now
+ * hands the v10 result to `migrateV10` instead of validating it against the **live** schema.
+ *
+ * That tail is load-bearing (KNOWN_ISSUES C-14): once `worldSchema` is v11, validating a v10 object
+ * against it would demand `agents`/`agentMessages`/`agentInteractions` and every v9 save would fail
+ * to migrate.
+ */
 export function migrateV9(input: unknown): WorldState {
   const old = legacyV9Schema.parse(input);
-  const w: WorldState = {
+  const w = {
     ...old,
     version: 10,
     renamedEntityIds: [
@@ -44,12 +53,29 @@ export function migrateV9(input: unknown): WorldState {
       return { ...h, exitSector, exit: { x: exitSector.q * 400 + 90, y: exitSector.r * 400 - 80 } };
     }),
   };
-  return worldSchema.parse(w);
+  return migrateV10(w);
+}
+/**
+ * v10 -> v11. Purely additive: the Agent collections start empty and every existing field is
+ * carried over untouched, so a v10 save keeps behaving exactly as it did. The three `agents`-era
+ * collections are **not** back-filled with a starting roster — a migrated world has no Agents until
+ * a new world is created, which keeps the migration a data change rather than a gameplay change.
+ */
+export function migrateV10(input: unknown): WorldState {
+  const old = legacyV10Schema.parse(input);
+  return worldSchema.parse({
+    ...old,
+    version: 11,
+    agents: [],
+    agentMessages: [],
+    agentInteractions: [],
+  });
 }
 export function parseSave(input: unknown): WorldState {
   const version =
     input && typeof input === 'object' && 'version' in input ? input.version : undefined;
   if (version === 9) return migrateV9(input);
+  if (version === 10) return migrateV10(input);
   if (version !== CURRENT_SAVE_VERSION)
     throw new UnsupportedSaveVersionError('Unsupported save version: ' + version);
   return worldSchema.parse(input);

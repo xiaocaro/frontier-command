@@ -183,7 +183,7 @@ describe('mine accident repair and public response state', () => {
       expect(issue(engine, { type: 'ASSIST_EVENT', targetId: event.id }, ship.id).ok).toBe(true);
       run(engine, 0.1);
       expect(engine.state.events.find((v) => v.id === event.id)!.stage).toBe('resolved');
-      expect(engine.state.version).toBe(10);
+      expect(engine.state.version).toBe(11);
       expect(parseSave(engine.state).events.find((v) => v.id === event.id)!.work).toBe(20);
     }
     expect(a.state).toEqual(b.state);

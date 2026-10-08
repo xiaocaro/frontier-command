@@ -368,7 +368,7 @@ describe('v10 production, capture and persistent world', () => {
     const store = new SaveStore(dir);
     const loaded = store.read();
     expect(loaded.blocked).toBe(false);
-    expect(loaded.world?.version).toBe(10);
+    expect(loaded.world?.version).toBe(11);
     expect(loaded.world?.ships.map((s) => [s.id, s.x, s.y, s.photon, s.quantum])).toEqual(
       JSON.parse(original).ships.map(
         (s: { id: string; x: number; y: number; photon: number; quantum: number }) => [
@@ -382,12 +382,12 @@ describe('v10 production, capture and persistent world', () => {
     );
     expect(readFileSync(join(source, 'head.json'), 'utf8')).toBe(original);
     expect(readFileSync(join(dir, 'timeline-v9.json'), 'utf8')).toBe(index);
-    expect(store.root).toContain('frontiers-v10');
+    expect(store.root).toContain('frontiers-v11');
     const next = new SimulationEngine(loaded.world!);
     run(next, 5);
     store.write(next.state);
     expect(store.read().world).toEqual(next.state);
-    expect(store.restorePreviousDay({ ...next.state, tick: 14400, time: 1440 }).version).toBe(10);
+    expect(store.restorePreviousDay({ ...next.state, tick: 14400, time: 1440 }).version).toBe(11);
   });
   it('legacy ordinary portals are rerouted while explored sectors and fixed passage persist', () => {
     const old: unknown = JSON.parse(readFileSync('tests/fixtures/v9/initial.json', 'utf8'));
@@ -409,6 +409,10 @@ describe('v10 production, capture and persistent world', () => {
     legacy.version = 9;
     delete legacy.productionDiscountUnlocked;
     delete legacy.renamedEntityIds;
+    // v11 additions must be stripped too, otherwise this is not a v9-shaped object at all.
+    delete legacy.agents;
+    delete legacy.agentMessages;
+    delete legacy.agentInteractions;
     legacy.locations = current.locations.map(({ occupation: _, ...l }) => l);
     const migrated = parseSave(legacy);
     expect(migrated.wormholes.find((h) => h.id === 'wormhole:0:-1')!.exitSector.q).not.toBe(0);

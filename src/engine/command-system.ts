@@ -4,7 +4,17 @@ import { inventory, available } from './inventory';
 import { STORAGE } from './definitions/frontier';
 import { validateFrontierCommand, applyFrontierCommand } from './frontier-commands';
 import type { SimulationEngine } from './engine';
-import type { Action, Command, CommandResult, Cost, Directive, Ship, WorldState } from './types';
+import type {
+  Action,
+  AgentInteraction,
+  AgentMessage,
+  Command,
+  CommandResult,
+  Cost,
+  Directive,
+  Ship,
+  WorldState,
+} from './types';
 import { GOODS } from './types';
 import { actionSchema, commandSchema } from './commands';
 import { emptyStock } from './data';
@@ -32,7 +42,18 @@ export function pay(e: SimulationEngine, c: Cost, locationId = 'base') {
   }
 }
 export function validateAction(e: SimulationEngine, s: Ship, a: Action): CommandResult {
-  const w = e.state;
+  return validateActionIn(e.state, s, a);
+}
+/**
+ * The same rule check, against a `WorldState` instead of an engine.
+ *
+ * Lv3's candidate generation (`src/engine/agent/actions.ts`) must guarantee at generation time that
+ * an Agent is never offered an action the engine would refuse (KNOWN_ISSUES N-8). Routing that
+ * through here keeps `validateAction` the single rules authority instead of growing a second,
+ * drifting copy of the preconditions. Behaviour is identical — the engine form only unwraps
+ * `e.state`.
+ */
+export function validateActionIn(w: WorldState, s: Ship, a: Action): CommandResult {
   if (a.type === 'MOVE' || a.type === 'RETURN') return ok();
   if (a.type === 'ASSIST_EVENT') {
     const event = w.events.find(

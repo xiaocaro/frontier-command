@@ -1,0 +1,73 @@
+{
+  "id": "agent-1",
+  "name": "LYRA VOSS / 薇拉",
+  "career": "explorer",
+  "personality": {
+    "riskTolerance": 75,
+    "curiosity": 90,
+    "loyalty": 55,
+    "cooperation": 55,
+    "ambition": 70
+  },
+  "state": {
+    "fatigue": 12,
+    "stress": 8,
+    "morale": 74,
+    "trustInAdmiral": 62,
+    "loyaltyToCompany": 75,
+    "experience": 40,
+    "reputation": 5,
+    "goalProgress": 10
+  },
+  "goal": {
+    "id": "goal:agent-1",
+    "title": "测绘未知星区，发现并确认重要异常与线索",
+    "kind": "discovery",
+    "progress": 10,
+    "priority": 70
+  },
+  "relationships": [
+    { "targetAgentId": "agent-2", "value": 12, "trust": 55, "cooperation": 60 }
+  ],
+  "memories": [
+    {
+      "kind": "episodic",
+      "id": "memory-1",
+      "at": 120,
+      "text": "在 UNKNOWN SPACE 记录到异常信号。",
+      "tags": ["discovery"],
+      "weight": 60,
+      "subjectId": "body-1"
+    },
+    {
+      "kind": "social",
+      "id": "memory-2",
+      "at": 130,
+      "aboutAgentId": "agent-2",
+      "text": "诺亚愿意为我护航。",
+      "weight": 50
+    },
+    {
+      "kind": "promise",
+      "id": "memory-3",
+      "promiseId": "promise-1",
+      "at": 140,
+      "text": "Admiral 答应任务完成后授予 Deep Scan。",
+      "weight": 70
+    }
+  ],
+  "promises": [
+    {
+      "id": "promise-1",
+      "from": "admiral",
+      "to": "agent-1",
+      "type": "equipment",
+      "description": "任务完成后授予 Deep Scan 权限",
+      "status": "pending",
+      "createdAt": 140,
+      "resolvedAt": null,
+      "fulfills": { "kind": "grant-module", "key": "deepScan" }
+    }
+  ],
+  "nextDecisionAt": 300
+}

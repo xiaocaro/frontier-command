@@ -10,7 +10,7 @@ import {
 import { join } from 'node:path';
 import { z } from 'zod';
 import { worldSchema } from '../src/engine/save-schema';
-import { parseSave, UnsupportedSaveVersionError } from '../src/engine/saves';
+import { CURRENT_SAVE_VERSION, parseSave, UnsupportedSaveVersionError } from '../src/engine/saves';
 import { gameCalendar, TICKS_PER_DAY } from '../src/engine/clock';
 import type { WorldState } from '../src/engine/types';
 import type { TimelineStatus } from '../src/engine/timeline';
@@ -22,8 +22,14 @@ const metaSchema = z
   })
   .strict();
 const indexSchema = z
-  .object({ version: z.literal(10), activeId: branchId, branches: z.array(metaSchema) })
+  .object({
+    version: z.literal(CURRENT_SAVE_VERSION),
+    activeId: branchId,
+    branches: z.array(metaSchema),
+  })
   .strict();
+/** Roots and indexes of previous layouts, newest first, used to trigger and walk the migration. */
+const PREVIOUS_SAVE_VERSIONS = [10, 9] as const;
 type Index = z.infer<typeof indexSchema>;
 function atomic(path: string, data: unknown) {
   writeFileSync(path + '.tmp', JSON.stringify(data), 'utf8');
@@ -41,11 +47,14 @@ export class SaveStore {
   private blocked = false;
   private migrationFailed = false;
   constructor(readonly directory: string) {
-    this.root = join(directory, 'frontiers-v10');
-    this.indexPath = join(directory, 'timeline-v10.json');
-    if (!existsSync(this.indexPath) && existsSync(join(directory, 'timeline-v9.json'))) {
+    // Derived from the single version authority rather than hard-coded. The previous hard-coding is
+    // exactly what let the disk layout drift from `CURRENT_SAVE_VERSION` (KNOWN_ISSUES C-15).
+    this.root = join(directory, 'frontiers-v' + CURRENT_SAVE_VERSION);
+    this.indexPath = join(directory, 'timeline-v' + CURRENT_SAVE_VERSION + '.json');
+    const previous = this.previousLayout();
+    if (!existsSync(this.indexPath) && previous) {
       try {
-        this.migrateTimeline();
+        this.migrateTimeline(previous);
       } catch {
         this.blocked = true;
         this.migrationFailed = true;
@@ -61,18 +70,41 @@ export class SaveStore {
         this.blocked = true;
       }
   }
-  private migrateTimeline() {
+  /**
+   * The newest previous layout present on disk, or `null` when there is nothing to migrate from.
+   * Checking v10 as well as v9 is what makes a v10 player actually migrate (KNOWN_ISSUES C-15).
+   */
+  private previousLayout(): number | null {
+    for (const version of PREVIOUS_SAVE_VERSIONS)
+      if (existsSync(join(this.directory, 'timeline-v' + version + '.json'))) return version;
+    return null;
+  }
+  /**
+   * Migrates a whole previous timeline onto the current layout.
+   *
+   * Chain-agnostic: every world file is read through `loadWorld` -> `parseSave`, which already walks
+   * v9 -> v10 -> v11, so a v9 source and a v10 source take the same path. Original files are never
+   * rewritten: the new root is staged, validated branch by branch, and only then renamed into place.
+   */
+  private migrateTimeline(sourceVersion: number) {
     const legacyIndex = indexSchema
-      .extend({ version: z.literal(9) })
-      .parse(JSON.parse(readFileSync(join(this.directory, 'timeline-v9.json'), 'utf8')));
+      .extend({ version: z.literal(sourceVersion) })
+      .parse(
+        JSON.parse(
+          readFileSync(join(this.directory, 'timeline-v' + sourceVersion + '.json'), 'utf8'),
+        ),
+      );
     if (!legacyIndex.branches.some((b) => b.id === legacyIndex.activeId))
       throw Error('Missing active branch');
     if (existsSync(this.root)) throw Error('Uncommitted migration preserved');
-    const stage = join(this.directory, 'frontiers-v10-migration-' + Date.now());
+    const stage = join(
+      this.directory,
+      'frontiers-v' + CURRENT_SAVE_VERSION + '-migration-' + Date.now(),
+    );
     mkdirSync(stage, { recursive: true });
-    // Validate every branch before publishing its index; v9 files are never rewritten.
+    // Validate every branch before publishing its index; previous-generation files are never rewritten.
     for (const branch of legacyIndex.branches) {
-      const source = join(this.directory, 'frontiers-v9', branch.id);
+      const source = join(this.directory, 'frontiers-v' + sourceVersion, branch.id);
       const destination = join(stage, branch.id);
       mkdirSync(destination);
       const head = (() => {
@@ -98,7 +130,7 @@ export class SaveStore {
       }
     }
     renameSync(stage, this.root);
-    atomic(this.indexPath, { ...legacyIndex, version: 10 });
+    atomic(this.indexPath, { ...legacyIndex, version: CURRENT_SAVE_VERSION });
   }
   get path() {
     return join(this.root, this.index?.activeId ?? 'uninitialized', 'head.json');
@@ -108,11 +140,11 @@ export class SaveStore {
       return {
         world: null,
         message: this.migrationFailed
-          ? 'v9 时间线迁移验证失败；原存档完整保留，已阻止启用新版存档。'
+          ? '旧版时间线迁移验证失败；原存档完整保留，已阻止启用新版存档。'
           : '时间线索引损坏或版本不支持；已保留原文件并阻止覆盖。',
         blocked: true,
       };
-    if (!this.index) return { world: null, message: 'v10 曙光边疆就绪。', blocked: false };
+    if (!this.index) return { world: null, message: '曙光边疆就绪。', blocked: false };
     const terminal = join(this.root, this.index.activeId, 'failure.json');
     if (existsSync(terminal)) {
       try {
@@ -131,7 +163,7 @@ export class SaveStore {
         const world = loadWorld(path);
         return {
           world,
-          message: path === this.path ? '已恢复 v10 时间线' : '已从同代备份恢复',
+          message: path === this.path ? '已恢复时间线' : '已从同代备份恢复',
           blocked: false,
         };
       } catch (error) {
@@ -164,7 +196,7 @@ export class SaveStore {
     const meta = { id, parent };
     atomic(join(dir, 'branch.json'), meta);
     const next: Index = {
-      version: 10,
+      version: CURRENT_SAVE_VERSION,
       activeId: id,
       branches: [...(this.index?.branches ?? []), meta],
     };

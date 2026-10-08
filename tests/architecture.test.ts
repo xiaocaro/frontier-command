@@ -102,7 +102,7 @@ describe('authoritative v9 world, deterministic replay, Agent boundary', () => {
   });
   it('unsupported saves and impossible inventories, slots and refs are rejected', () => {
     const e = quietEngine();
-    for (const version of [5, 6, 7, 8, 11])
+    for (const version of [5, 6, 7, 8, 12])
       expect(() => parseSave({ ...e.state, version })).toThrow();
     for (const change of [
       (w: typeof e.state) => {

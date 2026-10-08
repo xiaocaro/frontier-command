@@ -1,5 +1,43 @@
 import type { SimulationSpeed } from './clock';
 import type { ShipClassId } from './definitions/ships';
+import type {
+  Agent,
+  AgentInteraction,
+  AgentMessage,
+  AgentMessageKind,
+  AgentObservation,
+  AgentTrigger,
+  MessagePayload,
+} from './agent/types';
+export type {
+  Agent,
+  AgentActionCandidate,
+  AgentCareer,
+  AgentDecision,
+  AgentGoal,
+  AgentInteraction,
+  AgentMemory,
+  AgentMessage,
+  AgentMessageKind,
+  AgentObservation,
+  AgentPersonality,
+  AgentPromise,
+  AgentRelationship,
+  AgentState,
+  AgentStateDelta,
+  AgentTrigger,
+  EpisodicMemory,
+  GoalKind,
+  InteractionKind,
+  InteractionOutcome,
+  MemoryTag,
+  MessagePayload,
+  PromiseFulfillment,
+  PromiseMemory,
+  PromiseStatus,
+  PromiseType,
+  SocialMemory,
+} from './agent/types';
 export type Point = { x: number; y: number };
 export type FactionId = 'starfleet' | 'orion' | 'romulan';
 export const GOODS = ['materials', 'photon', 'quantum', 'specialFinds'] as const;
@@ -382,7 +420,10 @@ export interface IndustryJob {
 export interface Operator {
   id: string;
   name: string;
-  kind: 'rules';
+  /** `'agent'` operators are driven by an Lv3 Agent; `'rules'` operators keep the Lv1/Lv2 behaviour. */
+  kind: 'rules' | 'agent';
+  /** Set exactly when `kind === 'agent'`; points at `Agent.id` (docs/lv3/03-implementation-plan.md §4.1). */
+  agentId?: string;
   availability: 'available' | 'vesselLost';
 }
 export interface Assignment {
@@ -450,7 +491,12 @@ export type SimulationEvent =
   | { type: 'dayBoundary'; day: number; tick: number; time: number }
   | { type: 'criticalPause'; reasons: CriticalReason[] }
   | { type: 'shipDestroyed'; shipId: string; operatorIds: string[]; tick: number }
-  | { type: 'commandLost'; tick: number };
+  | { type: 'commandLost'; tick: number }
+  /**
+   * Lv3 decision trigger. Carried on the transient `pendingEvents` channel, so it never enters
+   * `WorldState` and cannot affect the same-seed replay assertion.
+   */
+  | { type: 'agentTrigger'; trigger: AgentTrigger };
 /** Only completed, visible own-ship actions may be delivered as UI events. */
 export type PublicSimulationEvent = {
   type: 'shipTransited';
@@ -472,7 +518,7 @@ export interface SiteIntel extends Point {
   lastSeen: number;
 }
 export interface WorldState {
-  version: 10;
+  version: 11;
   tick: number;
   time: number;
   seed: number;
@@ -515,6 +561,12 @@ export interface WorldState {
   logs: LogEntry[];
   history: HistoryEntry[];
   beams: Beam[];
+  /** Lv3 Agent roster (bounded: 4 initial Agents). */
+  agents: Agent[];
+  /** Lv3 Admiral <-> Agent and Agent <-> Agent messages (bounded: 200). */
+  agentMessages: AgentMessage[];
+  /** Lv3 interaction audit trail, including the effects actually applied (bounded: 200). */
+  agentInteractions: AgentInteraction[];
   nextId: number;
   nextLog: number;
   nextComms: number;
@@ -528,7 +580,7 @@ export interface Opportunity {
 }
 /** Public read model: faction assets, intentions, seed and unknown geography are deliberately absent. */
 interface SnapshotData {
-  version: 10;
+  version: 11;
   tick: number;
   time: number;
   paused: boolean;
@@ -637,21 +689,34 @@ export type Command =
   | { type: 'repairFacility'; locationId: string }
   | { type: 'acknowledge'; communicationId: number }
   | { type: 'pause'; paused: boolean }
-  | { type: 'speed'; speed: SimulationSpeed };
+  | { type: 'speed'; speed: SimulationSpeed }
+  /**
+   * Lv3: the only command through which Agent social writes enter the engine. An Agent may only
+   * speak as itself (`from === actorId && from !== 'admiral'`); the Admiral may speak as `'admiral'`
+   * (docs/lv3/03-implementation-plan.md §4.5/§4.6).
+   */
+  | {
+      type: 'agentMessage';
+      from: 'admiral' | string;
+      to: string | 'admiral';
+      kind: AgentMessageKind;
+      text: string;
+      payload: MessagePayload | null;
+    };
 export type SessionCommand = { type: 'restorePreviousDay' | 'beginNewFrontier' };
 export type CommandResult = { ok: boolean; reason: string };
-interface ObservationData {
-  time: number;
-  operatorId: string;
-  ship: Ship;
-  contacts: IntelRecord[];
-  systems: StarSystem[];
-  bodies: Body[];
-  opportunities: Opportunity[];
-  legalActions: string[];
-}
+/**
+ * Lv3: `getObservation` is the single observation channel and is widened in place to the per-Agent
+ * view (docs/lv3/03-implementation-plan.md §4.3). The deprecated hard-coded `legalActions` list is
+ * replaced by `availableActions`, which is built from the world state so every entry is an already
+ * constructed, already legal `Action` (docs/lv3/02-domain-model.md §10).
+ *
+ * The port's key set is deliberately unchanged — `tests/architecture.test.ts` asserts exactly
+ * `['getObservation','submitAction']`, so choiceId resolution stays in the Agent layer
+ * (docs/lv3/KNOWN_ISSUES.md C-11).
+ */
 export interface AgentControllerPort {
-  getObservation(): Observation | null;
+  getObservation(): AgentObservation | null;
   submitAction(action: Action): CommandResult;
 }
 
@@ -662,4 +727,3 @@ export type ReadonlyDeep<T> = T extends readonly (infer Item)[]
     ? { readonly [Key in keyof T]: ReadonlyDeep<T[Key]> }
     : T;
 export type Snapshot = ReadonlyDeep<SnapshotData>;
-export type Observation = ReadonlyDeep<ObservationData>;
