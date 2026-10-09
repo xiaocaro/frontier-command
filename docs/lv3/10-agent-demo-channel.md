@@ -49,6 +49,19 @@ P3 结束时，EVT-01…09 **全部有自动测试**，规格也**从未要求**
 记忆条数取 `ROSTER_MEMORY_LIMIT = 6`，用 `recentMemories()` 排序（**与决策看到的同一种排序**），
 所以面板里最上面那条就是决策最在意的那条。
 
+同一通道还带一份**通信记录** `agentTranscriptView(w)`：`TRANSCRIPT_LIMIT = 20`，只取 Admiral 参与的
+行（`from === 'admiral' || to === 'admiral'`），按时间正序。裁剪同样是设计的一部分：
+
+| 给出 | 不给 | 为什么 |
+| --- | --- | --- |
+| `id`/`at`/`from`/`to`/双方 **`name`**/`kind`/`text` | `payload` | 里面只有面板不显示的 id（`promiseId`、`requestingAgentId`） |
+| — | `read` | 那是 **Agent 收件箱**的机制，与 `nextDecisionAt` 同类，不是「告诉过 Admiral 的事」；而且它是**刻意的非过滤条件**——`consumeAnswered` 会在 Agent 回话时把 Admiral 那条标成已读，一过滤就把「答复所针对的那条」删掉了 |
+
+它取自 `agentMessages` 而**不是**解析 `communications`：镜像行 `NAME ← NAME：text` 是给人读的展示
+字符串，从它反解说话人／收件人／正文要写正则处理含空格的名字和全角冒号——demo 里已经有一个带 fallback
+的这样的解析器。文本本身不构成新泄漏：引擎无条件把每条 Agent 发言镜像进 `communications`，而它本来就在
+Snapshot 里。
+
 ### 2.2 最小 LCARS 面板
 
 - `src/ui/components/AgentChannel.tsx`，挂在 `.communications` **内部**、`.comms-list` 之后。
@@ -61,6 +74,20 @@ P3 结束时，EVT-01…09 **全部有自动测试**，规格也**从未要求**
 **面板能做的**：选 Agent / 选 kind（`command`·`ask`·`negotiate`·`override`）/ 填文本 / 发送；
 override 另给一个 `directiveActionType` 选择器；一个 **`承诺 Deep Scan 优先权限`** 按钮；
 一个**刷新**按钮。`ENCOURAGE` 不做（`02-mvp-traceability.md` §1 判为延后）。
+
+**面板现在也显示这段对话**：`agent-thread` 列出所选 Agent 的来往（Admiral 发出的与发给 Admiral 的），
+**最新在上**。倒序就是「答复显示在触发消息之上」的做法——答复在时间上必然晚于它所答复的消息，所以不需要
+任何配对字段。**也没有可用的配对字段**：消息模型里就没有 reply-to，`consumeAnswered` 是刻意做粗的，
+顺序是唯一的联系（与通信栏一致）。
+
+箭头沿用**通信栏的同一套约定**（`command-system.ts` N-6：箭头背离说话人），所以面板里的
+`LYRA VOSS ← Dawn Frontier Command：` 与通信栏那一行是同一句话，而不是第二份可能漂移的渲染。
+
+面板**只在打开时**取数，因此它还按 shell 传入的 `revision`（通信栏长度，每条 Agent 消息恰好 +1）重取；
+否则打开之后才到的答复永远不会出现。
+
+发送后**仍然清空输入框**：触发消息没有消失，它进了记录，而输入框不该留着一句已经发出去的话——
+`tests/e2e/vertical-slice.spec.ts` 同时断言这两件事。
 
 **承诺为什么是两步**：`agentMessage{kind:'promise'}` 的 payload 只有一个 `promiseId`，**装不下
 `fulfills`**，所以它无法创建承诺——`agentEvent{promise-made}` 才能，且 id 由引擎生成。面板因此
@@ -251,6 +278,37 @@ npm run demo:ui -- --pace=0.5    # 反复重跑
 
 非法值会被拒绝并给出建议（`--pace=99` → 报错退出）。命令行参数由启动器读、经环境变量交给测试，
 因为 **Playwright 会拒绝未知的命令行选项**，测试文件里读不到 `--pace`。
+
+### 提示词之外的那次停顿：Agent 回话后世界暂停 2 秒
+
+Agent 答复 Admiral 时，**主进程会把世界停住 2 秒再放开**（`electron/read-hold.ts`，时长由
+`FRONTIER_READ_HOLD_MS` 决定，默认 2000）。这是本项目**唯一一处自动恢复**——其余所有暂停都等人来按
+——所以危险的不是定时器而是**归属**：误把别人的暂停解除才是真 bug。规则是纯函数，单独成模块、单独测。
+
+- 暂停走**普通 `pause` 命令**，所以 `WorldState` 仍然只经命令门被写（CLAUDE.md §2.1），引擎仍然权威。
+- **不带 `pauseReason`**：带 reason 会弹出 `PRIORITY HOLD … 处置后继续` 的横幅，那是在要求玩家行动，
+  而这里只是让人读一眼。
+- **只在归属仍然是自己时**才恢复：世界仍暂停、`status` 仍 `active`、`pauseReasons` 仍为空。引擎自己发起
+  的暂停（critical / commandLost）都带信号，因此进不了这个条件；而「无 reason 的裸暂停」与自己的分不开，
+  所以 `main.ts` 里每一个那样的写入点都显式 `disarm()`。残余限制记在 `KNOWN_ISSUES.md` `C-41`。
+- **演示不缩放它**：它是游戏本身的固定时长，不是演出的节拍（同 `expect.poll` 的上限）。演示因此**直接继承**
+  它，录下来的就是玩家看到的。想让演示里的停顿时长跟着 `--pace` 走，在 `scripts/demo-ui.mjs` 里按 pace 设
+  `FRONTIER_READ_HOLD_MS` 即可——那是一行的事，而且是**故意**不做成默认。
+
+E2E 一律把它设成 `0`：确定性分档的 Agent 会**自己**开口对 Admiral 说话，一个随时可能落下的冻结会让
+spec 因为与它无关的原因变得不稳定。唯一真正测它的用例（`tests/e2e/vertical-slice.spec.ts`）显式传一个
+非零值，断言它**落下**、并且**自己放开**。
+
+### 通信栏的两处调整
+
+同一次改动里，`PRIORITY COMMUNICATIONS` 也改了排序与默认过滤，为的是同一条要求（触发消息别消失、
+答复显示在触发之上）：
+
+- **排序只把 `urgent` 钉在最前**，其余**严格按时间倒序**。原来 `high` 也参与排序，而 Override 触发消息
+  被镜像为 `high`、它的答复是 `normal`，于是答复被排在它所答复的命令**下面**。`urgent` 保持置顶是原本
+  刻意的部分（新威胁不该被一条刚到的 Agent 发言挤下去），这一点没动。
+- **默认显示全部**（`showRead` 初始 `true`）：确认过的行不再消失。原来的默认是「仅未读」，而确认一行就
+  等于把它——连同它答复的那条——从列表里删掉。按钮语义不变，仍可切回仅未读。
 
 ### 它不录像
 

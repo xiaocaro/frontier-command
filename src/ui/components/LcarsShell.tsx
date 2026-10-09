@@ -46,7 +46,10 @@ export function LcarsShell({
   contextSerial: string;
   selectedShipIds: string[];
 }) {
-  const [showRead, setShowRead] = useState(false),
+  // Shows everything by default, not only the unread. The list is where a conversation with an Agent
+  // is read back, and acknowledging a line used to make it — and the message it answered — disappear.
+  // The toggle still narrows to unread for anyone who wants the old behaviour.
+  const [showRead, setShowRead] = useState(true),
     [showContext, setShowContext] = useState(false),
     [showNav, setShowNav] = useState(false);
   const contextRef = usePanelFocus(() => setShowContext(false), false, showContext);
@@ -92,16 +95,25 @@ export function LcarsShell({
     lost = world.status === 'commandLost';
   const communications = [...world.communications]
     .filter((c) => showRead || !c.read)
+    /**
+     * Urgent first, then **strictly newest-first** — and nothing else reorders.
+     *
+     * The sort used to rank `high` above `normal` as well, which split conversations: an Override is
+     * mirrored as `high` and the Agent's answer to it as `normal`, so the answer was listed *below* the
+     * order it answered. Chronology is the only link the data has between a message and its reply —
+     * there is no reply-to id — so the list has to preserve chronology to keep the pair readable.
+     *
+     * `urgent` keeps its pin, which is the part that was deliberate: a new threat should stay on top
+     * even when an Agent spoke a moment later.
+     */
     .sort(
       (a, b) =>
-        ({ urgent: 3, high: 2, normal: 1 })[b.priority] -
-          { urgent: 3, high: 2, normal: 1 }[a.priority] || b.id - a.id,
+        (b.priority === 'urgent' ? 1 : 0) - (a.priority === 'urgent' ? 1 : 0) || b.id - a.id,
     );
   /**
-   * The newest line by **creation**, which is not the same as the first row: the sort above puts
-   * priority first, so an urgent threat stays on top even when an Agent spoke a moment later. Derived
-   * here rather than stored, so the highlight moves by itself — no "clear the previous one" step, and
-   * nothing to keep in sync.
+   * The newest line by **creation**, which is not the same as the first row: an urgent threat stays
+   * pinned above it even when an Agent spoke a moment later. Derived here rather than stored, so the
+   * highlight moves by itself — no "clear the previous one" step, and nothing to keep in sync.
    */
   const latestId = communications.reduce<number | null>(
     (newest, c) => (newest === null || c.id > newest ? c.id : newest),
@@ -195,7 +207,14 @@ export function LcarsShell({
                   <p className="muted">CHANNEL CLEAR · 暂无待处理通信</p>
                 )}
               </div>
-              <AgentChannel command={command} commanderName={world.commander.name} />
+              {/* `revision`: every Agent message adds exactly one mirrored line to the feed, so its
+                  length is a sufficient "the world moved" signal for the panel to re-fetch on —
+                  otherwise an answer that arrives while the panel is open would never show up. */}
+              <AgentChannel
+                command={command}
+                commanderName={world.commander.name}
+                revision={world.communications.length}
+              />
             </section>
             <section className="clock-panel" aria-label="Simulation controls">
               <strong data-testid="game-clock">

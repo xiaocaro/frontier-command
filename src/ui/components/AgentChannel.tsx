@@ -18,7 +18,12 @@
  * line when it is not.
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { AgentChannelView, AgentLoopStats, RosterAgent } from '../../engine/agent/roster';
+import type {
+  AgentChannelView,
+  AgentLoopStats,
+  AgentTranscriptEntry,
+  RosterAgent,
+} from '../../engine/agent/roster';
 import type { CommandSender } from '../types';
 import { LcarsButton, LcarsTextBar } from './Lcars';
 
@@ -41,16 +46,24 @@ const PROMISE_TEXT = '完成这次任务后，我给你一次 Deep Scan 优先�
 /**
  * `commanderName` is the sender's name as the **engine** spells it (`commander.name`), passed in rather
  * than invented here so the prefix above the box matches the line the engine writes into the feed.
+ *
+ * `revision` is any number that changes when the world does — the shell passes the length of the
+ * Communications feed, and every Agent message adds exactly one mirrored line to it. The panel only
+ * fetches while it is open, so without this a reply that arrived after opening would never appear
+ * until someone pressed 刷新.
  */
 export function AgentChannel({
   command,
   commanderName,
+  revision,
 }: {
   command: CommandSender;
   commanderName: string;
+  revision: number;
 }) {
   const [open, setOpen] = useState(false);
   const [roster, setRoster] = useState<RosterAgent[]>([]);
+  const [messages, setMessages] = useState<AgentTranscriptEntry[]>([]);
   const [stats, setStats] = useState<AgentLoopStats>({ decisions: 0, modelCalls: 0, dropped: 0, lastDrop: null });
   const [speed, setSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +86,7 @@ export function AgentChannel({
       setRoster(next.agents);
       setStats(next.stats);
       setSpeed(next.speed);
+      setMessages(next.messages);
       setTarget((current) => current || (next.agents[0]?.id ?? ''));
       setError(null);
     } catch (failure) {
@@ -82,7 +96,7 @@ export function AgentChannel({
 
   useEffect(() => {
     if (open) void refresh();
-  }, [open, refresh]);
+  }, [open, revision, refresh]);
 
   const send = async () => {
     if (!target) return;
@@ -147,6 +161,18 @@ export function AgentChannel({
     await refresh();
   };
 
+  /**
+   * The selected Agent's correspondence, **newest first**.
+   *
+   * The reversal is the whole point of the feature: an answer is always a later message than the
+   * message it answers, so newest-first puts it *above* its trigger. Nothing pairs them — there is no
+   * reply-to id in the message model, and `consumeAnswered` was deliberately left blunt — the order
+   * is the only link, which is what the Communications feed relies on too.
+   */
+  const thread = (target ? messages.filter((m) => m.from === target || m.to === target) : [])
+    .slice()
+    .reverse();
+
   return (
     <details className="agent-channel" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>
@@ -198,6 +224,30 @@ export function AgentChannel({
             </span>
           </div>
         ))}
+
+        {/*
+          What was asked and what came back, newest first — see `thread`. Deliberately rendered with
+          the **same arrow convention as the feed** (`command-system.ts`, N-6): the arrow points away
+          from the speaker, so `LYRA VOSS ← Dawn Frontier Command：` here is the same sentence as the
+          mirrored line there, rather than a second rendering free to drift from it.
+        */}
+        {thread.length > 0 && (
+          <div className="agent-thread">
+            {thread.map((message) => (
+              <p
+                key={message.id}
+                className={'agent-line ' + (message.from === 'admiral' ? 'is-sent' : 'is-reply')}
+              >
+                <span>
+                  {message.from === 'admiral'
+                    ? message.fromName + ' → ' + message.toName + '：'
+                    : message.toName + ' ← ' + message.fromName + '：'}
+                </span>
+                {message.text}
+              </p>
+            ))}
+          </div>
+        )}
 
         <div className="agent-compose">
           <label>

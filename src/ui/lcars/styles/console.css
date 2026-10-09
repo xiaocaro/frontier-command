@@ -195,6 +195,29 @@
 .agent-memory {
   font-size: 0.85em;
 }
+/* What was asked and what came back, newest first — so an answer sits above the message it answers.
+   It lives inside `.agent-channel-body`, which is already the scrolling, height-capped box, so a
+   long transcript cannot grow the panel and push the map. */
+.agent-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  margin: 0.1em 0;
+  padding: 0.25em 0;
+  border-top: 1px solid var(--african-violet);
+  border-bottom: 1px solid var(--african-violet);
+}
+.agent-line {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+/* The `Speaker → Listener：` prefix is secondary; the words are what the reader is here for. */
+.agent-line > span {
+  color: var(--muted);
+}
+.agent-line.is-reply > span {
+  color: var(--barley);
+}
 .agent-compose {
   display: flex;
   flex-wrap: wrap;

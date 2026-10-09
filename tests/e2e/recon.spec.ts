@@ -23,7 +23,8 @@ async function launch(world: WorldState, scale = 1, visible = false) {
   new SaveStore(directory).write(world);
   app = await electron.launch({
     args: ['--force-device-scale-factor=' + scale, resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: visible ? '0' : '1' },
+    // `FRONTIER_READ_HOLD_MS: '0'` — the read hold would freeze the world mid-assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: visible ? '0' : '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const page = await app.firstWindow();
   await page.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });
@@ -115,7 +116,7 @@ test('visible offline Electron: actual passage, survey, Veil recovery, cloak con
   app = undefined;
   app = await electron.launch({
     args: [resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1' },
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const restoredPage = await app.firstWindow();
   await restoredPage.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });

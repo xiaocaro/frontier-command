@@ -198,7 +198,73 @@ ship(弹药/船体)  +  candidate 的目标点  ──assessReadiness──▶  
 
 ---
 
-## 7. 推荐下一步
+## 7. 后续改动：答复可见性与「读完再走」的 2 秒（**在当前阶段之外**）
+
+需求（用户原话）：**大模型响应的消息内容也显示出来；触发消息不消失；响应消息显示在对应的触发消息之上；
+游戏执行停顿 2 秒供查看**，且**面板与通信栏两个界面都要改**、**游戏与演示都要停**。
+
+这条要求**不新增任何引擎规则、命令、投影或存档字段**：`agentMessages` 本来就在存档里，暂停是一条普通
+`pause` 命令。
+
+### 7.1 创建 / 修改
+
+| 文件 | 类别 | 职责 |
+| --- | --- | --- |
+| `electron/read-hold.ts` | CREATE | 2 秒阅读暂停的**归属**规则（`arm`/`disarm`/`dispose`、env 解析、`holdStillOwns`）。纯模块：无 Electron、无引擎、无时钟（定时器注入），所以能脱离 Electron 单测 |
+| `tests/read-hold.test.ts` | CREATE | 14 例：env 解析与钳制、归属真值表、arm 幂等、重复 arm 只**延长不叠加**、disarm 不碰世界、`0` 即关闭 |
+| `src/engine/agent/roster.ts` | MODIFY | `agentTranscriptView(w)` + `TRANSCRIPT_LIMIT`，`AgentChannelView` 增加 `messages` |
+| `electron/agent-host.ts` | MODIFY | `AgentHostOptions.onSpoke`，由 `messengerFor` 在**派发成功且 `to === 'admiral'`** 时触发 |
+| `electron/main.ts` | MODIFY | 装配 `ReadHold`；`agents:get` 增加 `messages`；在**每个别的暂停写入点** `disarm()` |
+| `src/ui/components/AgentChannel.tsx` | MODIFY | `revision` 属性 + 对话记录（最新在上，渲染在输入框之上） |
+| `src/ui/components/LcarsShell.tsx` | MODIFY | 排序只钉 `urgent`；`showRead` 默认 `true`；把 `world.communications.length` 当 `revision` 传入 |
+| `src/ui/lcars/styles/console.css` | MODIFY | `.agent-thread` / `.agent-line`（在既有 `max-height:40vh` 的滚动盒内，不动 `.comms-*` 排版） |
+| `tests/agent/{roster,host}.test.ts` | MODIFY | 记录裁剪 6 例 + `onSpoke` 精确触发次数 1 例 |
+| `tests/e2e/*.spec.ts` | MODIFY | 9 处 launch env 加 `FRONTIER_READ_HOLD_MS: '0'`；`vertical-slice.spec.ts` 另加 1 条暂停用例 + 记录断言 |
+| `tests/e2e/agent-channel.demo.ts` | MODIFY | `waitForReply` 返回**答复原文**，旁白打印它 |
+
+**未修改**：`src/engine/engine.ts`、`command-system.ts`、`projection.ts`、`save-schema.ts`、
+`agent/schemas.ts`、`combat.ts`、`schemas/*.json`、`electron/agent/**`、`electron/persistence.ts`、
+`electron/preload.ts`、`src/global.d.ts`（**没有新增 IPC 通道**，只加宽了既有 `agents:get`）。
+
+### 7.2 关键决定
+
+| 决定 | 选择 | 理由 |
+| --- | --- | --- |
+| 记录取自哪里 | `agentMessages` | 结构化；镜像行 `NAME ← NAME：text` 是展示字符串，反解要写正则（demo 里已有一个带 fallback 的）。文本**不构成新泄漏**：引擎无条件把它镜像进 `communications`，而那本来就在 Snapshot 里 |
+| 触发↔答复怎么配对 | **靠时间顺序**，不新增 id | 消息模型里没有 reply-to，`consumeAnswered` 是刻意做粗的。**最新在上**天然把答复放在触发之上 |
+| `read` | **不作为过滤条件** | `consumeAnswered` 在 Agent 回话时把 Admiral 那条标已读——一过滤就删掉「答复所针对的那条」 |
+| 通信栏排序 | **只钉 `urgent`**，其余严格 id 倒序 | Override 触发被镜像为 `high`、答复为 `normal`，原排序会让答复排在命令**下面**。`urgent` 置顶是原本刻意的部分，保留 |
+| 通信栏默认过滤 | `showRead` 默认 `true` | 「确认」不再让行消失。切换按钮语义不变 |
+| 暂停的触发条件 | `reply.to === 'admiral'` | 需求是**模型对 Admiral 的答复**；Agent↔Agent 的 `team-reply` 不该冻结世界 |
+| 暂停时长 | `FRONTIER_READ_HOLD_MS`，默认 2000，**测试里 `0`** | 与 `FRONTIER_USER_DATA`/`FRONTIER_HEADLESS` 同惯例。确定性分档的 Agent 会**自己**对 Admiral 说话，随时可能落下的冻结会让无关 spec 不稳 |
+| 带不带 `pauseReason` | **不带** | 带 reason 会弹 `PRIORITY HOLD … 处置后继续`，那是要求玩家行动 |
+
+### 7.3 验证（实际执行）
+
+| 命令 | 结果 |
+| --- | --- |
+| `npx tsc --noEmit` | **PASS**（0 error） |
+| `npx tsc -p tsconfig.electron.json` | **PASS**（0 error） |
+| `npm test` | **PASS** — 36 files / **571 passed + 1 skipped**（较改动前 550 增加 21：`read-hold` 14 + `roster` 记录 6 + `host` 的 `onSpoke` 1） |
+| `npm run build` | **PASS** — exit 0 |
+| `npx playwright test vertical-slice.spec.ts` | **PASS** — **3 passed / 24.5s**（原 2 条 + 新增「答复后暂停并自行放开」） |
+| `npx playwright test lcars.spec.ts` | **PASS** — **5 passed / 2.4m**。**几何闸门通过**：`showRead` 默认改成全部**没有**顶掉地图高度断言（`C-40` 记过「只改字号就失败」的前车之鉴，所以这一条是必跑的） |
+| `npx playwright test`（其余 6 个 spec / 31 用例） | **PASS（30 passed, 13.6m）** —— 唯一失败 `mine-accidents.spec.ts:131` 是 §4 已记录的**既存阈值 flake**（`toContainText('现场施工', { timeout: 15000 })`，报错正是「15.000s vs 需求约 15.38s」）。**单跑同样失败**，所以不是满载时序问题；而本 spec 已显式设 `FRONTIER_READ_HOLD_MS=0`，本次改动不可能冻结它的世界，也不碰仿真速率 |
+
+### 7.4 已知限制
+
+1. **归属的残余缺口**：`holdStillOwns` 靠「仍暂停 + `status==='active'` + `pauseReasons` 为空」判断。引擎
+   自发的暂停都带信号，但 `main.ts` 的**存档失败**与 **advanceFrame 抛错**正是「无 reason 的裸暂停」——
+   与 hold 不可分辨。所以不靠猜：那两处（以及会话切换、任何 `pause` 命令）都**显式 `disarm()`**。**将来在
+   `main.ts` 之外新增裸暂停写入点，必须自己 `disarm()`**（`C-41`）。
+2. **记录是有界的，不是无限的**：`agentMessages` 上限 200，`boundMessages` **先淘汰已读**。所以「触发消息
+   不消失」在 200 条以内成立，超长一局仍可能淘汰掉一条很旧的触发。
+3. **暂停用的是同一把 `paused`**：2 秒内 UI 会显示 `SIMULATION PAUSED`、按钮变「继续」。这是需求要的
+   「停 2 秒供查看」，不是故障，但确实与玩家自己按的暂停共用同一个指示。
+
+---
+
+## 8. 推荐下一步
 
 1. **按 `10-agent-demo-channel.md` §4 的 runbook 人工走一遍** —— 尤其是第 5–8 步的 Path A（承诺 → REFIT
    兑现 → 下一次决策）与 Path B（Override → 下一次决策）。这是 MVP 唯一尚未由人跑过的部分。

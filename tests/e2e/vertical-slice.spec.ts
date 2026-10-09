@@ -16,8 +16,9 @@
  * a real game state change the player can see, and the app stayed up. Roster-level assertions
  * (`trustInAdmiral`, memories, promises) live in the Vitest slice, where they are deterministic.
  *
- * No new IPC channel and no UI change: the offer goes through the existing `world:command`, and the
- * reply arrives in the existing Communications panel (`N-6`).
+ * No new IPC channel: the offer goes through the existing `world:command`, and the reply arrives in
+ * the existing Communications panel (`N-6`). The Agent channel also now shows the correspondence —
+ * the trigger and the answer, newest first — which is read through the existing `agents:get` crop.
  */
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,7 +41,13 @@ test.afterEach(async () => {
 
 const state = (page: Page) => page.evaluate(() => window.frontier.getState()).then((x) => x.state);
 
-async function launch() {
+/**
+ * `readHoldMs` is the in-game pause after an Agent answers the Admiral (`electron/read-hold.ts`).
+ * The default is 0 for the same reason the other specs set it: a freeze an Agent can trigger at any
+ * moment would make a wall-clock assertion flaky for reasons the test is not about. Only the test
+ * that is *about* the hold asks for a real one.
+ */
+async function launch(readHoldMs = '0') {
   stub = await startAgentStub();
   const directory = mkdtempSync(join(tmpdir(), 'frontier-e2e-p3-'));
   const world = createWorld(236807);
@@ -53,6 +60,7 @@ async function launch() {
       ...process.env,
       FRONTIER_USER_DATA: directory,
       FRONTIER_HEADLESS: '1',
+      FRONTIER_READ_HOLD_MS: readHoldMs,
       // The real provider client, aimed at the stub. Overriding the key matters: an ambient
       // DEEPSEEK_API_KEY would otherwise send this run to the live API, and `setOffline` cannot
       // prevent that because the fetch happens in the main process.
@@ -117,10 +125,57 @@ test('the Admiral offers a mission and the Agent answers it, in the real app', a
   expect(stub!.prompts.length).toBeGreaterThan(0);
   expect(await page.locator('.communications').innerText()).toContain('←');
 
+  // The panel shows the same conversation, **newest first** — which is the whole reason for the
+  // ordering: the answer is a later message than the offer, so reversing chronology puts it above
+  // the message it answers. `←` is the Agent speaking, `→` the Admiral.
+  await page.locator('.agent-channel > summary').click();
+  const thread = page.locator('.agent-thread .agent-line');
+  await expect(thread.first()).toContainText('←');
+  await expect(thread.nth(1)).toContainText('→');
+
   // And the app is still a working game afterwards.
   const after = await state(page);
   expect(after.status).toBe('active');
   expect(after.tick).toBeGreaterThan(0);
+});
+
+test('an Agent answering the Admiral holds the world for a moment, then lets it go', async () => {
+  // The read hold (`electron/read-hold.ts`). It is the project's only automatic resume, so what is
+  // worth asserting end to end is that it *lands* — through the real main process, on a real reply —
+  // and that it is released rather than leaving the game paused forever.
+  test.setTimeout(180_000);
+  const { page, explorerId } = await launch('4000');
+
+  await page.evaluate(
+    (to) =>
+      window.frontier.command({
+        type: 'agentMessage',
+        from: 'admiral',
+        to,
+        kind: 'command',
+        text: '穿越虫洞，寻找失联探测船。',
+        payload: null,
+      }),
+    explorerId,
+  );
+  // A loaded world starts paused, so the scheduler is silent until this.
+  await page.getByRole('button', { name: '16×', exact: true }).click();
+  await page.getByRole('button', { name: '继续', exact: true }).click();
+
+  // The hold is applied without a reason, deliberately: a `pauseReason` would raise the PRIORITY HOLD
+  // banner, which asks the player to act. So the assertion is on `paused` alone.
+  await expect
+    .poll(async () => (await state(page)).paused, { timeout: 90_000, intervals: [100] })
+    .toBe(true);
+
+  // …and released on its own, with no banner and no click: the world is running again and nothing is
+  // waiting on the player.
+  await expect
+    .poll(async () => (await state(page)).paused, { timeout: 30_000, intervals: [200] })
+    .toBe(false);
+  const after = await state(page);
+  expect(after.status).toBe('active');
+  expect(after.pauseReasons).toHaveLength(0);
 });
 
 test('the Agent channel shows the roster, and a message sent from it reaches the engine', async () => {
@@ -176,6 +231,14 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // goes with it, rather than sitting there labelling an empty box.
   await expect(page.locator('.agent-channel .agent-compose input')).toHaveValue('');
   await expect(page.locator('.agent-channel .agent-prefix')).toHaveCount(0);
+
+  // …because the message did not vanish, it moved here. The transcript is the panel's own record of
+  // the correspondence, so what was sent is still readable after the box let it go — and it arrives
+  // without pressing 刷新, because the panel re-reads when the feed it mirrors into grows.
+  await expect(page.locator('.agent-thread .agent-line.is-sent').first()).toContainText(
+    '穿越虫洞，寻找失联探测船。',
+  );
+  await expect(page.locator('.agent-thread .agent-line.is-sent').first()).toContainText('→');
 
   // The promise button is the two-command path (create, then notify). It must not fail silently.
   await page.locator('.agent-channel').getByRole('button', { name: '承诺 Deep Scan 优先权限' }).click();

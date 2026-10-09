@@ -7,9 +7,15 @@
  */
 import { describe, it, expect } from 'vitest';
 import { quietEngine, run } from '../helpers';
-import { agentRosterView, ROSTER_MEMORY_LIMIT } from '../../src/engine/agent/roster';
+import {
+  agentRosterView,
+  agentTranscriptView,
+  ROSTER_MEMORY_LIMIT,
+  TRANSCRIPT_LIMIT,
+} from '../../src/engine/agent/roster';
 import { agentByCareer, patchAgent } from './support';
 import { episodicMemory, remember } from '../../src/engine/agent/memory';
+import type { Command } from '../../src/engine/types';
 
 describe('the roster view is cropped on purpose', () => {
   it('carries the state a player needs to see, for every Agent', () => {
@@ -104,5 +110,106 @@ describe('the roster view is cropped on purpose', () => {
     view[0].state.trustInAdmiral = 0;
     view[0].relationships.length = 0;
     expect(JSON.stringify(engine.state.agents)).toBe(before);
+  });
+});
+
+/** A message as the engine receives it. `actorId` is the sender, and must be omitted for the Admiral. */
+function speak(
+  engine: ReturnType<typeof quietEngine>,
+  from: string,
+  to: string,
+  kind: 'command' | 'report' | 'team-request' | 'promise',
+  text: string,
+  payload: unknown = null,
+) {
+  return engine.dispatchCommand(
+    { type: 'agentMessage', from, to, kind, text, payload } as Command,
+    from === 'admiral' ? undefined : from,
+  );
+}
+
+describe('the transcript view is the Admiral’s own correspondence', () => {
+  it('carries both sides of a conversation, oldest first, with names resolved', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    speak(engine, 'admiral', explorer.id, 'command', '穿越虫洞。');
+    speak(engine, explorer.id, 'admiral', 'report', '收到，这就去。');
+
+    const view = agentTranscriptView(engine.state);
+    // Order is the only pairing there is: the answer is simply the later line. The panel reverses it.
+    expect(view.map((message) => message.text)).toEqual(['穿越虫洞。', '收到，这就去。']);
+    expect(view[0]).toMatchObject({
+      from: 'admiral',
+      fromName: 'Dawn Frontier Command',
+      to: explorer.id,
+      toName: explorer.name,
+      kind: 'command',
+    });
+    expect(view[1]).toMatchObject({
+      from: explorer.id,
+      fromName: explorer.name,
+      to: 'admiral',
+      toName: 'Dawn Frontier Command',
+      kind: 'report',
+    });
+  });
+
+  it('keeps the message a reply answers, even though answering marks it read', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    const TRIGGER = '穿越虫洞，寻找失联探测船。';
+    speak(engine, 'admiral', explorer.id, 'command', TRIGGER);
+    speak(engine, explorer.id, 'admiral', 'report', '我去。');
+
+    // `consumeAnswered` marks the Admiral's own offer read the moment the Agent answers it — which is
+    // exactly why `read` is not a filter here: it would hide the message the answer is about.
+    expect(engine.state.agentMessages[0].read).toBe(true);
+    expect(agentTranscriptView(engine.state).some((line) => line.text === TRIGGER)).toBe(true);
+  });
+
+  it('leaves Agent-to-Agent traffic out — it is not the Admiral’s correspondence', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    const tactical = agentByCareer(engine, 'tactical');
+    speak(engine, explorer.id, tactical.id, 'team-request', '我要进那片空域，需要护航。', {
+      requestingAgentId: explorer.id,
+      accept: false,
+    });
+
+    expect(engine.state.agentMessages).toHaveLength(1);
+    expect(agentTranscriptView(engine.state)).toEqual([]);
+  });
+
+  it('bounds the transcript and keeps the newest end', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    for (let i = 0; i < TRANSCRIPT_LIMIT + 5; i++)
+      speak(engine, 'admiral', explorer.id, 'command', '第 ' + i + ' 条');
+
+    const view = agentTranscriptView(engine.state);
+    expect(view).toHaveLength(TRANSCRIPT_LIMIT);
+    expect(view.at(-1)!.text).toBe('第 ' + (TRANSCRIPT_LIMIT + 4) + ' 条');
+    expect(view.some((line) => line.text === '第 0 条')).toBe(false);
+  });
+
+  it('withholds the payload and the inbox flag — machinery, like `nextDecisionAt`', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    speak(engine, 'admiral', explorer.id, 'promise', '给你 Deep Scan。', { promiseId: 'promise-secret' });
+
+    const serialised = JSON.stringify(agentTranscriptView(engine.state));
+    expect(serialised).not.toContain('promise-secret');
+    expect(serialised).not.toContain('payload');
+    expect(serialised).not.toContain('read');
+  });
+
+  it('is a snapshot, not a live handle — mutating the view cannot reach the world', () => {
+    const engine = quietEngine();
+    const explorer = agentByCareer(engine, 'explorer');
+    speak(engine, 'admiral', explorer.id, 'command', '原文');
+    const before = JSON.stringify(engine.state.agentMessages);
+    const view = agentTranscriptView(engine.state);
+    view[0].text = '改过了';
+    expect(JSON.stringify(engine.state.agentMessages)).toBe(before);
   });
 });

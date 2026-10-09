@@ -14,7 +14,8 @@ async function launch(world?: WorldState, scale = 1) {
   if (world) new SaveStore(dir).write(world);
   app = await electron.launch({
     args: ['--force-device-scale-factor=' + scale, resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: dir, FRONTIER_HEADLESS: '1' },
+    // `FRONTIER_READ_HOLD_MS: '0'` — the read hold would freeze the world mid-assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: dir, FRONTIER_HEADLESS: '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const p = await app.firstWindow();
   await p.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });

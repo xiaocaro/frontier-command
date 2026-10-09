@@ -24,7 +24,9 @@ async function launch(
   new SaveStore(directory).write(world);
   app = await electron.launch({
     args: ['--force-device-scale-factor=' + scale, resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '0' },
+    // `FRONTIER_READ_HOLD_MS: '0'`: an Agent can answer the Admiral unprompted, and the read hold
+    // would then freeze the world for 2s in the middle of an assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '0', FRONTIER_READ_HOLD_MS: '0' },
   });
   const p = await app.firstWindow();
   await p.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });
@@ -168,7 +170,7 @@ test('actual wormhole follow, immediate capture guidance, cloak symbols and pers
   app = undefined;
   app = await electron.launch({
     args: [resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '0' },
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '0', FRONTIER_READ_HOLD_MS: '0' },
   });
   const restored = await app.firstWindow();
   await restored.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });

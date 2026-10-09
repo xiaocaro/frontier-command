@@ -15,7 +15,8 @@ const key = 'frontier.lcars.console.v2';
 async function launch(directory: string, scale = 1) {
   app = await electron.launch({
     args: ['--force-device-scale-factor=' + scale, resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1' },
+    // `FRONTIER_READ_HOLD_MS: '0'` — the read hold would freeze the world mid-assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const page = await app.firstWindow();
   await page.locator('nav[aria-label="主导航"]').waitFor({ state: 'attached' });

@@ -21,7 +21,8 @@ async function launch(world: WorldState) {
   new SaveStore(directory).write(world);
   app = await electron.launch({
     args: [resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1' },
+    // `FRONTIER_READ_HOLD_MS: '0'` — the read hold would freeze the world mid-assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const p = await app.firstWindow();
   await p.getByRole('navigation', { name: '主导航' }).waitFor();

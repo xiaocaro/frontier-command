@@ -443,6 +443,23 @@
 
 ---
 
+### C-41 — 「Agent 回话后暂停 2 秒」是本项目**第一处自动恢复**，归属靠状态+显式 disarm 两道保险 🟡 MEDIUM（**已实现并测试，残余限制一条**）
+
+| 项 | 内容 |
+| --- | --- |
+| **背景** | 需求：「大模型响应的消息内容也显示出来；触发消息不消失；响应消息显示在对应的触发消息之上；游戏执行停顿 2 秒供查看」 |
+| **为什么危险** | 此前**所有**暂停都等人按（`处置后继续` / `暂停·继续`）。第一次让代码自己恢复一个暂停，就可能把**别人的**暂停解除——威胁警报、存档失败、玩家自己按的 |
+| **可分辨的信号** | 引擎自己发起的暂停**都带信号**：`critical()` 一律附 `pauseReasons`，`commandLost` 会改 `status`。所以「仍暂停 + `status==='active'` + `pauseReasons` 为空」足以排除它们（`holdStillOwns`，`electron/read-hold.ts`） |
+| **不可分辨的状态** | 「active、暂停、无 reason」——`main.ts` 在**存档失败**和**advanceFrame 抛错**时正是这样暂停的。纯状态无法与 hold 区分，**所以不靠猜**：`arm()` 拒绝从已暂停的世界开始，且上述每个写入点（以及会话切换、任何 `pause` 命令）都显式 `disarm()` |
+| **残余限制** | 若将来在 `main.ts` 之外新增一个「无 reason 的裸暂停」写入点，必须自己 `disarm()`。已写进 `read-hold.ts` 的模块注释与本条 |
+| **为什么不是引擎改动** | 这是**墙钟调度**，不是仿真规则：`docs/architecture.md:13` 允许 host 调度自己的工作，但不得决定移动/战斗/库存。暂停经**普通 `pause` 命令**落地，`WorldState` 仍只经命令门被写（CLAUDE.md §2.1）；暂停不推进任何东西，所以固定步长与同种子回放不受影响 |
+| **为什么不带 reason** | 带 `pauseReason` 会渲染 `PRIORITY HOLD … 处置后继续` 横幅，那是在**要求玩家行动**；这里只是让人读一眼 |
+| **测试里为什么默认关** | 确定性分档的 Agent 会**自己**对 Admiral 说话（`decision.ts` 的 request 档 → `dialogue.ts`），所以任何跑世界的 spec 都可能被冻结打断。E2E 一律 `FRONTIER_READ_HOLD_MS=0`；唯一测它的用例显式传非零值 |
+| **通信栏的连带改动** | 排序原来让 `high` 也参与（Override 触发消息被镜像为 `high`，其答复是 `normal`，于是答复排在**下面**）——改为**只钉 `urgent`**，其余严格按 id 倒序；`showRead` 默认改为 `true`（确认过的行不再消失）。**几何风险**：C-40 记过「只改字号就让地图高度断言失败」，所以这两处改完后 `lcars.spec.ts` 六尺寸必须重跑 |
+| **验证** | `tests/read-hold.test.ts`（14 条，含归属真值表与「无法分辨」那一条）；`tests/agent/host.test.ts` 的 `onSpoke` 精确触发次数；`tests/agent/roster.test.ts` 的通信记录裁剪；`tests/e2e/vertical-slice.spec.ts` 新增一条断言暂停**落下**且**自己放开**；`lcars.spec.ts` 六尺寸重跑 |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |

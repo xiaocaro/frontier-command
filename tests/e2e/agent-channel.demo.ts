@@ -48,6 +48,11 @@ const SHOT_DIR = resolve('test-results/agent-demo');
  *
  * The default lives here as well as in the launcher so that running the spec directly — as the
  * `demo:ui` script does not, but a config-driven test run would — gets the same pace.
+ *
+ * The app's own read hold (`FRONTIER_READ_HOLD_MS`, `electron/read-hold.ts`) is **not** scaled here.
+ * It is a fixed property of the game — the world pauses for two seconds whenever an Agent answers the
+ * Admiral — and the demo inherits it rather than restating it, so what the recording shows is what a
+ * player sees.
  */
 const PACE = Number(process.env.DEMO_PACE ?? '5');
 const pause = (page: Page, ms: number) => page.waitForTimeout(Math.round(ms * PACE));
@@ -205,15 +210,27 @@ const lastReply = (page: Page) =>
     return line === null ? null : line.replace(/^[A-Z]+\s*\/\s*\d+m/, '').replace(/确认$/, '').trim();
   });
 
-/** True when an Agent actually spoke. **False is a result** — it may have chosen to act instead. */
-async function waitForReply(page: Page, ms = 60_000) {
+/**
+ * The Agent's answer, or `null`. **`null` is a result**, not a failure — it may have chosen to act.
+ *
+ * Returning the words instead of a boolean is what lets the narration show what the model actually
+ * said: the storyboard is the artifact, and "出现了答复" is not what a viewer came to read.
+ *
+ * When this returns, the world is holding for a couple of seconds (`FRONTIER_READ_HOLD_MS`,
+ * `electron/read-hold.ts`), so the screenshot the caller takes next catches the held state with the
+ * answer on screen. That hold is the app's own fixed duration and is deliberately **not** scaled by
+ * `--pace`: it is a property of the game rather than a beat in the performance, exactly like the
+ * `expect.poll` ceilings below. To make the demo's hold longer than the game's, set
+ * `FRONTIER_READ_HOLD_MS` from `--pace` in `scripts/demo-ui.mjs`.
+ */
+async function waitForReply(page: Page, ms = 60_000): Promise<string | null> {
   try {
     await expect
       .poll(() => comms(page).innerText(), { timeout: ms, intervals: [300] })
       .toContain('←');
-    return true;
+    return await lastReply(page);
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -277,13 +294,13 @@ test('the MVP runbook, clicked through the real interface', async () => {
 
   await narrate(page, '第 2 步 · Agent 自主评估', '继续时间，等它决策');
   await page.getByRole('button', { name: '继续', exact: true }).click();
-  const spoke = await waitForReply(page);
+  const answer = await waitForReply(page);
   await narrate(
     page,
     '第 2 步 · 结果',
-    spoke
-      ? '通信栏出现了「' + explorerName + '」的答复'
-      : '「' + explorerName + '」没有回话——模型很可能选择了直接行动，这也是一个结果',
+    answer === null
+      ? '「' + explorerName + '」没有回话——模型很可能选择了直接行动，这也是一个结果'
+      : '世界已暂停供阅读 · 「' + explorerName + '」答复：' + answer,
   );
   await pause(page, 1200);
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
@@ -356,9 +373,9 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(page, 'Path A · 记下它的下一次答复', '同一个高风险任务问题');
   await page.getByRole('button', { name: '1×', exact: true }).click();
   await speak(page, 'command', '又出现一个高风险调查机会，你去不去？');
-  await waitForReply(page);
+  const pathASaid = await waitForReply(page);
   await pause(page, 2000);
-  const pathA = { trust: (await agentByCareer(page, 'explorer')).state.trustInAdmiral, said: await lastReply(page) };
+  const pathA = { trust: (await agentByCareer(page, 'explorer')).state.trustInAdmiral, said: pathASaid };
 
   await narrate(page, 'ACT A 结束', '下一幕换一局，让同一名 Agent 经历一次 Override');
   const statsA = await loopStats(page);
@@ -398,9 +415,9 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await p2.locator('.agent-channel').getByLabel('类型').selectOption('command');
   await p2.locator('.agent-channel').getByLabel('发往 Agent 的消息').fill('又出现一个高风险调查机会，你去不去？');
   await p2.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
-  await waitForReply(p2);
+  const pathBSaid = await waitForReply(p2);
   await p2.waitForTimeout(2200);
-  const pathB = { trust: (await agentByCareer(p2, 'explorer')).state.trustInAdmiral, said: await lastReply(p2) };
+  const pathB = { trust: (await agentByCareer(p2, 'explorer')).state.trustInAdmiral, said: pathBSaid };
 
   // ── Only model-independent facts are asserted. See the header. ────────────────────────────────
   expect((await agentByCareer(p2, 'explorer')).memories.some((m) => m.tags.includes('admiral-override'))).toBe(true);

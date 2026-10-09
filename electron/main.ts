@@ -6,7 +6,8 @@ import { createWorld } from '../src/engine/data';
 import { HOST_FRAME_MS } from '../src/engine/clock';
 import { SaveStore } from './persistence';
 import { AgentHost } from './agent-host';
-import { agentRosterView } from '../src/engine/agent/roster';
+import { agentRosterView, agentTranscriptView } from '../src/engine/agent/roster';
+import { holdStillOwns, ReadHold, readHoldMsFromEnv } from './read-hold';
 import { z } from 'zod';
 
 protocol.registerSchemesAsPrivileged([
@@ -23,6 +24,7 @@ let timer: ReturnType<typeof setInterval> | undefined;
 let lastAutoSave = 0;
 let saveMessage = '';
 let agentHost: AgentHost | undefined;
+let readHold: ReadHold | undefined;
 const send = () => {
   if (window && !window.isDestroyed()) window.webContents.send('world:state', engine.snapshot());
 };
@@ -60,8 +62,19 @@ app.whenReady().then(async () => {
   engine = new SimulationEngine(loaded.world ?? createWorld());
   if (engine.state.status === 'active') engine.state.paused = true;
   if (!loaded.world && !loaded.blocked) store.write(engine.state);
+  // Hold the world for a moment when an Agent answers the Admiral, so the answer can be read
+  // (`electron/read-hold.ts`). Applied through the command door, like every other world change.
+  readHold = new ReadHold({
+    ms: readHoldMsFromEnv(process.env),
+    apply: (paused) => {
+      engine.dispatchCommand({ type: 'pause', paused });
+      send();
+    },
+    isPaused: () => engine.state.paused,
+    stillOurs: () => holdStillOwns(engine.state),
+  });
   try {
-    agentHost = new AgentHost(engine, { root: app.getAppPath() });
+    agentHost = new AgentHost(engine, { root: app.getAppPath(), onSpoke: () => readHold?.arm() });
   } catch (error) {
     // Unreadable or version-mismatched prompts are a packaging fault. Loud, but not fatal: the game
     // runs, it just never asks a model anything.
@@ -149,15 +162,25 @@ app.whenReady().then(async () => {
       // needed — the roster says what the Agents are, the stats say whether anything is reaching them.
       stats: agentHost?.stats() ?? { decisions: 0, dropped: 0, lastDrop: null },
       speed: engine.state.speed,
+      // The Admiral's own correspondence, so the panel can show what was asked and what came back.
+      // Without it the answer existed only as a mirrored line in the Communications feed.
+      messages: agentTranscriptView(engine.state),
     };
   });
   ipcMain.handle('world:command', (event, command: unknown) => {
     trusted(event);
+    // A pause the player asked for is theirs, not the hold's: stop counting, in both directions. This
+    // covers the 暂停/继续 toggle and the 处置后继续 button on the critical banner.
+    if (typeof command === 'object' && command && (command as { type?: string }).type === 'pause')
+      readHold?.disarm();
     const session = z
       .object({ type: z.enum(['restorePreviousDay', 'beginNewFrontier']) })
       .strict()
       .safeParse(command);
     if (session.success) {
+      // The world is about to be replaced underneath the hold, so any hold still counted belongs to a
+      // world that no longer exists.
+      readHold?.disarm();
       try {
         const next =
           session.data.type === 'restorePreviousDay'
@@ -218,6 +241,9 @@ app.whenReady().then(async () => {
       });
     } catch (error) {
       engine.state.paused = true;
+      // A failed write is its own pause, with no reason — indistinguishable from the hold by state
+      // alone, so the hold is told rather than asked.
+      readHold?.disarm();
       saveMessage = '时间线写入失败：' + String(error);
       saveBlocked = true;
     }
@@ -240,6 +266,7 @@ app.whenReady().then(async () => {
       const result = save();
       if (!result.ok && !saveBlocked && engine.state.status === 'active') {
         engine.state.paused = true;
+        readHold?.disarm();
         engine.log(result.reason, 'danger');
         lastAutoSave = engine.state.tick;
       }
@@ -259,5 +286,6 @@ app.on('second-instance', () => {
 });
 app.on('window-all-closed', () => {
   if (timer) clearInterval(timer);
+  readHold?.dispose();
   app.quit();
 });

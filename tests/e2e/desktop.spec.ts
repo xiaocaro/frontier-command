@@ -17,7 +17,8 @@ const temp = () => mkdtempSync(join(tmpdir(), 'frontier-e2e-v9-'));
 async function launch(directory: string) {
   app = await electron.launch({
     args: [resolve('.')],
-    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1' },
+    // `FRONTIER_READ_HOLD_MS: '0'` — the read hold would freeze the world mid-assertion (`electron/read-hold.ts`).
+    env: { ...process.env, FRONTIER_USER_DATA: directory, FRONTIER_HEADLESS: '1', FRONTIER_READ_HOLD_MS: '0' },
   });
   const p = await app.firstWindow();
   await p.getByRole('navigation', { name: '主导航' }).waitFor();
