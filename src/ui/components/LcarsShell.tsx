@@ -195,7 +195,7 @@ export function LcarsShell({
                   <p className="muted">CHANNEL CLEAR · 暂无待处理通信</p>
                 )}
               </div>
-              <AgentChannel command={command} />
+              <AgentChannel command={command} commanderName={world.commander.name} />
             </section>
             <section className="clock-panel" aria-label="Simulation controls">
               <strong data-testid="game-clock">

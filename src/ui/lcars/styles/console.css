@@ -207,6 +207,13 @@
   gap: 0.25em;
   color: var(--muted);
 }
+/* Who is speaking to whom, immediately before the box — so the input reads as the rest of the
+   sentence, and it matches the line the engine mirrors into the Communications feed. */
+.agent-compose .agent-prefix {
+  flex: 0 0 auto;
+  color: var(--almond-creme);
+  white-space: nowrap;
+}
 .agent-compose input {
   flex: 1;
   min-width: 8em;

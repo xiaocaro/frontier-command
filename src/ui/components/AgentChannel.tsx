@@ -38,7 +38,17 @@ const OVERRIDE_ACTIONS = ['TRANSIT', 'SURVEY', 'EXPLORE', 'RETURN', 'ESCORT'] as
 
 const PROMISE_TEXT = '完成这次任务后，我给你一次 Deep Scan 优先权限。';
 
-export function AgentChannel({ command }: { command: CommandSender }) {
+/**
+ * `commanderName` is the sender's name as the **engine** spells it (`commander.name`), passed in rather
+ * than invented here so the prefix above the box matches the line the engine writes into the feed.
+ */
+export function AgentChannel({
+  command,
+  commanderName,
+}: {
+  command: CommandSender;
+  commanderName: string;
+}) {
   const [open, setOpen] = useState(false);
   const [roster, setRoster] = useState<RosterAgent[]>([]);
   const [stats, setStats] = useState<AgentLoopStats>({ decisions: 0, modelCalls: 0, dropped: 0, lastDrop: null });
@@ -49,6 +59,8 @@ export function AgentChannel({ command }: { command: CommandSender }) {
   const [kind, setKind] = useState<Kind>('command');
   const [overrideAction, setOverrideAction] = useState<string>('TRANSIT');
   const [text, setText] = useState('穿越虫洞，寻找失联探测船。');
+
+  const recipientName = roster.find((agent) => agent.id === target)?.name ?? null;
 
   const refresh = useCallback(async () => {
     const api = window.frontier?.agents;
@@ -210,6 +222,17 @@ export function AgentChannel({ command }: { command: CommandSender }) {
               </select>
             </label>
           )}
+          {/*
+            Who is speaking to whom, spelled out — the same prefix the engine will put on the line
+            when it mirrors this message into the Communications feed (`command-system.ts`, N-6). It
+            is built from the same two names the engine uses (`commander.name` and the target Agent's
+            name), so what you read here is literally what appears there.
+
+            It sits immediately before the box so the input reads as the rest of that sentence.
+          */}
+          <span className="agent-prefix">
+            {commanderName} → {recipientName ?? '（未选择 Agent）'}：
+          </span>
           <input
             aria-label="发往 Agent 的消息"
             value={text}

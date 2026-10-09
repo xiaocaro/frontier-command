@@ -147,6 +147,11 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // scheduler drained, `modelCalls` counts the ones the model actually answered (`C-36`).
   await expect(page.locator('.agent-loop')).toContainText('由模型作答');
 
+  // The box carries the sender → recipient prefix, built from the same names the engine uses when it
+  // mirrors the line into the feed — so what you read above the box is what appears in it.
+  await expect(page.locator('.agent-channel .agent-prefix')).toContainText('→');
+  await expect(page.locator('.agent-channel .agent-prefix')).toContainText('LYRA VOSS');
+
   // Send from the panel. The default kind is `command`, i.e. the Admiral offering a task.
   await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
   await page.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
