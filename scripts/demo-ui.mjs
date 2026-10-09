@@ -15,12 +15,13 @@
 import { spawn } from 'node:child_process';
 
 const arg = process.argv.slice(2).find((value) => value.startsWith('--pace='));
-const pace = arg ? arg.slice('--pace='.length) : '1';
+const DEFAULT_PACE = '5';
+const pace = arg ? arg.slice('--pace='.length) : DEFAULT_PACE;
 const value = Number(pace);
 
 if (!Number.isFinite(value) || value < 0.25 || value > 10) {
   console.error('--pace 需要一个 0.25 到 10 之间的数（收到 ' + JSON.stringify(pace) + '）');
-  console.error('  1（默认）适合一个人看；2–3 适合投影或第一次看；0.5 适合快速重跑');
+  console.error('  5（默认）适合有观众的演示；1 适合一个人快速看；0.5 适合反复重跑');
   process.exit(2);
 }
 
