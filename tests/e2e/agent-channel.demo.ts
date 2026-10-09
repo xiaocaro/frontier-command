@@ -21,7 +21,7 @@
  * Two acts, two worlds, two recordings. `electron/main.ts` takes a single-instance lock, so act A must
  * be fully closed before act B launches or act B silently never appears.
  */
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, expect, _electron as electron } from '@playwright/test';
@@ -103,6 +103,98 @@ async function installNarration(page: Page) {
 }
 
 let shot = 0;
+
+/**
+ * The opening card: the world, the crew, and what the eight steps are about.
+ *
+ * **Demo scaffolding, not product** — the same stance as `installNarration`. The game has no intro
+ * screen and this does not add one (CLAUDE.md §3): it is injected outside the React root, it is
+ * `pointer-events: none` so it can never swallow a click, and the demo removes it before the story
+ * starts. Two details make it coexist with the narration instead of fighting it: its `z-index` is one
+ * **below** the overlay's, so a caption still reads on top of it, and its content is centred so the
+ * caption strip (top-left) never lands on the text.
+ *
+ * The crew is passed in rather than written here, so the names on the card are the names in the panel
+ * and in the feed — read from the real roster, a card that lists the wrong crew is impossible.
+ */
+async function showOpening(page: Page, crew: { name: string; career: string }[]) {
+  await page.evaluate((crew) => {
+    document.getElementById('demo-opening')?.remove();
+    const LABELS: Record<string, string> = {
+      explorer: '探索',
+      scientist: '科学',
+      tactical: '战术',
+      logistics: '后勤',
+    };
+    const TITLE = 'margin:0 0 8px;font:700 44px/1.15 system-ui,sans-serif;letter-spacing:.05em;color:#ffcc66';
+    const SUB = 'margin:0 0 26px;font:600 21px/1.5 system-ui,sans-serif;color:#9fd8ff';
+    const SECTION = 'margin:24px 0 4px;font:700 15px/1.2 system-ui,sans-serif;letter-spacing:.22em;color:#6fd3ff';
+    const BODY = 'margin:0;font:400 19px/1.7 system-ui,sans-serif;color:#dbe6f0';
+    const CREW = 'margin:2px 0;font:600 20px/1.5 system-ui,sans-serif;color:#f0f6fb';
+    const FOOT = 'margin:30px 0 0;font:400 15px/1.7 system-ui,sans-serif;color:#8ba3b6';
+    const card = document.createElement('div');
+    card.id = 'demo-opening';
+    card.setAttribute(
+      'style',
+      [
+        'position:fixed',
+        'inset:0',
+        'z-index:2147483646',
+        'pointer-events:none',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'background:linear-gradient(160deg,#070b11,#0e1822 60%,#12242f)',
+        'color:#e6eef6',
+        'padding:56px 72px',
+      ].join(';'),
+    );
+    const column = document.createElement('div');
+    column.setAttribute('style', 'max-width:1000px;width:100%');
+    const add = (style: string, text: string) => {
+      const node = document.createElement('p');
+      node.setAttribute('style', style);
+      // `textContent`, never `innerHTML`: part of this text is the roster's names.
+      node.textContent = text;
+      column.appendChild(node);
+    };
+    add(TITLE, 'FRONTIER COMMAND · Lv3 AGENT 演示');
+    add(SUB, '八步，看同一名 Agent 因为历史不同，给出不同的答复');
+    add(SECTION, '世界');
+    add(BODY, '你是 Dawn Frontier Command 的 Admiral。边疆在持续运行：舰队、基地、殖民地与补给都真实存在，机会与威胁由世界自己产生。');
+    add(BODY, '世界状态由 SimulationEngine 权威结算——Agent 与模型只有「结构化决策」，改不了世界。');
+    add(SECTION, '角色');
+    for (const member of crew) add(CREW, member.name + '　·　' + (LABELS[member.career] ?? member.career));
+    add(SECTION, '任务');
+    add(BODY, '一个高风险调查机会。先对 Explorer 许诺并兑现（Path A），另起一局改用命令强行压过去（Path B）——同一个问题，两次历史，两种答复。');
+    add(FOOT, '台词全部由 Agent 自己写，出现在 PRIORITY COMMUNICATIONS 里；本演示只断言与模型无关的事实。');
+    card.appendChild(column);
+    document.body.appendChild(card);
+  }, crew);
+}
+
+/**
+ * Take the opening card down. The story starts on the game's own UI. */
+async function hideOpening(page: Page) {
+  await page.evaluate(() => document.getElementById('demo-opening')?.remove());
+}
+
+/**
+ * Start the storyboard from empty.
+ *
+ * `narrate` numbers the frames from `shot`, and the storyboard is **one** artifact covering both acts:
+ * a re-run that narrates the same steps overwrites its own frames, so the directory stays honest by
+ * itself. Insert one frame, though — as the opening card did — and every later number shifts, leaving
+ * the *previous* run's `01-…` behind as a file this run never wrote. On screen that is
+ * indistinguishable from a real frame, which is exactly the kind of "looks fine, means nothing"
+ * artifact the rest of this file works to avoid. Playwright's own `outputDir` cleanup cannot help:
+ * it is a different directory on purpose (see `SHOT_DIR`).
+ */
+function clearStoryboard() {
+  mkdirSync(SHOT_DIR, { recursive: true });
+  for (const entry of readdirSync(SHOT_DIR, { withFileTypes: true }))
+    if (entry.isFile() && entry.name.endsWith('.png')) rmSync(join(SHOT_DIR, entry.name));
+}
 
 /**
  * Say the same thing to the terminal, to the screen, and to the storyboard.
@@ -439,14 +531,29 @@ test('the MVP runbook, clicked through the real interface', async () => {
   const startedAt = Date.now();
 
   // ══ ACT A · the world where the Admiral keeps a promise ═══════════════════════════════════════
+  clearStoryboard();
   const a = await launchVisible(fundedWorld(), 'a');
   const page = a.page;
   const explorerName = (await agentByCareer(page, 'explorer')).name;
 
-  await narrate(page, 'ACT A · 准备', '世界已建；基地里预置了预算与一枚特殊发现（改装需要它）· 演示节奏 ×' + PACE);
   await expect
     .poll(() => a.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()))
     .toBe(true);
+
+  // The opening card lists the crew, so a roster that could not be read would render a heading with
+  // nothing under it — the kind of half-empty frame nobody notices in a recording. Asserted here, where
+  // the same four are pinned again as panel rows in step 1.
+  const crew = (await roster(page)).agents;
+  expect(crew.length).toBe(4);
+  await showOpening(
+    page,
+    crew.map((agent) => ({ name: agent.name, career: agent.career })),
+  );
+  await narrate(page, '开幕', '世界 · 角色 · 这八步要演的事');
+  await pause(page, 3500);
+  await hideOpening(page);
+
+  await narrate(page, 'ACT A · 准备', '世界已建；基地里预置了预算与一枚特殊发现（改装需要它）· 演示节奏 ×' + PACE);
 
   await narrate(page, '第 1 步 · Admiral 发布任务', '展开 AGENT CHANNEL，选中 Explorer，发送任务命令');
   await panel(page).locator('> summary').click();
