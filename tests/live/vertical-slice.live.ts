@@ -177,7 +177,9 @@ function report(v: Vignette, agent: Agent, since: number) {
     );
 
   const reply = lastReply(v, agent.id);
-  if (reply) say('  ' + agent.name + ' 最近一次发言：' + reply.text);
+  // Label the speaker explicitly: the runbook's earlier form put the name in front of a colon and
+  // was easy to skim past, and this transcript is read by someone who was not watching.
+  if (reply) say('  说话人：' + agent.name + '（本步最近一次发言）｜' + reply.text);
   else {
     say('  ⚠ 到这一步为止该 Agent 没有发过言——真模型常常直接下令（`act`），而不是回话。');
     const ship = v.engine.state.ships.find((s) => s.id === agentShipOf(v.engine, agent));
@@ -344,9 +346,9 @@ test('the MVP runbook, driven by the real model', async () => {
   const kept = await answer(a);
   const forced = await answer(b);
   say('  Path A（承诺已兑现）  信任 ' + kept.trust + '，本步决策 ' + kept.decisions + ' 次 → ' + kept.model);
-  say('    ' + a.explorer.name + '：' + kept.said);
+  say('    说话人：' + a.explorer.name + '｜' + kept.said);
   say('  Path B（被强制过）    信任 ' + forced.trust + '，本步决策 ' + forced.decisions + ' 次 → ' + forced.model);
-  say('    ' + b.explorer.name + '：' + forced.said);
+  say('    说话人：' + b.explorer.name + '｜' + forced.said);
   say('');
   say('  ↑ 两条**打印**出来供你判断，本脚本**不断言**它们不同。真模型下可能相同——');
   say('    那本身是结果。确定性路径下它们**确实**不同，那一条由');

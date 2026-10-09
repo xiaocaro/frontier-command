@@ -224,6 +224,31 @@ function fundedWorld(): WorldState {
   return world;
 }
 
+/**
+ * The engine mirrors every message into the Communications feed as `to ← from：text` (for a line an
+ * Agent spoke) or `from → to：text` (for the Admiral's). That is the right shape for a feed you read
+ * top-down, and the wrong shape to print under a heading that says "the answer": the speaker ends up
+ * after an arrow pointing away from them, so a bare line reads as though the *recipient* said it.
+ * This turns it back into speaker-first, and labels both ends, because a printed transcript has no
+ * context to fall back on.
+ */
+function parseMirrored(line: string): { speaker: string; listener: string; text: string } | null {
+  const match = /^(.*?)\s*(→|←)\s*(.*?)：(.*)$/s.exec(line);
+  if (!match) return null;
+  const [, left, arrow, right, text] = match;
+  return arrow === '→'
+    ? { speaker: left, listener: right, text }
+    : { speaker: right, listener: left, text };
+}
+
+/** A reply, with the speaker named. Falls back to the raw line if it does not parse. */
+function describeReply(said: string | null): string {
+  if (said === null) return '（没有回话）';
+  const parsed = parseMirrored(said);
+  if (parsed === null) return said;
+  return '说话人 ' + parsed.speaker + ' → 收件人 ' + parsed.listener + '｜' + parsed.text;
+}
+
 test('the MVP runbook, clicked through the real interface', async () => {
   test.setTimeout(Math.round(20 * 60_000 * Math.max(1, PACE)));
   const startedAt = Date.now();
@@ -231,6 +256,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   // ══ ACT A · the world where the Admiral keeps a promise ═══════════════════════════════════════
   const a = await launchVisible(fundedWorld(), 'a');
   const page = a.page;
+  const explorerName = (await agentByCareer(page, 'explorer')).name;
 
   await narrate(page, 'ACT A · 准备', '世界已建；基地里预置了预算与一枚特殊发现（改装需要它）· 演示节奏 ×' + PACE);
   await expect
@@ -251,7 +277,9 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(
     page,
     '第 2 步 · 结果',
-    spoke ? '通信栏出现 Agent 的答复' : '它没有回话——模型很可能选择了直接行动，这也是一个结果',
+    spoke
+      ? '通信栏出现了「' + explorerName + '」的答复'
+      : '「' + explorerName + '」没有回话——模型很可能选择了直接行动，这也是一个结果',
   );
   await pause(page, 1200);
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
@@ -335,7 +363,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   // ══ ACT B · the world where the Admiral forces it ════════════════════════════════════════════
   const b = await launchVisible(createWorld(236807), 'b');
   const p2 = b.page;
-  await narrate(p2, 'ACT B · 第 7 步 · Path B', '同一名 Agent，这次被强制');
+  await narrate(p2, 'ACT B · 第 7 步 · Path B', '同一名 Agent「' + (await agentByCareer(p2, 'explorer')).name + '」，这次被强制');
   await p2.getByRole('button', { name: '继续', exact: true }).click();
   await p2.waitForTimeout(1500);
   await p2.locator('.agent-channel > summary').click();
@@ -362,7 +390,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await p2.waitForTimeout(1800);
   await narrate(p2, '第 7 步 · 结果', '面板上出现 admiral-override —— 强制的代价被记住了');
 
-  await narrate(p2, '第 8 步 · 历史影响下一次决策', '同一个问题，两次历史');
+  await narrate(p2, '第 8 步 · 历史影响下一次决策', '同一个问题，两次历史——说话人相同，历史不同');
   await p2.locator('.agent-channel').getByLabel('类型').selectOption('command');
   await p2.locator('.agent-channel').getByLabel('发往 Agent 的消息').fill('又出现一个高风险调查机会，你去不去？');
   await p2.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
@@ -383,8 +411,8 @@ test('the MVP runbook, clicked through the real interface', async () => {
   process.stdout.write(
     '\n[demo] ══ 对照（仅供参考，本脚本不断言两者不同）══\n' +
       '[demo] 信任：Path A ' + pathA.trust + ' vs Path B ' + pathB.trust + '\n' +
-      '[demo] Path A 的答复：' + (pathA.said ?? '(没有回话)') + '\n' +
-      '[demo] Path B 的答复：' + (pathB.said ?? '(没有回话)') + '\n' +
+      '[demo] Path A 的答复：' + describeReply(pathA.said) + '\n' +
+      '[demo] Path B 的答复：' + describeReply(pathB.said) + '\n' +
       '\n[demo] ══ 本局计数（来自 AgentHost，不是估算）══\n' +
       '[demo] ACT A：决策 ' + statsA.decisions + ' 次，其中 ' + statsA.modelCalls + ' 次由模型作答' +
       ' · 过期丢弃 ' + statsA.dropped + '\n' +
