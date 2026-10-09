@@ -38,10 +38,10 @@ import type { WorldState } from '../../src/engine/types';
 const SHOT_DIR = resolve('test-results/agent-demo');
 
 /**
- * How much to stretch every deliberate pause (`--pace=`, via `scripts/demo-ui.mjs`). Default ×5.
+ * How much to stretch every deliberate pause (`--pace=`, via `scripts/demo-ui.mjs`). Default ×10.
  *
  * A demo has an audience. The first version used ×1, which reads fine on one screen and is too fast
- * to follow when someone else is watching — so ×5 is the default now, and ×1 remains available for a
+ * to follow when someone else is watching — so ×10 is the default now, and ×1 remains available for a
  * quick look. Only the **pauses** scale: `expect.poll` timeouts are ceilings on how long a model may
  * take, not beats in the performance, and shortening those would turn a slow model into a spurious
  * failure.
@@ -49,7 +49,7 @@ const SHOT_DIR = resolve('test-results/agent-demo');
  * The default lives here as well as in the launcher so that running the spec directly — as the
  * `demo:ui` script does not, but a config-driven test run would — gets the same pace.
  */
-const PACE = Number(process.env.DEMO_PACE ?? '5');
+const PACE = Number(process.env.DEMO_PACE ?? '10');
 const pause = (page: Page, ms: number) => page.waitForTimeout(Math.round(ms * PACE));
 /** Must match `electron/main.ts`'s BrowserWindow, or the recording is scaled to fit 800x450. */
 const WINDOW = { width: 1600, height: 900 };
