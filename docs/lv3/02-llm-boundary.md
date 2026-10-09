@@ -168,9 +168,11 @@ LLM **必须**输出结构化 JSON：
 | `invalid-choice-id` | 丢弃（Rule 3） | ✅ |
 | `http-error` | 丢弃；连续失败则临时停用该 Agent 的 LLM 路径 | ✅ |
 | `unavailable` | 同上 | ✅ |
-| **Observation 过期** | 丢弃 | ❌ **不 fallback** |
+| **Observation 过期** | 丢弃（**由 `scheduler.apply()` 判定**——它才持有世界） | ❌ **不 fallback** |
 
 **「过期不 fallback」的理由**：`observationTick` 落后过多意味着世界已显著变化。此时用确定性规则基于**新**世界做决策是合理的；但若 fallback 是基于**旧** Observation 算出的分数，就是错的。正确做法是丢弃并在下一拍重新评估。
+
+> **判定位置（`KNOWN_ISSUES.md` `C-37` 更正）**：这一条**不在 `DecisionRuntime`**。运行时按 Rule 1 不持有世界、按 B-12 不得有钟，它在 `await` 前后拿到的是同一份冻结 Observation，**无法测出过了多久**。真正的过期判定在 `scheduler.apply()`。运行时那道 `misreportsObservation` 是**provider 守约检查**（决策必须自报它实际拿到的那份观测的 tick），两者用途不同。
 
 **连续失败的退避**：提案使用有限重试（最多 2 次）+ 指数退避，之后降级为确定性模式一段时间（提案 30 游戏分钟）。**不无限重试**——`Agent.md` §58 只要求「不能导致游戏崩溃」。
 

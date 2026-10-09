@@ -237,11 +237,11 @@ type ModelError =
 | **Input** | `agentId` + `AgentTrigger`（可选） |
 | **Output** | `void`（副作用：可能提交一条命令） |
 | **同步/异步** | 内部**异步**（`await client.decide`），由 Scheduler 以 `Promise` 保存，**不被宿主 await** |
-| **失败模式** | 全部失败路径 ⇒ 丢弃 + 记一条 `provider` 轨迹；除「Observation 过期」外走确定性 fallback |
+| **失败模式** | 全部失败路径 ⇒ 丢弃 + 记一条 `provider` 轨迹；除「provider 自报的 tick 与所发观测不符」（错误串 `'stale'`）外走确定性 fallback。**真正的过期丢弃在 `Scheduler`，不在本模块**（`KNOWN_ISSUES.md` `C-37`） |
 | **验证边界** | 调 `DecisionValidator`；提交前做 stale 复核 |
 | **变更权限** | 仅经 `ControllerPort.submitAction` |
 
-**stale 复核（提交前必须再查一次）**：若以下任一成立则**丢弃**：`state.tick - observationTick` 超阈、
+**stale 复核（提交前必须再查一次，判定在 `Scheduler`——它才持有世界）**：若以下任一成立则**丢弃**：`state.tick - observationTick` 超阈、
 舰船不再空闲、出现 `source: 'admiral'` 的指令、已被更新的决策取代。
 
 ### 4.8 `PersistenceAdapter`（既有 `SaveStore`，不改签名）
@@ -310,7 +310,7 @@ sequenceDiagram
 | `ModelClient.decide` | 返回 `{ ok: false, error }` | — |
 | `DecisionValidator.validate` | 返回 `{ ok: false, error }` | — |
 | `AgentRuntime`（超时 / 非法 JSON / schema 不符 / choiceId 越界 / HTTP 错误 / provider 不可用） | 丢弃 | ✅ 确定性 fallback |
-| `AgentRuntime`（**Observation 过期**） | 丢弃 | ❌ **不 fallback**——基于旧观测的分数同样是错的 |
+| `Scheduler`（**Observation 过期**） | 丢弃 | ❌ **不 fallback**——基于旧观测的分数同样是错的。判定在 `Scheduler`（`C-37`）：`AgentRuntime` 不持有世界，测不出时间 |
 | `AgentRuntime`（**指令被引擎侧清除**） | 合成 `directive-failed` + morale/stress 更新 | — |
 | `AgentControllerPort.submitAction` | 返回 `{ ok: false, reason }` | 记 `provider` 轨迹后丢弃；下次基于**新**观测重试 |
 

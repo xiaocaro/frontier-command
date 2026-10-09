@@ -91,7 +91,7 @@ Fixture：`tests/fixtures/agent/*.json`（录制决策、场景初始状态、�
 | DEC-9 | **`choiceId` 越界** ⇒ `invalid-choice-id`，且**绝不**回退为「让模型直接给 Action」 | Rule 3 | 全部 |
 | DEC-10 | `intent:'request'` 缺 `request` 字段 ⇒ Zod 拒绝 | schema `allOf` | EVT-02 |
 | DEC-11 | 非 `act` 意图**不调用** `submitAction`（用 spy 断言零调用） | `03-api-contract.md` §3 | EVT-01/02/04/06 |
-| DEC-12 | `observationTick` 过期 ⇒ 丢弃，**且不做 fallback**（断言 provider 未被二次调用、状态未变） | §6 | 全部 |
+| DEC-12 | `observationTick` 过期 ⇒ 丢弃，**且不做 fallback**（断言 provider 未被二次调用、状态未变）。该用例走的是**不盖戳的 client**，验的是 provider 守约；**真正的过期丢弃由 `scheduler.test.ts` 的 `SC-4` 覆盖**（`C-37`） | §6 | 全部 |
 | DEC-13 | `observationTick` 未过期 ⇒ 正常处理 | §6 | 全部 |
 | DEC-14 | **Observation 裁剪**：无他人 memory/promise/state；无 `enemies`/`seed`/`factions`；无未发现地理 | Rule 5 | 全部 |
 | DEC-15 | **Agent 隔离**：A 的 Observation 不含 B 的私有字段（逐字段断言，非仅 `JSON.stringify` 检查） | Rule 5 | EVT-03/06 |

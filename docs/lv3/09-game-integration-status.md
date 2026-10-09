@@ -24,7 +24,7 @@
 | `npm run test:package` | **未运行** |
 | **面板上的循环计数（`C-36` ④）** | **PASS** —— `vertical-slice.spec.ts` 断言真实应用里出现「本局模型决策 …」；`scheduler.test.ts` 两条新用例钉住 16× 缩放与 `onDiscarded`；`host.test.ts` 一条钉住转发与快照 |
 | **`C-36` ①（窗口随速度缩放）** | **PASS（含真实端点对照）** —— 16× 下 `npm run demo:live -- --speed=16`：开着缩放**决策 37 / 丢弃 0**；临时关掉缩放**决策 84 / 丢弃 63（75%）**。真实端点、真实 `AgentHost`、真实调度器 |
-| **`C-37`（运行时 `isStale` 不可达）** | 仅登记，未改行为 |
+| **`C-37`（运行时过期检查不可达）** | **已解决（改认知，不删）** —— `isStale` → `misreportsObservation`、常量拆分、四份文档就地更正判定位置；**行为零变更**，`npm test` 550 通过 |
 | **`npm run demo:live`**（真实模型，25 次调用 / 47.6s） | **PASS** —— 八步逐步打印：模型在第 1–2 步给出扎根于自身状态的答复（"我舰上没有一枚鱼雷…我需要一个明确的返航窗口"）；第 4 步组队后关系值 0 → 10；第 6 步真 REFIT 使承诺转 `fulfilled`、信任 60 → 70；第 7 步 Override 使信任 60 → 50；第 8 步两种历史都答 `counteroffer` 但**措辞可见地不同**（A 更积极、B 更直接）。**并因此发现 `C-36`** |
 | **实际启动应用**（无头、读终端） | **PASS** —— 无 key 时终端出现 `[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型`；带 key 时出现 `[agent] 模型已配置 — {...hasApiKey:true}`，且**输出中不含密钥**（实测 0 处匹配）。顺带确认：Windows 上主进程的 `console.log` **不送到终端**，`console.error` 会——所以那行用 stderr |
 

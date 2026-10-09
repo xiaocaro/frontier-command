@@ -127,7 +127,7 @@ agent.nextDecisionAt = w.time + RULES.agentDecisionInterval;   // 提案 15 游�
 | JSON 非法 | 丢弃，fallback |
 | `choiceId` 不在 `availableActions` 中 | 拒绝，fallback（Rule 3） |
 | API 错误 | 丢弃，fallback；连续失败则暂停该 Agent 的 LLM 路径若干分钟 |
-| Observation 过期（`observationTick` 落后过多） | **丢弃**，不 fallback——世界已变，旧决策无意义 |
+| Observation 过期（`observationTick` 落后过多） | **丢弃**，不 fallback——世界已变，旧决策无意义。<br>**在哪里判**：`scheduler.apply()`（它才持有世界），**不是** `DecisionRuntime`——运行时的同名检查实际是 provider 守约检查，见 `KNOWN_ISSUES.md` `C-37` |
 
 **fallback 阈值**（`Agent.md` §46 / §58）：
 

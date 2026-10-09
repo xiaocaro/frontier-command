@@ -59,19 +59,48 @@ export type ShapeValidationResult =
   | { ok: false; error: ModelError };
 
 /**
- * How stale an observation may be before its decision is worthless: one decision interval. Past
- * that, the world has moved on by a full scheduler beat.
+ * The staleness window: one decision interval, in ticks. Past it, the world has moved on by a full
+ * scheduler beat and a decision formed before that is no longer about the world it would act on.
+ *
+ * **This is the scheduler's constant.** The scheduler is the thing that can measure elapsed time — it
+ * holds the world — and `electron/agent/scheduler.ts` is where a stale decision is actually dropped.
+ * See `KNOWN_ISSUES.md` `C-37`: the check below is a different question entirely, and used to be
+ * described as this one.
  */
 export const STALE_TICK_LIMIT = RULES.agentDecisionInterval * 10;
 
 /**
- * Stale means the answer was formed against a materially older (or impossible future) world. Such
- * an answer is dropped without fallback: a deterministic score computed from the *old* observation
- * would be just as wrong, and the right response is to re-evaluate next beat.
+ * How far a provider's self-reported tick may be off before it counts as not having reported the
+ * observation it was handed.
+ *
+ * The value matches `STALE_TICK_LIMIT` because both are one decision interval; the *questions* are
+ * unrelated, which is why they are two constants rather than one.
  */
-export function isStale(decision: AgentDecision, observation: AgentObservation): boolean {
+export const MISREPORTED_TICK_TOLERANCE = RULES.agentDecisionInterval * 10;
+
+/**
+ * Did the provider report an observation other than the one it was given?
+ *
+ * **Not a staleness check, and it cannot be one.** This validates against the *same* frozen
+ * observation the request was built from, so no amount of elapsed time can show up here — the runtime
+ * holds no world and no clock on purpose (Rule 1; `src/engine/agent` is forbidden a clock by
+ * `tests/agent/boundary.test.ts` B-12). Elapsed time is measured where the world is: the scheduler.
+ *
+ * What this does enforce is a **provider contract**: a decision must claim the tick of the observation
+ * it was actually handed. Both shipped clients stamp `observationTick` themselves
+ * (`openai-compatible.ts`, `mock-client.ts`), so for them this never fires — but a provider that let
+ * the model's own `observationTick` through would be caught here, and a future one that forgot to
+ * stamp would be too. The tolerance covers a provider that echoes a slightly different tick rather
+ * than failing it outright.
+ *
+ * `KNOWN_ISSUES.md` `C-37` records what this used to be mistaken for.
+ */
+export function misreportsObservation(
+  decision: AgentDecision,
+  observation: AgentObservation,
+): boolean {
   const age = observation.tick - decision.observationTick;
-  return age < 0 || age > STALE_TICK_LIMIT;
+  return age < 0 || age > MISREPORTED_TICK_TOLERANCE;
 }
 
 const isOffered = (observation: AgentObservation, choiceId: string): boolean =>
@@ -128,16 +157,20 @@ export function validateDecisionShape(
 }
 
 /**
- * The full gate: `validateDecisionShape` plus the staleness test.
+ * The full gate: `validateDecisionShape` plus the provider-honesty check.
  *
  * This is what the runtime applies to whatever comes back from a provider (docs/lv3/03-api-contract.md
  * §4.5), including a provider that claims success. Re-checking rather than trusting the provider is
  * the point: the model layer is untrusted by construction (Rule 3).
+ *
+ * It is **not** where staleness is decided — the error string `'stale'` is kept because it is a member
+ * of the `ValidationError` contract, but the condition behind it is `misreportsObservation`. Real
+ * staleness is the scheduler's (`KNOWN_ISSUES.md` `C-37`).
  */
 export function validateDecision(raw: unknown, observation: AgentObservation): ValidationResult {
   const shaped = validateDecisionShape(raw, observation);
   if (!shaped.ok) return shaped;
-  if (isStale(shaped.decision, observation)) return { ok: false, error: 'stale' };
+  if (misreportsObservation(shaped.decision, observation)) return { ok: false, error: 'stale' };
   return shaped;
 }
 

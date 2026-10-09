@@ -390,14 +390,16 @@
 
 ---
 
-### C-37 — 运行时的 `isStale` 在生产中**不可达**，文档写的第一道闸门其实是空的 🟡 MEDIUM
+### C-37 — 运行时的过期检查在生产中不可达；文档把第一道闸门指错了层 🟡 MEDIUM（**已解决：改认知，不删**）
 
 | 项 | 内容 |
 | --- | --- |
-| **Conflict** | `02-decision-flow.md` §3.5 / `02-llm-boundary.md` §6 / `03-api-contract.md` §4.7/§6 都把「Observation 过期 ⇒ 丢弃且**不** fallback」写成**运行时**的行为，`DEC-12` 也这么断言 |
-| **Current Code** | 运行时那道是 `validateDecision` → `isStale`（`decision.ts:137-142, 71-75`），比的是 `observation.tick - decision.observationTick`。而 `observation` **就是同一份**（`runtime.ts:240, 257`），且两个 client 都会把 `observationTick` 覆盖成 `observation.tick`（`openai-compatible.ts:454-462`、`mock-client.ts:93-101`）⇒ `age` 恒为 **0** ⇒ **永不触发** |
-| **Impact** | 文档与实际不符：**唯一活着的过期闸门是调度器那道**（`scheduler.ts` `apply()`）。`DEC-12` 之所以通过，只是因为测试用的 `lyingClient` 不盖戳——**它测的是"假 client 不守约"这一情形**，不是生产路径。两道的**失败语义也不同**：运行时那道产出 `trace.outcome='discarded'` 且**不 fallback**；调度器那道只写一行日志、`trace` 早就以 `provider` 结束了 |
-| **Proposed Resolution** | **不改行为，先改认知**。要么删掉运行时那道（承认它是死代码，把"不 fallback"的语义完整移到调度器那道），要么让它在**能看见时间**的地方生效（那就得把 `now` 传进 runtime，而 runtime 按 Rule 1 不持有世界——触碰边界）。**在决定前不要动它**：`DEC-12` 与 `runtime.test.ts:166-189` 都依赖它今天的样子。本条目只登记"文档说的第一道闸门生产环境不生效" |
+| **Conflict** | `02-decision-flow.md` §3.5 / `02-llm-boundary.md` §6 / `03-api-contract.md` §4.7·§6 都把「Observation 过期 ⇒ 丢弃且**不** fallback」写成 **`DecisionRuntime`** 的行为，`DEC-12` 也这么断言 |
+| **Current Code** | 运行时那道是 `validateDecision` → `isStale`（`decision.ts`），比的是 `observation.tick - decision.observationTick`。而 `observation` **就是同一份**冻结对象（`runtime.ts`），两个 client 又都把 `observationTick` 覆盖成 `observation.tick` ⇒ `age` 恒为 **0** ⇒ **永不触发**。唯一活着的过期闸门是 `scheduler.apply()` |
+| **Impact** | **文档把排查者指向了错的层**：丢过期决策的是**调度器**，它只写**一行日志**且**不产生 `discarded` 轨迹**（trace 早已以 `provider` 结束）。谁查"Agent 为什么什么都没做"，按文档会去翻运行时的 `discarded`——那里永远什么都没有 |
+| **Proposed Resolution** | **已按用户裁决执行：「改认知，不删」（2026-10-09）**。理由：让它**真的**测出时间在结构上做不到——运行时按 Rule 1 不持有世界、按 B-12 不得有钟，注入时钟只会造出**第二套以墙钟为单位**的过期定义，比一个空闸门更糟。具体改动：<br>① `isStale` → **`misreportsObservation`**，并新增常量 `MISREPORTED_TICK_TOLERANCE`——原来它与调度器的窗口**共用一个 `STALE_TICK_LIMIT`**，是同一个数字回答两个不相关的问题，拆开后 `STALE_TICK_LIMIT` 保留给调度器（`C-36` 的文档因此全部继续有效）；<br>② 注释写明它是 **provider 守约检查**（决策必须自报它实际拿到的那份观测的 tick），并说明两条分支对**不守约的** client 才活着；<br>③ 四份文档（`02-decision-flow.md`、`02-llm-boundary.md`、`03-api-contract.md`、`03-test-plan.md` 的 DEC-12）就地更正判定位置。<br>**错误字符串 `'stale'` 未改**——它是 `ValidationError` 契约成员（CLAUDE.md §15）。**行为零变更**，`npm test` 550 通过 |
+| **保留的价值** | 这道检查不是死代码：一个**忘记盖戳**的未来 provider（让模型 JSON 里那个 `observationTick` 漏过去）会让两条分支都活过来并被拒。删掉它，那种缺陷会变成静默——所以选了"改认知"而不是"删" |
+| **操作说明** | 这四份文档都在 `00-*`…`09-*` 的红线清单里（"冲突只登记在 `KNOWN_ISSUES.md`，不静默修改"）。本次**就地修改由用户显式授权**，与 `C-34` 同类 |
 
 ---
 

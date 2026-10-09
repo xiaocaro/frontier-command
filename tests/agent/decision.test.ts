@@ -11,7 +11,7 @@ import {
   STALE_TICK_LIMIT,
   evaluate,
   fallbackDecision,
-  isStale,
+  misreportsObservation,
   matchesObservation,
   parseDecisionText,
   validateDecision,
@@ -148,11 +148,11 @@ describe('DEC-12/DEC-13 stale observations are dropped, not guessed at', () => {
   it('treats an aged decision as stale', () => {
     const engine = agentEngine();
     const observation = observationFor(engine, explorer(engine).id);
-    expect(isStale(decision({ observationTick: 0 }), withTick(observation, STALE_TICK_LIMIT))).toBe(
+    expect(misreportsObservation(decision({ observationTick: 0 }), withTick(observation, STALE_TICK_LIMIT))).toBe(
       false,
     );
     expect(
-      isStale(decision({ observationTick: 0 }), withTick(observation, STALE_TICK_LIMIT + 1)),
+      misreportsObservation(decision({ observationTick: 0 }), withTick(observation, STALE_TICK_LIMIT + 1)),
     ).toBe(true);
     expect(validateDecision(decision({ choiceId: 'return' }), withTick(observation, STALE_TICK_LIMIT + 1))).toEqual(
       { ok: false, error: 'stale' },
