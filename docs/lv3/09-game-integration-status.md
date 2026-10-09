@@ -22,6 +22,9 @@
 | `npm run test:e2e`（`lcars.spec.ts`） | **PASS** —— **5 passed / 2.4m**（几何六尺寸 + 偏好/动效/音频 + 125/150/200% 显示缩放）。**面板没有移动 LCARS 布局**——这是演示通道唯一未验证的风险，现已排除 |
 | `npm run test:e2e`（全套） | **未重跑**（上一次全套是 P3 结束时：35 / 37 / 14.7m） |
 | `npm run test:package` | **未运行** |
+| **面板上的循环计数（`C-36` ④）** | **PASS** —— `vertical-slice.spec.ts` 断言真实应用里出现「本局模型决策 …」；`scheduler.test.ts` 两条新用例钉住 16× 缩放与 `onDiscarded`；`host.test.ts` 一条钉住转发与快照 |
+| **`C-36` ①（窗口随速度缩放）** | **单元级 PASS**；**16× 的真实模型端到端未实测** |
+| **`C-37`（运行时 `isStale` 不可达）** | 仅登记，未改行为 |
 | **`npm run demo:live`**（真实模型，25 次调用 / 47.6s） | **PASS** —— 八步逐步打印：模型在第 1–2 步给出扎根于自身状态的答复（"我舰上没有一枚鱼雷…我需要一个明确的返航窗口"）；第 4 步组队后关系值 0 → 10；第 6 步真 REFIT 使承诺转 `fulfilled`、信任 60 → 70；第 7 步 Override 使信任 60 → 50；第 8 步两种历史都答 `counteroffer` 但**措辞可见地不同**（A 更积极、B 更直接）。**并因此发现 `C-36`** |
 | **实际启动应用**（无头、读终端） | **PASS** —— 无 key 时终端出现 `[agent] 未配置 DEEPSEEK_API_KEY —— 本轮为确定性模式，不调用模型`；带 key 时出现 `[agent] 模型已配置 — {...hasApiKey:true}`，且**输出中不含密钥**（实测 0 处匹配）。顺带确认：Windows 上主进程的 `console.log` **不送到终端**，`console.error` 会——所以那行用 stderr |
 

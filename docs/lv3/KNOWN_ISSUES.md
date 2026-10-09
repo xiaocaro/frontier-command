@@ -348,16 +348,49 @@
 
 ---
 
-### C-36 — 加速时模型的决策会被判过期丢弃，16× 下几乎必然 🔴 BLOCKER（**未修复，需设计决定**）
+### C-36 — 加速时模型的决策会被判过期丢弃，16× 下几乎必然 🔴 BLOCKER（**①+④ 已落地，② 待决**）
 
 | 项 | 内容 |
 | --- | --- |
-| **Conflict** | `scheduler.apply()` 在 `ageTicks > STALE_TICK_LIMIT` 时丢弃决策并只写一行 `info` 日志；而仿真速度是玩家可调的 1/4/16×。`STALE_TICK_LIMIT = RULES.agentDecisionInterval * 10 = 150` tick = **15 游戏分钟** |
-| **Current Code** | `electron/agent/scheduler.ts:288-297`（`ageTicks = (now - decision.observation.time) * 10`）；`HOST_FRAME_MS = 100`，`advanceFrame()` 每宿主帧跑 `speed` 步，每步 0.1 游戏分钟 |
-| **Measured** | 模型在 15 游戏分钟内必须返回，否则决策作废：**1× → 15.0s；4× → 3.75s；16× → 0.94s**。而实测 DeepSeek 延迟 **2–8s**（`C-33` 的实测表）。⇒ **16× 下模型的回答基本永远落地不了**，Agent 实际一直由确定性回退驱动 |
-| **Impact** | 🔴 **静默且反直觉**：玩家加速是为了看得快，结果加速**越界地关掉了 LLM**——而两种模式在游戏里看起来一样（`C-33` 的同一类问题）。更糟的是**演示 runbook 原本建议用 16×**，照着做会得到一份"模型参与了"的假象。这是靠带真 key 跑 `demo:live` 才暴露的——所有离线测试都在 1× 或同步循环里，看不到 |
-| **Proposed Resolution** | **未决定，不擅自改**。至少三条路，代价不同：① 让 `STALE_TICK_LIMIT` 随 `speed` 缩放（一致但会放宽"过期"的语义）；② 决策在**开始**时就记下 `observation.time`，而 `apply` 比较的是"决策发起后世界走了多少"，并按实际 elapsed 而非阈值判断；③ 模型调用期间**暂停/降速**世界（玩家可感知，但最诚实）。**在决定之前不要改这个常量**——它同时约束着确定性回退路径，而那条路径**必须**保持现在的严格性 |
-| **临时缓解** | 带真 key 演示时**用 1×**（15s 余量）。`10-agent-demo-channel.md` §4 已改 |
+| **Conflict** | `scheduler.apply()` 在超过 `STALE_TICK_LIMIT` 时丢弃决策；而仿真速度是玩家可调的 1/4/16× |
+| **Current Code** | `electron/agent/scheduler.ts` 的 `apply()`；`STALE_TICK_LIMIT = RULES.agentDecisionInterval * 10 = 150` tick = **15 游戏分钟**；`HOST_FRAME_MS = 100`，`advanceFrame()` 每帧跑 `speed` 步 |
+| **Measured** | 原实现下模型必须在 **1× → 15.0s、4× → 3.75s、16× → 0.94s** 内返回，而实测 DeepSeek 延迟 **2–8s** ⇒ **16× 下模型的回答基本永远落地不了**，Agent 一直由确定性回退驱动 |
+
+#### 先澄清一件事：**规则本身没有错**
+
+它的语义是「世界已变，旧前提无意义」，而 16× 下世界**确实**在 0.94s 内走完了一整拍——模型的答案真的是对一个已经翻页的世界做出的。真正的缺陷是**这套设计没有办法让一个慢的决策者在快时钟上工作**，于是三条路本质上是三种让步，不是三种修法。
+
+#### 三条路的优劣（定稿）
+
+| | ① 阈值随 `speed` 缩放 | ② 提交前按**语义**复核 | ③ 调用期间暂停/降速世界 |
+| --- | --- | --- | --- |
+| **效果** | 恢复墙钟不变性（任何速度下 ~15s 窗口） | 丢弃 ⟺ **前提不再成立** | 世界不动 ⇒ 前提不可能过期 |
+| **合契约吗** | 契约未规定不变性，属新增约定 | ✅ **`03-api-contract.md` §4.7 本就列了四条**（`tick` 超阈／舰船不再空闲／出现 admiral 指令／已被更新的决策取代），实现只做了第一条 | 不违反字面（被禁的是调用**位置**） |
+| **要改 port 吗** | ⚠️ **要**（`SchedulerWorld` 看不到 `speed`） | ✅ 不用，`observe()` 已在 | — |
+| **主要优点** | 与**已按帧判定**的节拍规则（`07-scheduler-plan.md` §5 inv-9）一致——现在这两条相邻规则一个墙钟不变、一个随速度变，从未被调和 | 最贴合规则**真实目的**；天然速度不变、无时间常数；与既有校验互补而非重复 | 概念上最干净 |
+| **主要缺点** | **恰在世界变化最快处放宽守卫**（16× 下窗口 = 240 游戏分钟）；且**用观察时刻还是检查时刻的 speed** 有歧义（玩家可在调用途中改速，本实现用检查时刻，属近似） | **确实放宽了守卫**：菜单 id 可一模一样而**处境**已变（风险重算、目标将死）。"合法"≠"明智"；测试改动最大（`scheduler.test.ts` 的 tick 断言、`FakeWorld.observe` 返回静态观察） | ❌ **与 CLAUDE.md §2.4 的硬要求冲突**（LLM 慢时模拟仍须**确定且可响应**）；❌ **会死锁**（`S-5` 断言 `paused` 时 `pump()` 不动作 ⇒ 暂停后无法排空、无法恢复，且 UI 会显示假暂停）；❌ **最致命：世界推进量将取决于网络往返，破坏 `tests/architecture.test.ts:39-60` 的同 seed 重放** |
+| **本质** | 提高容差 | 换掉"世界变了多少"这把尺 | 用墙钟依赖换掉速度依赖 |
+
+**结论：③ 应当否决**——它是拿项目明确当作地基的重放不变性去换。**② 才是真修法**（合契约、不需改 port、天然速度不变），但它会把"Agent 基于更旧的推理行动"变成常态，因此实现前必须先定下 **"前提仍成立"的判据**：只查 `choiceId` 还在不在菜单上显然太窄。
+
+#### 已落地的处置
+
+**①（缩放）已实现**：`SchedulerWorld` 新增 `speed()`（`scheduler.ts`），`apply()` 用 `STALE_TICK_LIMIT * Math.max(1, speed())`。代价如上表，**这是有意选择的权宜**，不是终局。近似之处写在代码注释里。
+
+**④（让它可见）已实现**：`SchedulerOptions.onDiscarded` 新回调 → `AgentHost.stats()` → `agents:get` 载荷 → 面板显示「本局模型决策 N 次 · 过期丢弃 M 次」，并在有丢弃时给出原因（`speed > 1` 时明确建议降到 1×）。**这一条最重要**：丢弃原本只写一行 `info` 到 world log，而**没有任何 UI 组件渲染该 log**——所以模型可以完全停止参与而界面毫无异样。这与 `C-33` 是同一个失败模式。
+
+**测试**：`scheduler.test.ts` 两条新用例（16× 下同一份迟到的答案不再被丢；`onDiscarded` 报出 `ageTicks`/`limit`）、`host.test.ts` 一条（计数被转发且是快照）、`vertical-slice.spec.ts` 一条（面板上确实有那行）。**16× 的端到端（真实模型）尚未实测**——单元测试钉住了缩放，但"游戏里 16× 现在真的好用"这句话还没有 live 证据。
+
+---
+
+### C-37 — 运行时的 `isStale` 在生产中**不可达**，文档写的第一道闸门其实是空的 🟡 MEDIUM
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `02-decision-flow.md` §3.5 / `02-llm-boundary.md` §6 / `03-api-contract.md` §4.7/§6 都把「Observation 过期 ⇒ 丢弃且**不** fallback」写成**运行时**的行为，`DEC-12` 也这么断言 |
+| **Current Code** | 运行时那道是 `validateDecision` → `isStale`（`decision.ts:137-142, 71-75`），比的是 `observation.tick - decision.observationTick`。而 `observation` **就是同一份**（`runtime.ts:240, 257`），且两个 client 都会把 `observationTick` 覆盖成 `observation.tick`（`openai-compatible.ts:454-462`、`mock-client.ts:93-101`）⇒ `age` 恒为 **0** ⇒ **永不触发** |
+| **Impact** | 文档与实际不符：**唯一活着的过期闸门是调度器那道**（`scheduler.ts` `apply()`）。`DEC-12` 之所以通过，只是因为测试用的 `lyingClient` 不盖戳——**它测的是"假 client 不守约"这一情形**，不是生产路径。两道的**失败语义也不同**：运行时那道产出 `trace.outcome='discarded'` 且**不 fallback**；调度器那道只写一行日志、`trace` 早就以 `provider` 结束了 |
+| **Proposed Resolution** | **不改行为，先改认知**。要么删掉运行时那道（承认它是死代码，把"不 fallback"的语义完整移到调度器那道），要么让它在**能看见时间**的地方生效（那就得把 `now` 传进 runtime，而 runtime 按 Rule 1 不持有世界——触碰边界）。**在决定前不要动它**：`DEC-12` 与 `runtime.test.ts:166-189` 都依赖它今天的样子。本条目只登记"文档说的第一道闸门生产环境不生效" |
 
 ---
 
