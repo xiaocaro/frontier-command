@@ -150,7 +150,7 @@ DEEPSEEK_API_KEY=<key> npm start
 | 1 | 面板 → 选中 Explorer → 类型 `command` → 发送「穿越虫洞，寻找失联探测船。」 | 通信栏出现 `舰队司令 → <Agent>：…`；**面板出现「已发出」** |
 | 2 | 点「继续」等一拍，再点面板的**刷新** | 通信栏出现 `<Agent> ← admiral：…`（**Agent 的答复**）；面板里该 Agent 的信任/士气可能已变 |
 | 3 | 换 `negotiate` 或 `ask` 再发一条，看 Agent 如何回应 | 答复文本随其人格/目标/状态而不同 |
-| 4 | 让 Explorer 与 Tactical 互相请求（Agent-Agent）：可在第 1 步的文本里点明需要护航 | 出现 `team-request` / `team-reply`；面板刷新后两者的 `relationships` 变化 |
+| 4 | 让 Explorer 与 Tactical 互相请求（Agent-Agent）：可在第 1 步的文本里点明需要护航 | 通信栏出现 Tactical 的答复行。**关系值本身看不到**——面板不渲染 `relationships`（`KNOWN_ISSUES.md` `C-39`）；要看数值请用 `window.frontier.agents()` |
 | 5 | **Path A**：点「承诺 Deep Scan 优先权限」 | 「承诺已创建，并已通知」；面板里该 Agent **多出一条未兑现承诺** |
 | 6 | 兑现：用既有的 **Admiral 指令**对话给某艘舰下 `REFIT`（Deep Scan），等它装好 | 面板刷新后承诺变 **fulfilled**，信任上升，记忆 tag 出现 **`promise-kept`** |
 | 7 | **Path B**（另起一局）：类型 `override` → 选一个 `directiveActionType` → 发送 | 面板里信任**下降**、士气下降，记忆 tag 出现 **`admiral-override`** |
@@ -205,3 +205,31 @@ playbook §三十二 明令不得把「DeepSeek 必须输出 COUNTEROFFER」当�
   决策全部因超过 `STALE_TICK_LIMIT` 被判过期——表现就是"模型说了 accept 但什么也没发生"。
 - **第 4 步的 team-request 是注入的**，不是模型自己发起的（要看的是 Tactical 的答复）。
 - 脚本会打印**模型调用次数与耗时**。实测一次约 **25 次调用 / 50s**。
+
+---
+
+## 6. 让人**看着**跑一遍：`npm run demo:ui`
+
+```bash
+npm run demo:ui
+```
+
+跑 `tests/e2e/agent-channel.demo.ts`（经 `playwright.demo.config.ts`）。与 §5 的文字版**职责不同，两者都保留**：
+
+| | §5 `demo:live` | §6 `demo:ui` |
+| --- | --- | --- |
+| 形态 | 终端文字，无界面 | **真实 Electron 窗口**，鼠标点真实控件 |
+| 断言 | 承诺/记忆/信任等**引擎状态事实**，并打印模型的推理 | 只断言与模型无关的事实；其余**只展示** |
+| 产物 | 可复现的文字记录 | **可见的窗口** + `test-results/agent-demo/` 的 **14 张截图故事板**（旁白烧在图里） |
+| 用时 | ~50s | **~35s**（无 key，确定性模式） |
+
+**它不录像。** `electron.launch({ recordVideo })` 会让本应用加载失败（`ERR_FAILED (-2) loading 'frontier://app/index.html'`），
+用例会挂到 20 分钟超时——完整证据与单变量实验见 `KNOWN_ISSUES.md` `C-38`。**看鼠标点击请直接看窗口**，
+那正是这个演示存在的意义；PNG 是可分享的产物。
+
+八步与 §4 的 runbook 一一对应，**其中只有第 4 步（组队请求）是注入的**——面板的 kind 只有四种，
+全仓库没有任何组队 UI，旁白与截图里都标了 ⚠。其余七步（含第 6 步的 REFIT 走既有 Admiral 指令对话框、
+第 7 步的 Override 走面板三个控件）**全部是真实鼠标点击**。
+
+世界是**启动前预置**的：`deepScan` 改装要一枚 specialFind，而新世界没有——所以按既有惯例用
+`SaveStore` 预置一个"基地里本来就有存货"的世界，旁白里也说明了。

@@ -22,6 +22,8 @@
 | `npm run test:e2e`（`lcars.spec.ts`） | **PASS** —— **5 passed / 2.4m**（几何六尺寸 + 偏好/动效/音频 + 125/150/200% 显示缩放）。**面板没有移动 LCARS 布局**——这是演示通道唯一未验证的风险，现已排除 |
 | `npm run test:e2e`（全套） | **未重跑**（上一次全套是 P3 结束时：35 / 37 / 14.7m） |
 | `npm run test:package` | **未运行** |
+| **`npm run demo:ui`**（可观看的 UI 演示，无 key） | **PASS** —— 真实 Electron 窗口、真实鼠标点击八步、**1 passed / 35.5s**、`test-results/agent-demo/` 产出 **14 张带旁白的故事板 PNG**。**不录像**：`recordVideo` 会让应用加载失败（`C-38`） |
+| `npm run test:e2e` 是否收集到演示 | **未收集**（`npx playwright test --list` 无 demo；演示配置 `--list` 恰好 1 个用例）——隔离双向验证通过，`npm test` 亦不受影响（550 通过） |
 | **面板上的循环计数（`C-36` ④）** | **PASS** —— `vertical-slice.spec.ts` 断言真实应用里出现「本局模型决策 …」；`scheduler.test.ts` 两条新用例钉住 16× 缩放与 `onDiscarded`；`host.test.ts` 一条钉住转发与快照 |
 | **`C-36` ①（窗口随速度缩放）** | **PASS（含真实端点对照）** —— 16× 下 `npm run demo:live -- --speed=16`：开着缩放**决策 37 / 丢弃 0**；临时关掉缩放**决策 84 / 丢弃 63（75%）**。真实端点、真实 `AgentHost`、真实调度器 |
 | **`C-37`（运行时过期检查不可达）** | **已解决（改认知，不删）** —— `isStale` → `misreportsObservation`、常量拆分、四份文档就地更正判定位置；**行为零变更**，`npm test` 550 通过 |

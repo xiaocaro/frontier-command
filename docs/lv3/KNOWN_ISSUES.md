@@ -403,6 +403,30 @@
 
 ---
 
+### C-38 — `electron.launch({ recordVideo })` 会让应用加载失败，可观看演示只能用截图故事板 🟡 MEDIUM（**已绕过并记录**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | 用户要求一个"能看到鼠标自动点击界面"的 UI 演示，最自然的产物是一段带指针的录像；Playwright 1.63 的 `recordVideo.showActions.cursor` 默认就是 `'pointer'`，看起来正合适 |
+| **Current Code** | 本项目用**自定义 standard scheme** 提供前端包：`electron/main.ts` 的 `protocol.handle('frontier', … → net.fetch(pathToFileURL(file)))` |
+| **Measured** | 加上 `recordVideo` 后，首次导航即失败：`UnhandledPromiseRejectionWarning: Error: ERR_FAILED (-2) loading 'frontier://app/index.html'`，页面空白，用例挂到 20 分钟超时。**单变量实验**：去掉 `recordVideo`（其余不动）**同一用例 34s 通过**；用最小形式 `recordVideo: { dir }` 仍失败；`FRONTIER_HEADLESS: '1'` 也仍失败 ⇒ 是**该选项本身**，与可见窗口无关。对照：同一台机器上 `vertical-slice.spec.ts`（无 recordVideo）13.6s 通过 |
+| **Impact** | 🟡 只影响演示的产物形态，不影响任何产品行为。但它会**以 20 分钟挂起的形式**出现，极易被误判为"演示太慢"——第一次就浪费了一整轮 |
+| **Proposed Resolution** | **已绕过**：`tests/e2e/agent-channel.demo.ts` **不使用 `recordVideo`**，改为**可见窗口 + 每步一张 PNG 故事板**（`test-results/agent-demo/`，旁白烧进图里，14 张）。人**实时看窗口**就能看到鼠标点击与界面反应——那正是用户要看的东西；PNG 是可分享的产物。**未深挖根因**：要判断是 Playwright 的 Electron 录制路径与 `net.fetch(file://)` 冲突、还是需要额外的启动开关，代价与收益不成比例。若将来要真视频，从这里开始查 |
+| **附注** | `use: { video: … }` 在 Playwright 配置里对 Electron **完全无效**（它只挂在浏览器 `context` fixture 上），所以"改成配置里开"不是出路；`slowMo` 也不在 `Electron.launch` 的选项里，节奏只能用 `page.waitForTimeout` |
+
+---
+
+### C-39 — 面板不渲染 `relationships`，而 runbook 让演示者去看它 🟡 MEDIUM（**文档已更正，UI 未动**）
+
+| 项 | 内容 |
+| --- | --- |
+| **Conflict** | `10-agent-demo-channel.md` §4 第 4 步写着「面板刷新后两者的 `relationships` 变化」——把"关系值上升"列为**可见证据** |
+| **Current Code** | `RosterAgent.relationships` 确实被投影携带（`src/engine/agent/roster.ts`），但 `AgentChannel.tsx` **从未显示它**。grep `src/ui/**` 无任何读 `relationships` 的地方 |
+| **Impact** | 照着 runbook 演示的人在第 4 步会找不到那个数字，只能看到通信栏里 Tactical 的答复行——**演示者会以为自己漏了什么**，而实际是 UI 没有这个视图 |
+| **Proposed Resolution** | **已更正文档**：第 4 步的可见证据改为"Tactical 的答复行出现在通信栏"，并注明"关系值当前没有 UI 视图，要看请用 `window.frontier.agents()`"。**没有擅自加 UI**——那要重新决定 §二十五 的边界（`C-35` 只授权了一个只读通道 + 一个面板），属于新的设计决定 |
+
+---
+
 ## 3. 实施期需要留意的既有行为（非冲突，但会绊倒实施者）
 
 | # | 行为 | 位置 | 影响 |
