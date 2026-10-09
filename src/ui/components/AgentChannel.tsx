@@ -228,11 +228,15 @@ export function AgentChannel({
             is built from the same two names the engine uses (`commander.name` and the target Agent's
             name), so what you read here is literally what appears there.
 
-            It sits immediately before the box so the input reads as the rest of that sentence.
+            It sits immediately before the box so the input reads as the rest of that sentence, and it
+            exists **only while there is something to send**: sending clears the text, and the prefix
+            leaves with it rather than sitting there labelling an empty box.
           */}
-          <span className="agent-prefix">
-            {commanderName} → {recipientName ?? '（未选择 Agent）'}：
-          </span>
+          {text.trim().length > 0 && (
+            <span className="agent-prefix">
+              {commanderName} → {recipientName ?? '（未选择 Agent）'}：
+            </span>
+          )}
           <input
             aria-label="发往 Agent 的消息"
             value={text}

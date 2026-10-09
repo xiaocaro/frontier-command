@@ -147,13 +147,19 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // scheduler drained, `modelCalls` counts the ones the model actually answered (`C-36`).
   await expect(page.locator('.agent-loop')).toContainText('由模型作答');
 
-  // The box carries the sender → recipient prefix, built from the same names the engine uses when it
-  // mirrors the line into the feed — so what you read above the box is what appears in it.
+  // The prefix belongs to the sentence the box holds: it is there while there is text, and it leaves
+  // when the text does. (The box starts pre-filled, which is why this asserts presence rather than
+  // absence first.)
+  await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
+  // Built from the same names the engine uses when it mirrors the line into the feed — so what you
+  // read above the box is what appears in it.
   await expect(page.locator('.agent-channel .agent-prefix')).toContainText('→');
   await expect(page.locator('.agent-channel .agent-prefix')).toContainText('LYRA VOSS');
-
-  // Send from the panel. The default kind is `command`, i.e. the Admiral offering a task.
+  // Empty it without sending: the prefix goes with the text, on its own.
+  await page.locator('.agent-channel .agent-compose input').fill('');
+  await expect(page.locator('.agent-channel .agent-prefix')).toHaveCount(0);
   await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
+
   await page.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
   await expect(page.locator('.agent-channel')).toContainText('已发出');
 
@@ -166,8 +172,10 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   await expect(page.locator('.comms-item.is-latest')).toHaveCount(1);
   await expect(page.locator('.comms-item.is-latest')).toContainText('→');
 
-  // The box empties on a successful send, so the next message starts from nothing.
+  // The box empties on a successful send, so the next message starts from nothing — and the prefix
+  // goes with it, rather than sitting there labelling an empty box.
   await expect(page.locator('.agent-channel .agent-compose input')).toHaveValue('');
+  await expect(page.locator('.agent-channel .agent-prefix')).toHaveCount(0);
 
   // The promise button is the two-command path (create, then notify). It must not fail silently.
   await page.locator('.agent-channel').getByRole('button', { name: '承诺 Deep Scan 优先权限' }).click();
