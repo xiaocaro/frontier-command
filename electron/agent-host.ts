@@ -22,6 +22,7 @@
  */
 import { SimulationEngine } from '../src/engine/engine';
 import type { AgentEvent, AgentTrigger, SimulationEvent, WorldState } from '../src/engine/types';
+import { ADMIRAL } from '../src/engine/agent/dialogue';
 import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
@@ -132,10 +133,10 @@ function submitterFor(engine: SimulationEngine): ActionSubmitter {
  * own id as the actor. It is never `'commander'`: an Agent must not be able to borrow the Admiral's
  * powers, the same rule `submitterFor` above observes (`N-3`).
  */
-function messengerFor(engine: SimulationEngine): MessageSubmitter {
+function messengerFor(engine: SimulationEngine, onSpoke?: () => void): MessageSubmitter {
   return {
-    send: (reply, observation) =>
-      engine.dispatchCommand(
+    send: (reply, observation) => {
+      const result = engine.dispatchCommand(
         {
           type: 'agentMessage',
           from: observation.agentId,
@@ -145,7 +146,13 @@ function messengerFor(engine: SimulationEngine): MessageSubmitter {
           payload: reply.payload,
         },
         observation.agentId,
-      ),
+      );
+      // Announce only an answer **to the Admiral**, and only one that was actually accepted: a
+      // refused dispatch changed nothing to read, and an Agent answering another Agent is not the
+      // Admiral's conversation (`docs/lv3/10-agent-demo-channel.md` step 4).
+      if (result.ok && reply.to === ADMIRAL) onSpoke?.();
+      return result;
+    },
   };
 }
 
@@ -169,6 +176,15 @@ export interface AgentHostOptions {
   /** Injected so a test can supply credentials; defaults to the real environment. */
   env?: NodeJS.ProcessEnv;
   onTrace?: (trace: DecisionTrace) => void;
+  /**
+   * Fired when an Agent has just answered **the Admiral**, and the engine accepted the message.
+   *
+   * The host is the only place that sees both halves of that (the decision, and the dispatch that
+   * turned it into a line the Admiral can read), so it is the only place that can say "there is
+   * something to read now". No arguments: the caller needs to know *that* it happened, and the
+   * content is already in the world for anyone who wants it.
+   */
+  onSpoke?: () => void;
 }
 
 export class AgentHost {
@@ -218,7 +234,7 @@ export class AgentHost {
       prompts: loadPromptTemplates(options.root),
       schema: loadDecisionSchema(options.root),
       submitter: submitterFor(engine),
-      messenger: messengerFor(engine),
+      messenger: messengerFor(engine, options.onSpoke),
       // Counted here rather than taken from the scheduler: only the runtime sees the trace, and the
       // trace is where "the model answered" is distinguishable from "the deterministic rule did".
       // The caller's own hook still runs.

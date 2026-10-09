@@ -252,3 +252,44 @@ describe('assembly puts the right provider behind the runtime', () => {
     }
   });
 });
+
+describe('the host announces an answer to the Admiral — and only that', () => {
+  it('fires once for the answer, and not for the Admiral’s own line', async () => {
+    // This is the signal the host holds the world on (`electron/read-hold.ts`). It has to be exact:
+    // firing on the Admiral's own message would freeze the game every time the player typed, and
+    // firing on a refusal would freeze it for something that was never written down.
+    const engine = quietEngine();
+    const onSpoke = vi.fn();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {}, onSpoke });
+    const agent = engine.state.agents[0];
+    expect(
+      engine.dispatchCommand({
+        type: 'agentMessage',
+        from: 'admiral',
+        to: agent.id,
+        kind: 'command',
+        text: '穿越虫洞，寻找失联探测船。',
+        payload: null,
+      }).ok,
+    ).toBe(true);
+    // The Admiral speaking is not an Agent speaking.
+    expect(onSpoke).not.toHaveBeenCalled();
+
+    // The production-shaped recipe from `vertical-slice.test.ts`: `frame()` never awaits the decision
+    // (CLAUDE.md §2.4), so the microtask queue has to run before the next `pump()` can drain it.
+    for (let i = 0; i < 200; i++) {
+      engine.dispatchCommand({ type: 'pause', paused: false });
+      host.frame(engine.step());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (engine.state.agentMessages.some((message) => message.from === agent.id)) break;
+    }
+
+    const answers = engine.state.agentMessages.filter(
+      (message) => message.from !== 'admiral' && message.to === 'admiral',
+    );
+    expect(answers).toHaveLength(1);
+    // Exactly one fire per line the Admiral can actually read — the gate is `ok && to === 'admiral'`,
+    // not "an Agent did something".
+    expect(onSpoke).toHaveBeenCalledTimes(answers.length);
+  });
+});
