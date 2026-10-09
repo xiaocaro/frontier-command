@@ -181,7 +181,7 @@ export class AgentHost {
    * many calls, how many thrown away), not of the simulation, and putting it in `WorldState` would make
    * the save depend on network timing.
    */
-  private readonly loop: AgentLoopStats = { decisions: 0, dropped: 0, lastDrop: null };
+  private readonly loop: AgentLoopStats = { decisions: 0, modelCalls: 0, dropped: 0, lastDrop: null };
 
   constructor(engine: SimulationEngine, options: AgentHostOptions) {
     this.engine = engine;
@@ -219,7 +219,13 @@ export class AgentHost {
       schema: loadDecisionSchema(options.root),
       submitter: submitterFor(engine),
       messenger: messengerFor(engine),
-      ...(options.onTrace ? { onTrace: options.onTrace } : {}),
+      // Counted here rather than taken from the scheduler: only the runtime sees the trace, and the
+      // trace is where "the model answered" is distinguishable from "the deterministic rule did".
+      // The caller's own hook still runs.
+      onTrace: (trace) => {
+        if (trace.outcome === 'provider') this.loop.modelCalls += 1;
+        options.onTrace?.(trace);
+      },
     });
     this.scheduler = new AgentScheduler({
       world: schedulerWorld(engine),
@@ -238,6 +244,7 @@ export class AgentHost {
   stats(): AgentLoopStats {
     return {
       decisions: this.loop.decisions,
+      modelCalls: this.loop.modelCalls,
       dropped: this.loop.dropped,
       lastDrop: this.loop.lastDrop ? { ...this.loop.lastDrop } : null,
     };

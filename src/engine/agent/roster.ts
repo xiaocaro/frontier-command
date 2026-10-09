@@ -62,6 +62,16 @@ export interface RosterAgent {
 export interface AgentLoopStats {
   /** Decisions drained this session, from either provider. */
   decisions: number;
+  /**
+   * Of those, the ones the **model** actually produced.
+   *
+   * Distinct from `decisions` on purpose, and the distinction is the whole point: a decision whose
+   * beat did not warrant a model call, or whose provider failed, is still a decision — it is answered
+   * by the deterministic rule. So "how many times did the model contribute?" is this number, and
+   * `decisions - modelCalls` is how often the game carried on without it. Reporting `decisions` under
+   * a "model calls" label would be the same kind of quiet inaccuracy as `C-33` and `C-36`.
+   */
+  modelCalls: number;
   /** Decisions dropped as stale instead of applied. */
   dropped: number;
   /** Ticks the most recent drop was late by, and the window it missed. */

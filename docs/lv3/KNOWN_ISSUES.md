@@ -377,7 +377,10 @@
 
 **①（缩放）已实现**：`SchedulerWorld` 新增 `speed()`（`scheduler.ts`），`apply()` 用 `STALE_TICK_LIMIT * Math.max(1, speed())`。代价如上表，**这是有意选择的权宜**，不是终局。近似之处写在代码注释里。
 
-**④（让它可见）已实现**：`SchedulerOptions.onDiscarded` 新回调 → `AgentHost.stats()` → `agents:get` 载荷 → 面板显示「本局模型决策 N 次 · 过期丢弃 M 次」，并在有丢弃时给出原因（`speed > 1` 时明确建议降到 1×）。**这一条最重要**：丢弃原本只写一行 `info` 到 world log，而**没有任何 UI 组件渲染该 log**——所以模型可以完全停止参与而界面毫无异样。这与 `C-33` 是同一个失败模式。
+**④（让它可见）已实现**：`AgentHost.stats()` 现在把**模型作答次数**与**决策次数**分开计
+（`modelCalls` 来自 trace 的 `outcome === 'provider'`，`decisions` 来自调度器的 drain）——两者不同，
+因为一个 beat 若不值得调模型、或 provider 失败，那次决策仍由确定性规则回答；把 `decisions` 当作
+"模型调用次数"报出去，正是本条要防的那种静默不准确。`SchedulerOptions.onDiscarded` 新回调 → `AgentHost.stats()` → `agents:get` 载荷 → 面板显示「本局模型决策 N 次 · 过期丢弃 M 次」，并在有丢弃时给出原因（`speed > 1` 时明确建议降到 1×）。**这一条最重要**：丢弃原本只写一行 `info` 到 world log，而**没有任何 UI 组件渲染该 log**——所以模型可以完全停止参与而界面毫无异样。这与 `C-33` 是同一个失败模式。
 
 **测试**：`scheduler.test.ts` 两条新用例（16× 下同一份迟到的答案不再被丢；`onDiscarded` 报出 `ageTicks`/`limit`）、`host.test.ts` 一条（计数被转发且是快照）、`vertical-slice.spec.ts` 一条（面板上确实有那行）。**16× 的端到端（真实模型）已实测，并做了前后对照**（`npm run demo:live -- --speed=16`）：
 

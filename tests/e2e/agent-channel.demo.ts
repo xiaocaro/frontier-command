@@ -36,6 +36,17 @@ import type { WorldState } from '../../src/engine/types';
  * this storyboard. Both live under the gitignored `test-results/`, but they must not be the same path.
  */
 const SHOT_DIR = resolve('test-results/agent-demo');
+
+/**
+ * How much to stretch every deliberate pause (`--pace=`, via `scripts/demo-ui.mjs`).
+ *
+ * A demo has an audience. At ×1 the beats read well on one screen; a projector, a room, or a viewer
+ * seeing it for the first time needs ×2–3, and a quick re-run wants ×0.5. Only the **pauses** scale —
+ * `expect.poll` timeouts are ceilings on how long a model may take, not beats in the performance, and
+ * shortening those would turn a slow model into a spurious failure.
+ */
+const PACE = Number(process.env.DEMO_PACE ?? '1');
+const pause = (page: Page, ms: number) => page.waitForTimeout(Math.round(ms * PACE));
 /** Must match `electron/main.ts`'s BrowserWindow, or the recording is scaled to fit 800x450. */
 const WINDOW = { width: 1600, height: 900 };
 const EXPLORER = 'LYRA VOSS';
@@ -158,18 +169,20 @@ async function launchVisible(world: WorldState, label: string): Promise<Act> {
 const panel = (page: Page) => page.locator('.agent-channel');
 const comms = (page: Page) => page.locator('.communications');
 const roster = (page: Page) => page.evaluate(() => window.frontier.agents());
+/** The loop's own tally - decisions, how many the model answered, how many were dropped. */
+const loopStats = async (page: Page) => (await roster(page)).stats;
 const agentByCareer = async (page: Page, career: string) =>
   (await roster(page)).agents.find((agent) => agent.career === career)!;
 
 async function selectAgent(page: Page, name: string) {
   await panel(page).locator('.agent-row').filter({ hasText: name }).locator('.agent-pick').click();
-  await page.waitForTimeout(400);
+  await pause(page, 400);
 }
 
 async function speak(page: Page, kind: string, text: string) {
   await panel(page).getByLabel('类型').selectOption(kind);
   await panel(page).getByLabel('发往 Agent 的消息').fill(text);
-  await page.waitForTimeout(600);
+  await pause(page, 600);
   await panel(page).getByRole('button', { name: '发送', exact: true }).click();
   await expect(panel(page)).toContainText('已发出');
   await expect(comms(page)).toContainText('→');
@@ -212,13 +225,14 @@ function fundedWorld(): WorldState {
 }
 
 test('the MVP runbook, clicked through the real interface', async () => {
-  test.setTimeout(20 * 60_000);
+  test.setTimeout(Math.round(20 * 60_000 * Math.max(1, PACE)));
+  const startedAt = Date.now();
 
   // ══ ACT A · the world where the Admiral keeps a promise ═══════════════════════════════════════
   const a = await launchVisible(fundedWorld(), 'a');
   const page = a.page;
 
-  await narrate(page, 'ACT A · 准备', '世界已建；基地里预置了预算与一枚特殊发现（改装需要它）');
+  await narrate(page, 'ACT A · 准备', '世界已建；基地里预置了预算与一枚特殊发现（改装需要它）· 演示节奏 ×' + PACE);
   await expect
     .poll(() => a.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()))
     .toBe(true);
@@ -226,10 +240,10 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(page, '第 1 步 · Admiral 发布任务', '展开 AGENT CHANNEL，选中 Explorer，发送任务命令');
   await panel(page).locator('> summary').click();
   await expect(page.locator('.agent-row')).toHaveCount(4);
-  await page.waitForTimeout(900);
+  await pause(page, 900);
   await selectAgent(page, EXPLORER);
   await speak(page, 'command', '穿越虫洞，寻找失联探测船，确认发生了什么。');
-  await page.waitForTimeout(1200);
+  await pause(page, 1200);
 
   await narrate(page, '第 2 步 · Agent 自主评估', '继续时间，等它决策');
   await page.getByRole('button', { name: '继续', exact: true }).click();
@@ -239,14 +253,14 @@ test('the MVP runbook, clicked through the real interface', async () => {
     '第 2 步 · 结果',
     spoke ? '通信栏出现 Agent 的答复' : '它没有回话——模型很可能选择了直接行动，这也是一个结果',
   );
-  await page.waitForTimeout(1200);
+  await pause(page, 1200);
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
-  await page.waitForTimeout(1000);
+  await pause(page, 1000);
 
   await narrate(page, '第 3 步 · 换一种问法', '类型 negotiate，同一个 Agent，不同问题');
   await speak(page, 'negotiate', '如果装备不足，你希望我提供什么？');
   await waitForReply(page);
-  await page.waitForTimeout(1800);
+  await pause(page, 1800);
 
   await narrate(
     page,
@@ -269,7 +283,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   );
   expect(injected.ok).toBe(true);
   await waitForReply(page);
-  await page.waitForTimeout(1800);
+  await pause(page, 1800);
 
   await narrate(page, '第 5 步 · Path A · Admiral 承诺', '点「承诺 Deep Scan 优先权限」——这是两步命令');
   await selectAgent(page, EXPLORER);
@@ -277,7 +291,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await expect(panel(page)).toContainText('承诺已创建');
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
   await expect(panel(page)).toContainText('有未兑现承诺');
-  await page.waitForTimeout(1800);
+  await pause(page, 1800);
 
   await narrate(page, '第 6 步 · Path A · 兑现', '对另一艘舰下达 REFIT（改装 → Deep Scan）');
   await page.getByRole('button', { name: '16×', exact: true }).click();
@@ -286,7 +300,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   const dialog = page.getByRole('dialog', { name: 'Admiral 指令' });
   await dialog.getByLabel('指令类型', { exact: true }).selectOption('REFIT');
   await dialog.getByLabel('安装模块', { exact: true }).selectOption('deepScan');
-  await page.waitForTimeout(700);
+  await pause(page, 700);
   await dialog.getByRole('button', { name: '下达 Admiral 指令', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   // Engine-driven and model-independent: installing the module settles the matching pending promise.
@@ -304,17 +318,18 @@ test('the MVP runbook, clicked through the real interface', async () => {
     .toBe(true);
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
   await expect(panel(page)).not.toContainText('有未兑现承诺');
-  await page.waitForTimeout(1800);
+  await pause(page, 1800);
   await narrate(page, '第 6 步 · 结果', '承诺已兑现（面板上「有未兑现承诺」消失）');
 
   await narrate(page, 'Path A · 记下它的下一次答复', '同一个高风险任务问题');
   await page.getByRole('button', { name: '1×', exact: true }).click();
   await speak(page, 'command', '又出现一个高风险调查机会，你去不去？');
   await waitForReply(page);
-  await page.waitForTimeout(2000);
+  await pause(page, 2000);
   const pathA = { trust: (await agentByCareer(page, 'explorer')).state.trustInAdmiral, said: await lastReply(page) };
 
   await narrate(page, 'ACT A 结束', '下一幕换一局，让同一名 Agent 经历一次 Override');
+  const statsA = await loopStats(page);
   await a.app.close();
 
   // ══ ACT B · the world where the Admiral forces it ════════════════════════════════════════════
@@ -360,6 +375,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   expect(await p2.evaluate(() => window.frontier.getState()).then((x) => x.state.status)).toBe('active');
 
   await p2.waitForTimeout(2000);
+  const statsB = await loopStats(p2);
   await b.app.close();
 
   // The comparison goes to the terminal, where both worlds can be shown at once — and it is shown,
@@ -369,6 +385,16 @@ test('the MVP runbook, clicked through the real interface', async () => {
       '[demo] 信任：Path A ' + pathA.trust + ' vs Path B ' + pathB.trust + '\n' +
       '[demo] Path A 的答复：' + (pathA.said ?? '(没有回话)') + '\n' +
       '[demo] Path B 的答复：' + (pathB.said ?? '(没有回话)') + '\n' +
+      '\n[demo] ══ 本局计数（来自 AgentHost，不是估算）══\n' +
+      '[demo] ACT A：决策 ' + statsA.decisions + ' 次，其中 ' + statsA.modelCalls + ' 次由模型作答' +
+      ' · 过期丢弃 ' + statsA.dropped + '\n' +
+      '[demo] ACT B：决策 ' + statsB.decisions + ' 次，其中 ' + statsB.modelCalls + ' 次由模型作答' +
+      ' · 过期丢弃 ' + statsB.dropped + '\n' +
+      '[demo] 合计：决策 ' + (statsA.decisions + statsB.decisions) + ' 次 · 模型作答 ' +
+      (statsA.modelCalls + statsB.modelCalls) + ' 次 · 过期丢弃 ' +
+      (statsA.dropped + statsB.dropped) + '\n' +
+      '[demo] 没有 key 时「模型作答」必然是 0 —— 那是确定性分档在回答，不是故障。\n' +
+      '[demo] 耗时 ' + ((Date.now() - startedAt) / 1000).toFixed(1) + 's · 演示节奏 ×' + PACE + '\n' +
       '[demo] 截图故事板：' + SHOT_DIR + '\n',
   );
 });

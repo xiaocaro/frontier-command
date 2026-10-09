@@ -211,21 +211,41 @@ playbook §三十二 明令不得把「DeepSeek 必须输出 COUNTEROFFER」当�
 ## 6. 让人**看着**跑一遍：`npm run demo:ui`
 
 ```bash
-npm run demo:ui
+npm run demo:ui                  # 默认节奏 ×1
+npm run demo:ui -- --pace=3      # 投影 / 第一次看：每一步的停顿放慢 3 倍
+npm run demo:ui -- --pace=0.5    # 快速重跑
 ```
 
-跑 `tests/e2e/agent-channel.demo.ts`（经 `playwright.demo.config.ts`）。与 §5 的文字版**职责不同，两者都保留**：
+跑 `tests/e2e/agent-channel.demo.ts`（经 `playwright.demo.config.ts`），由 `scripts/demo-ui.mjs` 启动
+（先 build，再跑 playwright）。与 §5 的文字版**职责不同，两者都保留**：
 
 | | §5 `demo:live` | §6 `demo:ui` |
 | --- | --- | --- |
 | 形态 | 终端文字，无界面 | **真实 Electron 窗口**，鼠标点真实控件 |
 | 断言 | 承诺/记忆/信任等**引擎状态事实**，并打印模型的推理 | 只断言与模型无关的事实；其余**只展示** |
 | 产物 | 可复现的文字记录 | **可见的窗口** + `test-results/agent-demo/` 的 **14 张截图故事板**（旁白烧在图里） |
-| 用时 | ~50s | **~35s**（无 key，确定性模式） |
+| 计数 | 模型调用 N 次：成功 X / 回退 Y | **决策 N 次，其中 M 次由模型作答**（两个 act 各自 + 合计）+ 耗时 + 节奏 |
+| 用时 | ~50s | **~35s**（×1，无 key）；`--pace=0.5` 约 26s |
 
-**它不录像。** `electron.launch({ recordVideo })` 会让本应用加载失败（`ERR_FAILED (-2) loading 'frontier://app/index.html'`），
+### 关于 `--pace`（0.25–10，默认 1）
+
+**观众跟不上是这个参数存在的唯一理由。** 它缩放的是**每一次刻意的停顿**——发起一个操作之前、
+一个结果落地之后、以及步与步之间——而**不动轮询超时**：那些是"模型最多能花多久"的上限，
+不是演出的节拍，缩短它们只会把一个慢模型变成一次假的失败。
+
+非法值会被拒绝并给出建议（`--pace=99` → 报错退出）。命令行参数由启动器读、经环境变量交给测试，
+因为 **Playwright 会拒绝未知的命令行选项**，测试文件里读不到 `--pace`。
+
+### 它不录像
+
+`electron.launch({ recordVideo })` 会让本应用加载失败（`ERR_FAILED (-2) loading 'frontier://app/index.html'`），
 用例会挂到 20 分钟超时——完整证据与单变量实验见 `KNOWN_ISSUES.md` `C-38`。**看鼠标点击请直接看窗口**，
 那正是这个演示存在的意义；PNG 是可分享的产物。
+
+**结尾会打印计数**：「决策 N 次，其中 M 次由模型作答」。这两个数**故意分开**——一个 beat 若不值得
+调模型、或 provider 失败，那次决策仍会被确定性规则回答。所以"模型参与了多少次"是 M，
+而 `N - M` 是"游戏在没有模型的情况下继续走了多少次"。把 N 当成"模型调用次数"报出去，
+就是 `C-33`/`C-36` 那类静默的不准确。
 
 八步与 §4 的 runbook 一一对应，**其中只有第 4 步（组队请求）是注入的**——面板的 kind 只有四种，
 全仓库没有任何组队 UI，旁白与截图里都标了 ⚠。其余七步（含第 6 步的 REFIT 走既有 Admiral 指令对话框、

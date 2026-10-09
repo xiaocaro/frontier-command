@@ -204,7 +204,7 @@ describe('assembly puts the right provider behind the runtime', () => {
     agent.nextDecisionAt = 0; // bring the beat due
     engine.state.paused = false;
 
-    expect(host.stats()).toEqual({ decisions: 0, dropped: 0, lastDrop: null });
+    expect(host.stats()).toEqual({ decisions: 0, modelCalls: 0, dropped: 0, lastDrop: null });
 
     host.frame([]);
     await new Promise((resolve) => setTimeout(resolve, 0));

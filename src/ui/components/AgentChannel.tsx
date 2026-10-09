@@ -41,7 +41,7 @@ const PROMISE_TEXT = '完成这次任务后，我给你一次 Deep Scan 优先�
 export function AgentChannel({ command }: { command: CommandSender }) {
   const [open, setOpen] = useState(false);
   const [roster, setRoster] = useState<RosterAgent[]>([]);
-  const [stats, setStats] = useState<AgentLoopStats>({ decisions: 0, dropped: 0, lastDrop: null });
+  const [stats, setStats] = useState<AgentLoopStats>({ decisions: 0, modelCalls: 0, dropped: 0, lastDrop: null });
   const [speed, setSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -142,7 +142,8 @@ export function AgentChannel({ command }: { command: CommandSender }) {
         {/* C-36: the loop's own tally. `dropped` is the number that used to be invisible — a stale
             decision writes one info line into the world log, and nothing renders that log. */}
         <p className="agent-loop">
-          本局模型决策 <b>{stats.decisions}</b> 次 · 过期丢弃 <b>{stats.dropped}</b> 次
+          本局决策 <b>{stats.decisions}</b> 次，其中 <b>{stats.modelCalls}</b> 次由模型作答 · 过期丢弃{' '}
+          <b>{stats.dropped}</b> 次
         </p>
         {stats.dropped > 0 && (
           <p className="agent-alert">

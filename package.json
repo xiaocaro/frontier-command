@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:llm": "vitest run tests/agent/live-deepseek.test.ts",
     "demo:live": "node scripts/demo-live.mjs",
-    "demo:ui": "npm run build && playwright test --config playwright.demo.config.ts",
+    "demo:ui": "node scripts/demo-ui.mjs",
     "format": "prettier --write src electron scripts tests *.json *.ts index.html",
     "test:e2e": "npm run build && playwright test",
     "test:package": "node scripts/smoke-package.mjs",
