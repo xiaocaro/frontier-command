@@ -6,22 +6,22 @@
  * This validates it and hands it over as an environment variable, which also sidesteps the Windows
  * problem that `VAR=value cmd` is not a thing.
  *
- * The pace exists because a demo has an audience. The default reads well on one screen; a room, a
- * projector or a first-time viewer needs it slower, and someone re-recording a short clip wants it
- * faster. It scales every deliberate pause — before an action is issued, and after a result lands
+ * The pace exists because a demo has an audience. ×5 — the default — is the middle of the road: a room
+ * or a projector wants ×10, a quick solo look wants ×1, and someone re-recording a short clip wants
+ * less still. It scales every deliberate pause — before an action is issued, and after a result lands
  * before the next step begins — and leaves the *polling* timeouts alone, because those are ceilings
  * on how long a model may take, not beats in the performance.
  */
 import { spawn } from 'node:child_process';
 
 const arg = process.argv.slice(2).find((value) => value.startsWith('--pace='));
-const DEFAULT_PACE = '10';
+const DEFAULT_PACE = '5';
 const pace = arg ? arg.slice('--pace='.length) : DEFAULT_PACE;
 const value = Number(pace);
 
 if (!Number.isFinite(value) || value < 0.25 || value > 10) {
   console.error('--pace 需要一个 0.25 到 10 之间的数（收到 ' + JSON.stringify(pace) + '）');
-  console.error('  10（默认，也是上限）适合有观众的演示；1 适合一个人快速看；0.5 适合反复重跑');
+  console.error('  5（默认）适合有观众的演示，10 是允许的上限；1 适合一个人快速看；0.5 适合反复重跑');
   process.exit(2);
 }
 
