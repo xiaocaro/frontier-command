@@ -194,13 +194,15 @@ DEEPSEEK_API_KEY=<key> npm start
 | 事实 | 机制 | 是不是「结果」 |
 | --- | --- | --- |
 | 世界当时**暂停** | `AgentScheduler.pump()` 第一行就 `return`（`S-5`）⇒ **任何** Agent 都不决策。带 reason 的暂停由 `critical()` 产生（接触警报、低血量…），**无 reason 的裸暂停**由 `main.ts` 的存档失败／`advanceFrame` 抛错产生（`C-41`） | ❌ 不是模型的选择 |
-| 世界在跑，但这一拍**没有决策** | 舰船非空闲 ⇒ 调度器只**延后**不重试（`N-1`） | ❌ 同上 |
+| 世界在跑，但这一拍**没有决策** | 舰船非空闲 ⇒ 调度器只**延后**不重试（`N-1`），**模型根本没被问到** | ❌ 同上 |
 | 世界在跑、决策发生了，模型**选择了不发言** | `intent` 是 `act`/`wait`，或 `respond` 没带 `say`（`replyTo` 只认 `accept`/`reject`/`counteroffer`/`team-*`） | ✅ 是结果 |
 
-所以演示在等待期间**采样**世界状态与 `AgentHost` 计数，超时后把三种情况印成一句话
-（`waitForReply` → `WaitWatch` → `whySilent`，`tests/e2e/agent-channel.demo.ts`）：终端、旁白叠层与
-故事板截图都有。这样「无 key ⇒ 第 8 步必然回话」可以直接在日志里对照——确定性分档在 `accept` 在菜单上时
-**总是**先回答 Admiral（`decision.ts` 的 `fallbackDecision`）。
+所以演示在等待期间**采样**世界状态、`AgentHost` 计数，以及被问的那个 Agent 的**舰船是否空闲**
+（`career → agent → operator → assignment → ship`，全部取自 `snapshot()` 已有的 `operators`/`assignments`/
+`ships`，不改契约），超时后把三种情况印成一句话（`waitForReply` → `WaitWatch` → `whySilent`，
+`tests/e2e/agent-channel.demo.ts`）：终端、旁白叠层与故事板截图都有。这样「无 key ⇒ 第 8 步必然回话」
+可以直接在日志里对照——确定性分档在 `accept` 在菜单上时**总是**先回答 Admiral（`decision.ts` 的
+`fallbackDecision`）。
 
 同时**每一步发送都被断言真的到达引擎**：`已发出` 只是面板的最后一条便签、下一次发送也不会清掉，所以真正
 的凭据是引擎为「已接受的命令」镜像进通信栏的那一行（含原文本）。第 8 步此前是演示里**唯一没有做这个检查**的

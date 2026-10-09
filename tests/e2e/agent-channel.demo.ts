@@ -242,6 +242,17 @@ interface WaitWatch {
   decisionsAtStart: number;
   modelCalls: number;
   /**
+   * The watched Agent's ship, busy or free — `null` when the caller did not name an Agent, or when
+   * that Agent has no ship bound.
+   *
+   * This is the field `N-1` needs: a busy ship means `pump()` defers the beat, so the *model is never
+   * asked*. Without it, "the model chose not to speak" and "the question was never put to it" are the
+   * same sentence — which is exactly the confusion this whole helper exists to remove.
+   */
+  agentBusy: boolean | null;
+  /** What that ship is executing, when it is busy. */
+  agentDirective: string | null;
+  /**
    * How many samples succeeded.
    *
    * A sample that throws is swallowed (the wait is what matters, not the sampling), but **silence must
@@ -256,7 +267,8 @@ interface WaitWatch {
  * Why an Agent said nothing, read from the engine rather than from the answer.
  *
  * Every branch is model-independent, which is what makes it safe to print in a demo that asserts only
- * what is true whatever the model chose: the world's pause state and the loop's counters are facts.
+ * what is true whatever the model chose: the world's pause state, the ship's idleness and the loop's
+ * counters are all facts.
  *
  * One thing this deliberately does **not** have to allow for: the read-hold. On the *answer* path the
  * world is paused with no reason — that is the hold, and it is why step 2 says 「世界已暂停供阅读」 —
@@ -270,17 +282,28 @@ interface WaitWatch {
 function whySilent(name: string, watch: WaitWatch): string {
   const world =
     watch.samples === 0
-      ? '采样失败（读不到世界状态与计数，不能断言世界当时在跑）'
+      ? '采样失败（读不到世界状态与计数）'
       : watch.paused
         ? '世界在等待结束时仍是暂停的（' + (watch.reasons.join('、') || '无 reason：人工暂停或自动存档失败都会这样停') + '）'
         : watch.everPaused
           ? '世界在等待期间暂停过（' + (watch.reasons.join('、') || '无 reason') + '），结束前已恢复'
           : '世界全程在运行';
+  const verdict =
+    watch.samples === 0
+      ? '没有任何证据可判断，不要据此下结论'
+      : watch.paused
+        ? '世界暂停时调度器不做任何决策，这不是模型的选择'
+        : watch.agentBusy === null
+          ? '世界在跑：要么这一拍没轮到它（舰船非空闲时调度器只延后，N-1），要么模型选择了不发言——未指名 Agent，无法再细分'
+          : watch.agentBusy
+            ? '世界在跑，但它的舰船在结束时非空闲' +
+              (watch.agentDirective ? '（正在执行 ' + watch.agentDirective + '）' : '') +
+              ' ⇒ 调度器按 N-1 只延后不重试，模型这一拍**根本没被问到**'
+            : '世界在跑、结束时舰船空闲、菜单上有未读的 offer ⇒ 模型这一拍选择了不发言，这是一个结果';
   const loop =
     '本局决策 ' + (watch.decisionsAtStart < 0 ? '?' : watch.decisionsAtStart) + ' → ' + watch.decisions +
     ' 次 · 其中模型作答 ' + watch.modelCalls + ' 次';
-  return '「' + name + '」没有回话 · ' + world + ' · ' + loop +
-    '。世界暂停时调度器不做任何决策，那不是模型的选择；世界在跑却仍无回话，才是模型这一拍选择了不发言——同样是一个结果';
+  return '「' + name + '」没有回话 · ' + world + ' · ' + loop + '。' + verdict;
 }
 
 /**
@@ -298,20 +321,53 @@ function whySilent(name: string, watch: WaitWatch): string {
  * `expect.poll` ceilings below. To make the demo's hold longer than the game's, set
  * `FRONTIER_READ_HOLD_MS` from `--pace` in `scripts/demo-ui.mjs`.
  */
-async function waitForReply(page: Page, ms = 60_000): Promise<{ said: string | null; watch: WaitWatch }> {
-  const watch: WaitWatch = { paused: false, everPaused: false, reasons: [], decisions: 0, decisionsAtStart: -1, modelCalls: 0, samples: 0 };
+async function waitForReply(
+  page: Page,
+  options: { career?: string; ms?: number } = {},
+): Promise<{ said: string | null; watch: WaitWatch }> {
+  const { career, ms = 60_000 } = options;
+  const watch: WaitWatch = {
+    paused: false,
+    everPaused: false,
+    reasons: [],
+    decisions: 0,
+    decisionsAtStart: -1,
+    modelCalls: 0,
+    agentBusy: null,
+    agentDirective: null,
+    samples: 0,
+  };
   const sample = async () => {
     try {
-      const facts = await page.evaluate(async () => {
-        const { state } = await window.frontier.getState();
-        const roster = await window.frontier.agents();
-        return {
-          paused: state.paused,
-          reasons: state.pauseReasons.map((reason) => reason.kind),
-          decisions: roster.stats.decisions,
-          modelCalls: roster.stats.modelCalls,
-        };
-      });
+      const facts = await page.evaluate(
+        async (career: string | undefined) => {
+          const { state } = await window.frontier.getState();
+          const roster = await window.frontier.agents();
+          // Named by **career**, not by name: the roster's name is the display name (`LYRA VOSS / 薇拉`)
+          // while the demo's constants are the call-sign, and `agentByCareer` is what every other step
+          // already uses. The chain is `agent-host.ts`'s `shipOfAgent`, read off the snapshot —
+          // `operators`, `assignments` and `ships` are already in it (`projection.ts`), so nothing new
+          // crosses the boundary and no contract changes.
+          const agent = career ? roster.agents.find((a) => a.career === career) : undefined;
+          const operator = agent ? state.operators.find((o) => o.agentId === agent.id) : undefined;
+          const shipId = operator
+            ? state.assignments.find((a) => a.operatorId === operator.id)?.shipId
+            : undefined;
+          const ship = shipId ? state.ships.find((s) => s.id === shipId) : undefined;
+          return {
+            paused: state.paused,
+            reasons: state.pauseReasons.map((reason) => reason.kind),
+            decisions: roster.stats.decisions,
+            modelCalls: roster.stats.modelCalls,
+            agentBusy:
+              career === undefined || !ship
+                ? null
+                : Boolean(ship.current) || ship.queue.length > 0 || ship.suspended.length > 0,
+            agentDirective: ship?.current?.action.type ?? null,
+          };
+        },
+        career,
+      );
       watch.samples += 1;
       if (watch.decisionsAtStart < 0) watch.decisionsAtStart = facts.decisions;
       watch.paused = facts.paused;
@@ -319,6 +375,8 @@ async function waitForReply(page: Page, ms = 60_000): Promise<{ said: string | n
       watch.reasons = facts.reasons;
       watch.decisions = facts.decisions;
       watch.modelCalls = facts.modelCalls;
+      watch.agentBusy = facts.agentBusy;
+      watch.agentDirective = facts.agentDirective;
     } catch {
       // A sample that cannot be read is not a reason to fail the demo — the *wait* is the assertion.
       // `samples` is what keeps that tolerance honest; see `WaitWatch`.
@@ -400,7 +458,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
 
   await narrate(page, '第 2 步 · Agent 自主评估', '继续时间，等它决策');
   await page.getByRole('button', { name: '继续', exact: true }).click();
-  const answer = await waitForReply(page);
+  const answer = await waitForReply(page, { career: 'explorer' });
   await narrate(
     page,
     '第 2 步 · 结果',
@@ -479,7 +537,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(page, 'Path A · 记下它的下一次答复', '同一个高风险任务问题');
   await page.getByRole('button', { name: '1×', exact: true }).click();
   await speak(page, 'command', '又出现一个高风险调查机会，你去不去？');
-  const pathASaid = (await waitForReply(page)).said;
+  const pathASaid = (await waitForReply(page, { career: 'explorer' })).said;
   await pause(page, 2000);
   const pathA = { trust: (await agentByCareer(page, 'explorer')).state.trustInAdmiral, said: pathASaid };
 
@@ -522,7 +580,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   // engine. It used to be the demo's only unchecked send, which made "the message never went out"
   // indistinguishable from "the model stayed quiet" — in the terminal log and the storyboard alike.
   await speak(p2, 'command', '又出现一个高风险调查机会，你去不去？');
-  const pathBAnswer = await waitForReply(p2);
+  const pathBAnswer = await waitForReply(p2, { career: 'explorer' });
   // Narrated immediately, so the screenshot catches the read-hold exactly as step 2's does. Until this
   // line existed, a silent Path B left the overlay frozen on the step-8 headline for the whole
   // `waitForReply` ceiling (60s real time, and it is deliberately not scaled by `--pace`), with nothing
