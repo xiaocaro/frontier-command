@@ -167,7 +167,7 @@ async function showOpening(page: Page, crew: { name: string; career: string }[])
     for (const member of crew) add(CREW, member.name + '　·　' + (LABELS[member.career] ?? member.career));
     add(SECTION, '任务');
     add(BODY, '一个高风险调查机会。先对 Explorer 许诺并兑现（Path A），另起一局改用命令强行压过去（Path B）——同一个问题，两次历史，两种答复。');
-    add(FOOT, '台词全部由 Agent 自己写，出现在 PRIORITY COMMUNICATIONS 里；本演示只断言与模型无关的事实。');
+    add(FOOT, '对话由 Agent 现场输出，出现在 PRIORITY COMMUNICATIONS 里；本演示只断言与模型无关的事实。');
     card.appendChild(column);
     document.body.appendChild(card);
   }, crew);
