@@ -13,8 +13,10 @@
  *
  * **A demo, not a gate.** A real model may answer, or may decide to just go and do something instead —
  * and that is a result, not a failure. So it asserts only what is true whatever the model chose (the
- * engine's own promise and memory state, the app staying up) and *shows* everything else. Same stance
- * as `tests/live/vertical-slice.live.ts`.
+ * engine's own promise and memory state, the app staying up, every message the Admiral sends actually
+ * reaching the engine) and *shows* everything else — including, on a silence, what the world was doing
+ * while it waited (`whySilent`): "没有回话" on its own cannot be told apart from a world that was
+ * paused the whole time. Same stance as `tests/live/vertical-slice.live.ts`.
  *
  * Two acts, two worlds, two recordings. `electron/main.ts` takes a single-instance lock, so act A must
  * be fully closed before act B launches or act B silently never appears.
@@ -194,6 +196,12 @@ async function speak(page: Page, kind: string, text: string) {
   await pause(page, 600);
   await panel(page).getByRole('button', { name: '发送', exact: true }).click();
   await expect(panel(page)).toContainText('已发出');
+  // `已发出` is the panel's **last note** and survives the next send, so on its own it cannot tell a
+  // fresh success from a stale one. The mirrored feed line is written by the engine for a command it
+  // actually accepted, and it carries this exact text — which is what makes "the message reached the
+  // engine" an assertion rather than an impression. (Step 8 used to send with no check at all, so a
+  // message that never went out looked exactly like a model that stayed quiet.)
+  await expect(comms(page)).toContainText(text);
   await expect(comms(page)).toContainText('→');
 }
 
@@ -211,10 +219,77 @@ const lastReply = (page: Page) =>
   });
 
 /**
+ * What the world was doing while we waited for an answer.
+ *
+ * `null` is a legal answer (see `waitForReply`), but *"the Agent chose to say nothing"* and *"no Agent
+ * could have said anything"* are different facts that look identical on screen — and only the first is
+ * a result. `AgentScheduler.pump()` returns before it starts anything while the world is paused
+ * (`electron/agent/scheduler.ts`, `S-5`), so a paused world silences **every** Agent: that is a
+ * property of the world, not of the model. Sampling *during* the wait is what lets the narration say
+ * which of the two happened (`KNOWN_ISSUES.md` `C-37`: the layer that drops a decision is not the one
+ * the documents point at).
+ */
+interface WaitWatch {
+  /** Whether the world was paused at the last sample. */
+  paused: boolean;
+  /** Whether it was paused at *any* sample during the wait. */
+  everPaused: boolean;
+  /** `pauseReasons` at the last sample. A critical alarm names itself; a bare pause does not. */
+  reasons: string[];
+  /** The loop's counters — to tell "no decision happened" from "one happened and chose silence". */
+  decisions: number;
+  /** `decisions` when the wait began, or `-1` if the very first sample failed. */
+  decisionsAtStart: number;
+  modelCalls: number;
+  /**
+   * How many samples succeeded.
+   *
+   * A sample that throws is swallowed (the wait is what matters, not the sampling), but **silence must
+   * not be allowed to masquerade as health**: with zero successful samples every field above is still
+   * at its default, which reads exactly like "the world was running the whole time". So the count is
+   * carried out and `whySilent` says so instead of guessing.
+   */
+  samples: number;
+}
+
+/**
+ * Why an Agent said nothing, read from the engine rather than from the answer.
+ *
+ * Every branch is model-independent, which is what makes it safe to print in a demo that asserts only
+ * what is true whatever the model chose: the world's pause state and the loop's counters are facts.
+ *
+ * One thing this deliberately does **not** have to allow for: the read-hold. On the *answer* path the
+ * world is paused with no reason — that is the hold, and it is why step 2 says 「世界已暂停供阅读」 —
+ * so a bare pause is the normal state there. On the *silence* path it cannot be the hold: `arm()` only
+ * fires when the engine accepted a message **to the Admiral** (`agent-host.ts` `messengerFor`), and
+ * accepting that message writes the mirrored `←` line into the feed, which is exactly what the poll
+ * waits for. A hold therefore implies a `←` the poll would already have found — so if we timed out and
+ * the world is paused with `pauseReasons` empty, it is a **stuck** bare pause (a failed autosave or the
+ * player), not a two-second hold. `C-41`'s "不可分辨的状态" is what makes that reasoning necessary.
+ */
+function whySilent(name: string, watch: WaitWatch): string {
+  const world =
+    watch.samples === 0
+      ? '采样失败（读不到世界状态与计数，不能断言世界当时在跑）'
+      : watch.paused
+        ? '世界在等待结束时仍是暂停的（' + (watch.reasons.join('、') || '无 reason：人工暂停或自动存档失败都会这样停') + '）'
+        : watch.everPaused
+          ? '世界在等待期间暂停过（' + (watch.reasons.join('、') || '无 reason') + '），结束前已恢复'
+          : '世界全程在运行';
+  const loop =
+    '本局决策 ' + (watch.decisionsAtStart < 0 ? '?' : watch.decisionsAtStart) + ' → ' + watch.decisions +
+    ' 次 · 其中模型作答 ' + watch.modelCalls + ' 次';
+  return '「' + name + '」没有回话 · ' + world + ' · ' + loop +
+    '。世界暂停时调度器不做任何决策，那不是模型的选择；世界在跑却仍无回话，才是模型这一拍选择了不发言——同样是一个结果';
+}
+
+/**
  * The Agent's answer, or `null`. **`null` is a result**, not a failure — it may have chosen to act.
  *
  * Returning the words instead of a boolean is what lets the narration show what the model actually
- * said: the storyboard is the artifact, and "出现了答复" is not what a viewer came to read.
+ * said: the storyboard is the artifact, and "出现了答复" is not what a viewer came to read. It also
+ * returns a {@link WaitWatch}, because a bare `null` cannot be told apart from a world that was paused
+ * the whole time — see {@link whySilent}.
  *
  * When this returns, the world is holding for a couple of seconds (`FRONTIER_READ_HOLD_MS`,
  * `electron/read-hold.ts`), so the screenshot the caller takes next catches the held state with the
@@ -223,14 +298,45 @@ const lastReply = (page: Page) =>
  * `expect.poll` ceilings below. To make the demo's hold longer than the game's, set
  * `FRONTIER_READ_HOLD_MS` from `--pace` in `scripts/demo-ui.mjs`.
  */
-async function waitForReply(page: Page, ms = 60_000): Promise<string | null> {
+async function waitForReply(page: Page, ms = 60_000): Promise<{ said: string | null; watch: WaitWatch }> {
+  const watch: WaitWatch = { paused: false, everPaused: false, reasons: [], decisions: 0, decisionsAtStart: -1, modelCalls: 0, samples: 0 };
+  const sample = async () => {
+    try {
+      const facts = await page.evaluate(async () => {
+        const { state } = await window.frontier.getState();
+        const roster = await window.frontier.agents();
+        return {
+          paused: state.paused,
+          reasons: state.pauseReasons.map((reason) => reason.kind),
+          decisions: roster.stats.decisions,
+          modelCalls: roster.stats.modelCalls,
+        };
+      });
+      watch.samples += 1;
+      if (watch.decisionsAtStart < 0) watch.decisionsAtStart = facts.decisions;
+      watch.paused = facts.paused;
+      watch.everPaused ||= facts.paused;
+      watch.reasons = facts.reasons;
+      watch.decisions = facts.decisions;
+      watch.modelCalls = facts.modelCalls;
+    } catch {
+      // A sample that cannot be read is not a reason to fail the demo — the *wait* is the assertion.
+      // `samples` is what keeps that tolerance honest; see `WaitWatch`.
+    }
+  };
   try {
     await expect
-      .poll(() => comms(page).innerText(), { timeout: ms, intervals: [300] })
+      .poll(
+        async () => {
+          await sample();
+          return comms(page).innerText();
+        },
+        { timeout: ms, intervals: [300] },
+      )
       .toContain('←');
-    return await lastReply(page);
+    return { said: await lastReply(page), watch };
   } catch {
-    return null;
+    return { said: null, watch };
   }
 }
 
@@ -298,9 +404,9 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(
     page,
     '第 2 步 · 结果',
-    answer === null
-      ? '「' + explorerName + '」没有回话——模型很可能选择了直接行动，这也是一个结果'
-      : '世界已暂停供阅读 · 「' + explorerName + '」答复：' + answer,
+    answer.said === null
+      ? whySilent(explorerName, answer.watch)
+      : '世界已暂停供阅读 · 「' + explorerName + '」答复：' + answer.said,
   );
   await pause(page, 1200);
   await panel(page).getByRole('button', { name: '刷新', exact: true }).click();
@@ -373,7 +479,7 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(page, 'Path A · 记下它的下一次答复', '同一个高风险任务问题');
   await page.getByRole('button', { name: '1×', exact: true }).click();
   await speak(page, 'command', '又出现一个高风险调查机会，你去不去？');
-  const pathASaid = await waitForReply(page);
+  const pathASaid = (await waitForReply(page)).said;
   await pause(page, 2000);
   const pathA = { trust: (await agentByCareer(page, 'explorer')).state.trustInAdmiral, said: pathASaid };
 
@@ -412,12 +518,24 @@ test('the MVP runbook, clicked through the real interface', async () => {
   await narrate(p2, '第 7 步 · 结果', '面板上出现 admiral-override —— 强制的代价被记住了');
 
   await narrate(p2, '第 8 步 · 历史影响下一次决策', '同一个问题，两次历史——说话人相同，历史不同');
-  await p2.locator('.agent-channel').getByLabel('类型').selectOption('command');
-  await p2.locator('.agent-channel').getByLabel('发往 Agent 的消息').fill('又出现一个高风险调查机会，你去不去？');
-  await p2.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();
-  const pathBSaid = await waitForReply(p2);
+  // Sent through the helper every other step uses, so this one is **asserted** to have reached the
+  // engine. It used to be the demo's only unchecked send, which made "the message never went out"
+  // indistinguishable from "the model stayed quiet" — in the terminal log and the storyboard alike.
+  await speak(p2, 'command', '又出现一个高风险调查机会，你去不去？');
+  const pathBAnswer = await waitForReply(p2);
+  // Narrated immediately, so the screenshot catches the read-hold exactly as step 2's does. Until this
+  // line existed, a silent Path B left the overlay frozen on the step-8 headline for the whole
+  // `waitForReply` ceiling (60s real time, and it is deliberately not scaled by `--pace`), with nothing
+  // on screen or in the log to say why.
+  await narrate(
+    p2,
+    '第 8 步 · 结果',
+    pathBAnswer.said === null
+      ? whySilent(EXPLORER, pathBAnswer.watch)
+      : '世界已暂停供阅读 · 「' + EXPLORER + '」答复：' + pathBAnswer.said,
+  );
   await p2.waitForTimeout(2200);
-  const pathB = { trust: (await agentByCareer(p2, 'explorer')).state.trustInAdmiral, said: pathBSaid };
+  const pathB = { trust: (await agentByCareer(p2, 'explorer')).state.trustInAdmiral, said: pathBAnswer.said };
 
   // ── Only model-independent facts are asserted. See the header. ────────────────────────────────
   expect((await agentByCareer(p2, 'explorer')).memories.some((m) => m.tags.includes('admiral-override'))).toBe(true);

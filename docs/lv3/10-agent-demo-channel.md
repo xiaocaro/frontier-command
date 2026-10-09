@@ -181,13 +181,30 @@ DEEPSEEK_API_KEY=<key> npm start
 | 5 | **Path A**：点「承诺 Deep Scan 优先权限」 | 「承诺已创建，并已通知」；面板里该 Agent **多出一条未兑现承诺** |
 | 6 | 兑现：用既有的 **Admiral 指令**对话给某艘舰下 `REFIT`（Deep Scan），等它装好 | 面板刷新后承诺变 **fulfilled**，信任上升，记忆 tag 出现 **`promise-kept`** |
 | 7 | **Path B**（另起一局）：类型 `override` → 选一个 `directiveActionType` → 发送 | 面板里信任**下降**、士气下降，记忆 tag 出现 **`admiral-override`** |
-| 8 | 再发一条新的高风险 `command`，看 Agent 的答复 | **同一名 Agent，因上一步的历史不同，答复不同**（Path A 更愿接，Path B 更保守） |
+| 8 | 再发一条新的高风险 `command`，看 Agent 的答复 | **同一名 Agent，因上一步的历史不同，答复不同**（Path A 更愿接，Path B 更保守）。真模型也可能这一拍**不发言**（`say` 在 `agent-decision.schema.json` 里是可选的）——演示会把「等待期间世界在不在跑、决策计数有没有涨」一并印出来，见下面一段 |
 
 **第 8 步是 §50 的闭环**，也是 `03-implementation-plan.md` §3.4 的退出判据。它现在**两种配置下都成立**：
 - 有 key（真实模型）：模型自己权衡；
 - **无 key（游戏默认）**：确定性分档 —— 由 `tests/agent/vertical-slice.test.ts` 的
   *「the two histories reach different answers through the real host, with no provider」* 固定，
   Path A 的历史在那条测试里是**真跑一次 REFIT** 造出来的。
+
+**「没有回话」是三种不同的事实，演示必须说出是哪一种。** 屏幕上的沉默看不出区别，但它们并不等价：
+
+| 事实 | 机制 | 是不是「结果」 |
+| --- | --- | --- |
+| 世界当时**暂停** | `AgentScheduler.pump()` 第一行就 `return`（`S-5`）⇒ **任何** Agent 都不决策。带 reason 的暂停由 `critical()` 产生（接触警报、低血量…），**无 reason 的裸暂停**由 `main.ts` 的存档失败／`advanceFrame` 抛错产生（`C-41`） | ❌ 不是模型的选择 |
+| 世界在跑，但这一拍**没有决策** | 舰船非空闲 ⇒ 调度器只**延后**不重试（`N-1`） | ❌ 同上 |
+| 世界在跑、决策发生了，模型**选择了不发言** | `intent` 是 `act`/`wait`，或 `respond` 没带 `say`（`replyTo` 只认 `accept`/`reject`/`counteroffer`/`team-*`） | ✅ 是结果 |
+
+所以演示在等待期间**采样**世界状态与 `AgentHost` 计数，超时后把三种情况印成一句话
+（`waitForReply` → `WaitWatch` → `whySilent`，`tests/e2e/agent-channel.demo.ts`）：终端、旁白叠层与
+故事板截图都有。这样「无 key ⇒ 第 8 步必然回话」可以直接在日志里对照——确定性分档在 `accept` 在菜单上时
+**总是**先回答 Admiral（`decision.ts` 的 `fallbackDecision`）。
+
+同时**每一步发送都被断言真的到达引擎**：`已发出` 只是面板的最后一条便签、下一次发送也不会清掉，所以真正
+的凭据是引擎为「已接受的命令」镜像进通信栏的那一行（含原文本）。第 8 步此前是演示里**唯一没有做这个检查**的
+发送，于是「消息根本没发出去」与「模型没吭声」在日志和故事板里长得一模一样。
 
 **看什么、不看什么**：面板显示记忆的 **tag**，不显示文本。要看「他具体记得什么」，读通信栏里
 Agent 自己说的话——那是它自己写的，不是从世界状态推出来的。
