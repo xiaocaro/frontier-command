@@ -97,6 +97,16 @@ export function LcarsShell({
         ({ urgent: 3, high: 2, normal: 1 })[b.priority] -
           { urgent: 3, high: 2, normal: 1 }[a.priority] || b.id - a.id,
     );
+  /**
+   * The newest line by **creation**, which is not the same as the first row: the sort above puts
+   * priority first, so an urgent threat stays on top even when an Agent spoke a moment later. Derived
+   * here rather than stored, so the highlight moves by itself — no "clear the previous one" step, and
+   * nothing to keep in sync.
+   */
+  const latestId = communications.reduce<number | null>(
+    (newest, c) => (newest === null || c.id > newest ? c.id : newest),
+    null,
+  );
   const base = world.locations.find((l) => l.id === 'base')!;
   return (
     <div className="admiral-console">
@@ -151,7 +161,12 @@ export function LcarsShell({
 
                 {communications.length ? (
                   communications.map((c) => (
-                    <div key={c.id} className={'comms-item ' + c.priority}>
+                    <div
+                      key={c.id}
+                      className={
+                        'comms-item ' + c.priority + (c.id === latestId ? ' is-latest' : '')
+                      }
+                    >
                       <LcarsButton
                         shape="text"
                         sound="navigation"

@@ -86,6 +86,10 @@ export function AgentChannel({ command }: { command: CommandSender }) {
       true,
     );
     setNote(result.ok ? '已发出 · ' + kind : '被拒：' + result.reason);
+    // Clear the box on success so the next message starts from empty. Deliberately NOT cleared on a
+    // refusal: the text is still the thing you want, and retyping it to fix one word would be worse
+    // than being told why it was refused.
+    if (result.ok) setText('');
     await refresh();
   };
 

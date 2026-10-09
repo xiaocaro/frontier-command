@@ -45,6 +45,12 @@
   --butterscotch: #ea9c72;
   --orange: #eb943a;
   --red: #cf4f4f;
+  /**
+   * Added for the "latest communication" highlight. The palette had no green at all — every other
+   * colour here is an existing LCARS 26 token — so this is a deliberate addition rather than a
+   * repurposing of one, and it is named in the same food/simple-colour style as its neighbours.
+   */
+  --lime: #9ed36a;
   --subdued-sienna: #c47d69;
   --ink: #000;
   --text: var(--african-violet);

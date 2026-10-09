@@ -23,6 +23,7 @@
 | `npm run test:e2e`（全套） | **未重跑**（上一次全套是 P3 结束时：35 / 37 / 14.7m） |
 | `npm run test:package` | **未运行** |
 | **`npm run demo:ui`**（可观看的 UI 演示，无 key，含 `--pace` 与计数） | **PASS** —— 真实 Electron 窗口、真实鼠标点击八步、`test-results/agent-demo/` 产出 **14 张带旁白的故事板 PNG**；结尾打印「决策 N 次，其中 M 次由模型作答」（无 key 时 M=0，如实测 133/0）；默认节奏 **×10** 实测 **189.6s**，×5 约 104s，×1 约 35s，`--pace=0.5` 约 26s，`--pace=99` 被拒。**不录像**：`recordVideo` 会让应用加载失败（`C-38`） |
+| **最新通信高亮 + 输入框清空**（`C-40`） | **PASS** —— `vertical-slice.spec.ts` 断言 `.comms-item.is-latest` 恰一条、**新旧两行的 `getComputedStyle` 不同**（颜色与字号）、发送后输入框为空；`lcars.spec.ts` **5 passed / 2.4m**（第一版只加字号时它抓到了地图高度回归，靠行盒等高修复） |
 | `npm run test:e2e` 是否收集到演示 | **未收集**（`npx playwright test --list` 无 demo；演示配置 `--list` 恰好 1 个用例）——隔离双向验证通过，`npm test` 亦不受影响（550 通过） |
 | **面板上的循环计数（`C-36` ④）** | **PASS** —— `vertical-slice.spec.ts` 断言真实应用里出现「本局模型决策 …」；`scheduler.test.ts` 两条新用例钉住 16× 缩放与 `onDiscarded`；`host.test.ts` 一条钉住转发与快照 |
 | **`C-36` ①（窗口随速度缩放）** | **PASS（含真实端点对照）** —— 16× 下 `npm run demo:live -- --speed=16`：开着缩放**决策 37 / 丢弃 0**；临时关掉缩放**决策 84 / 丢弃 63（75%）**。真实端点、真实 `AgentHost`、真实调度器 |

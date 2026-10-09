@@ -257,6 +257,23 @@
 .comms-item.urgent .comms-content > span {
   color: var(--red);
 }
+/**
+ * The most recently created communication, highlighted so an audience can see which line just
+ * arrived.
+ *
+ * Derived purely from the data on every render — there is no "previous latest" state to clear, so the
+ * moment a newer message exists the old row reverts on its own. A timer or a stored id would be a
+ * second source of truth for something the message list already knows.
+ *
+ * The `line-height` is not decoration: 0.82 × 1.6 and 1.02 × 1.29 are the same **line box**, so the
+ * bigger text does not make the row taller. Without it the header grew by ~3px and the map lost its
+ * share of the viewport — `tests/e2e/lcars.spec.ts` catches exactly that, and it did.
+ */
+.comms-item.is-latest .comms-content.lcars-button {
+  color: var(--lime);
+  font-size: 1.02em;
+  line-height: 1.29;
+}
 .ack-button.lcars-button {
   min-height: 32px;
   padding: 0.4em 0.85em;

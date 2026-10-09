@@ -142,7 +142,10 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // C-36: the loop's own tally has to be visible. A decision dropped for staleness writes one `info`
   // line into the world log and **nothing renders that log** — so the model could be entirely off while
   // the game looked normal. That is the whole point of surfacing it.
-  await expect(page.locator('.agent-loop')).toContainText('本局模型决策');
+  await expect(page.locator('.agent-loop')).toContainText('本局决策');
+  // The two numbers are deliberately separate words in the panel: `decisions` counts what the
+  // scheduler drained, `modelCalls` counts the ones the model actually answered (`C-36`).
+  await expect(page.locator('.agent-loop')).toContainText('由模型作答');
 
   // Send from the panel. The default kind is `command`, i.e. the Admiral offering a task.
   await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
@@ -152,7 +155,31 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // …and it really reached the engine: the offer is mirrored into the normal Communications feed.
   await expect(page.locator('.communications')).toContainText('→');
 
+  // Exactly one line is highlighted as the newest, and it is the one that just arrived. Derived from
+  // the message ids on every render, so the previous line reverts by itself — which is why there is
+  // no "previous latest" to assert against, only the count.
+  await expect(page.locator('.comms-item.is-latest')).toHaveCount(1);
+  await expect(page.locator('.comms-item.is-latest')).toContainText('→');
+
+  // The box empties on a successful send, so the next message starts from nothing.
+  await expect(page.locator('.agent-channel .agent-compose input')).toHaveValue('');
+
   // The promise button is the two-command path (create, then notify). It must not fail silently.
   await page.locator('.agent-channel').getByRole('button', { name: '承诺 Deep Scan 优先权限' }).click();
   await expect(page.locator('.agent-channel')).toContainText('承诺已创建');
+
+  // The highlight has to be **visible**, not merely present: a class whose CSS rule does not match is a
+  // silent no-op, and `is-latest` is easy to get right in the markup and wrong in the stylesheet. Two
+  // rows now exist, so compare the newest against an older one — colour and size must both differ.
+  const computed = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((node) => {
+        const style = getComputedStyle(node);
+        return style.color + '|' + style.fontSize;
+      });
+  expect(await computed('.comms-item.is-latest .comms-content')).not.toBe(
+    await computed('.comms-item:not(.is-latest) .comms-content'),
+  );
 });
