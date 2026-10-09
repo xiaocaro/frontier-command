@@ -215,6 +215,16 @@
   color: var(--muted);
   font-size: 0.8em;
 }
+.agent-loop {
+  color: var(--almond-creme);
+  margin: 0;
+}
+/* C-36: a dropped decision used to be a log line nobody renders. It gets a colour. */
+.agent-alert {
+  color: var(--butterscotch);
+  margin: 0;
+  font-size: 0.9em;
+}
 .comms-item {
   display: flex;
   min-width: 0;

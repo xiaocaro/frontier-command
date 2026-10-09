@@ -77,6 +77,19 @@ export interface ScheduledAgent {
 export interface SchedulerWorld {
   /** Simulated time, in game minutes. */
   time(): number;
+  /**
+   * The simulation's time multiplier (1 | 4 | 16). Needed for exactly one thing: `C-36`.
+   *
+   * Staleness is measured in **game** minutes while what it guards against is **wall-clock** latency —
+   * a model takes seconds, and how many game minutes that is depends entirely on the speed. At 16× the
+   * flat 15-game-minute window is 0.94s of real time, so every answer arrived expired and was dropped;
+   * the LLM was effectively off and nothing looked wrong. Scaling the window by the speed restores a
+   * constant ~15s of real time, which is what the rule was always implicitly asking for.
+   *
+   * The trade-off is real and recorded in `KNOWN_ISSUES.md` `C-36`: at 16× the window becomes 240 game
+   * minutes of world change, i.e. the guard is loosest exactly where the world moves fastest.
+   */
+  speed(): number;
   isPaused(): boolean;
   isActive(): boolean;
   agents(): readonly ScheduledAgent[];
@@ -133,6 +146,14 @@ export interface SchedulerOptions {
   onDecision?: (agentId: string, outcome: DecisionOutcome) => void;
   /** Called when a decision was applied — submitted, or refused by the engine. */
   onApplied?: (agentId: string, submission: SubmissionOutcome) => void;
+  /**
+   * Called when a decision was **dropped for staleness** rather than applied.
+   *
+   * `C-36`: this is the one outcome that used to be invisible. A dropped decision writes a single
+   * `info` line into the world log, and nothing renders that log — so the Agent layer could stop using
+   * the model entirely and the game looked identical. Whatever else changes, this has to be countable.
+   */
+  onDiscarded?: (agentId: string, ageTicks: number, limit: number) => void;
 }
 
 export class AgentScheduler {
@@ -141,6 +162,9 @@ export class AgentScheduler {
   private readonly callsPerMinute: number;
   private readonly onDecision: ((agentId: string, outcome: DecisionOutcome) => void) | undefined;
   private readonly onApplied: ((agentId: string, submission: SubmissionOutcome) => void) | undefined;
+  private readonly onDiscarded:
+    | ((agentId: string, ageTicks: number, limit: number) => void)
+    | undefined;
 
   private readonly pending = new Map<string, PendingDecision>();
   private readonly markers = new Map<string, Marker>();
@@ -158,6 +182,7 @@ export class AgentScheduler {
     this.callsPerMinute = options.callsPerMinute ?? 1;
     this.onDecision = options.onDecision;
     this.onApplied = options.onApplied;
+    this.onDiscarded = options.onDiscarded;
   }
 
   /**
@@ -288,11 +313,20 @@ export class AgentScheduler {
   private apply(decision: PendingDecision, now: number): void {
     if (decision.outcome?.status !== 'decided') return;
     const ageTicks = (now - decision.observation.time) * 10;
-    if (ageTicks > STALE_TICK_LIMIT) {
+    // `C-36`: the window is one decision interval *of real time*, so it scales with the speed. Without
+    // the multiplier a flat 150 ticks is 15s at 1× but 0.94s at 16× — shorter than any real model call,
+    // which silently turned the LLM off whenever the player sped the game up.
+    //
+    // Approximation: the speed is read at check time, so changing it mid-flight re-scales the window
+    // retroactively. Reading it at observation time instead would need it stored per decision and would
+    // be just as arbitrary for the interval in between.
+    const limit = STALE_TICK_LIMIT * Math.max(1, this.world.speed());
+    if (ageTicks > limit) {
       this.world.log(
-        'Agent ' + decision.agentId + ' 的决策已过期（' + ageTicks + ' tick），不予提交。',
+        'Agent ' + decision.agentId + ' 的决策已过期（' + ageTicks + ' tick > ' + limit + '），不予提交。',
         'info',
       );
+      if (this.onDiscarded) this.onDiscarded(decision.agentId, ageTicks, limit);
       return;
     }
     const submission = this.runtime.applyDecision(decision.observation, decision.outcome.decision);

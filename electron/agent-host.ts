@@ -25,6 +25,7 @@ import type { AgentEvent, AgentTrigger, SimulationEvent, WorldState } from '../s
 import { MockModelClient } from './agent/mock-client';
 import { loadDecisionSchema, loadPromptTemplates } from './agent/prompt';
 import { AgentScheduler, type SchedulerWorld, type ScheduledAgent } from './agent/scheduler';
+import type { AgentLoopStats } from '../src/engine/agent/roster';
 import { createDeepSeekClient, deepSeekConfigFromEnv, describeDeepSeekConfig } from './agent/openai-compatible';
 import { DecisionRuntime, type ActionSubmitter, type DecisionTrace, type MessageSubmitter } from './agent/runtime';
 
@@ -74,6 +75,7 @@ export function schedulerWorld(engine: SimulationEngine): SchedulerWorld {
   const w = (): WorldState => engine.state;
   return {
     time: () => w().time,
+    speed: () => w().speed,
     isPaused: () => w().paused,
     isActive: () => w().status === 'active',
     agents: (): ScheduledAgent[] =>
@@ -172,6 +174,14 @@ export interface AgentHostOptions {
 export class AgentHost {
   private readonly engine: SimulationEngine;
   private readonly scheduler: AgentScheduler;
+  /**
+   * `C-36`: the loop's own tally, for the panel.
+   *
+   * Kept here rather than in the world on purpose — it is a property of *this run's* Agent loop (how
+   * many calls, how many thrown away), not of the simulation, and putting it in `WorldState` would make
+   * the save depend on network timing.
+   */
+  private readonly loop: AgentLoopStats = { decisions: 0, dropped: 0, lastDrop: null };
 
   constructor(engine: SimulationEngine, options: AgentHostOptions) {
     this.engine = engine;
@@ -211,7 +221,26 @@ export class AgentHost {
       messenger: messengerFor(engine),
       ...(options.onTrace ? { onTrace: options.onTrace } : {}),
     });
-    this.scheduler = new AgentScheduler({ world: schedulerWorld(engine), runtime });
+    this.scheduler = new AgentScheduler({
+      world: schedulerWorld(engine),
+      runtime,
+      onDecision: () => {
+        this.loop.decisions += 1;
+      },
+      onDiscarded: (_agentId, ageTicks, limit) => {
+        this.loop.dropped += 1;
+        this.loop.lastDrop = { ageTicks, limit };
+      },
+    });
+  }
+
+  /** What the loop has done this session — `C-36`'s answer to "is the model actually being used?". */
+  stats(): AgentLoopStats {
+    return {
+      decisions: this.loop.decisions,
+      dropped: this.loop.dropped,
+      lastDrop: this.loop.lastDrop ? { ...this.loop.lastDrop } : null,
+    };
   }
 
   /**

@@ -139,6 +139,11 @@ test('the Agent channel shows the roster, and a message sent from it reaches the
   // Memory tags only — the crop withholds text on purpose (`KNOWN_ISSUES.md` N-7).
   await expect(page.locator('.agent-channel')).not.toContainText('我完成了');
 
+  // C-36: the loop's own tally has to be visible. A decision dropped for staleness writes one `info`
+  // line into the world log and **nothing renders that log** — so the model could be entirely off while
+  // the game looked normal. That is the whole point of surfacing it.
+  await expect(page.locator('.agent-loop')).toContainText('本局模型决策');
+
   // Send from the panel. The default kind is `command`, i.e. the Admiral offering a task.
   await page.locator('.agent-channel .agent-compose input').fill('穿越虫洞，寻找失联探测船。');
   await page.locator('.agent-channel').getByRole('button', { name: '发送', exact: true }).click();

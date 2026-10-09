@@ -18,7 +18,7 @@
  * line when it is not.
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { RosterAgent } from '../../engine/agent/roster';
+import type { AgentChannelView, AgentLoopStats, RosterAgent } from '../../engine/agent/roster';
 import type { CommandSender } from '../types';
 import { LcarsButton, LcarsTextBar } from './Lcars';
 
@@ -41,6 +41,8 @@ const PROMISE_TEXT = '完成这次任务后，我给你一次 Deep Scan 优先�
 export function AgentChannel({ command }: { command: CommandSender }) {
   const [open, setOpen] = useState(false);
   const [roster, setRoster] = useState<RosterAgent[]>([]);
+  const [stats, setStats] = useState<AgentLoopStats>({ decisions: 0, dropped: 0, lastDrop: null });
+  const [speed, setSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [target, setTarget] = useState('');
@@ -55,9 +57,11 @@ export function AgentChannel({ command }: { command: CommandSender }) {
       return;
     }
     try {
-      const next = await api();
-      setRoster(next);
-      setTarget((current) => current || (next[0]?.id ?? ''));
+      const next: AgentChannelView = await api();
+      setRoster(next.agents);
+      setStats(next.stats);
+      setSpeed(next.speed);
+      setTarget((current) => current || (next.agents[0]?.id ?? ''));
       setError(null);
     } catch (failure) {
       setError(String(failure));
@@ -113,7 +117,7 @@ export function AgentChannel({ command }: { command: CommandSender }) {
       return;
     }
     const after = await window.frontier.agents();
-    const promise = after.find((agent) => agent.id === target)?.promises.at(-1);
+    const promise = after.agents.find((agent) => agent.id === target)?.promises.at(-1);
     if (!promise) {
       setNote('承诺已创建，但读不回 id —— 未向 Agent 发出通知');
       await refresh();
@@ -135,6 +139,20 @@ export function AgentChannel({ command }: { command: CommandSender }) {
       </summary>
       <div className="agent-channel-body">
         {error && <p className="muted">{error}</p>}
+        {/* C-36: the loop's own tally. `dropped` is the number that used to be invisible — a stale
+            decision writes one info line into the world log, and nothing renders that log. */}
+        <p className="agent-loop">
+          本局模型决策 <b>{stats.decisions}</b> 次 · 过期丢弃 <b>{stats.dropped}</b> 次
+        </p>
+        {stats.dropped > 0 && (
+          <p className="agent-alert">
+            ⚠ 有决策因过期被丢弃
+            {stats.lastDrop ? '（最近一次迟 ' + stats.lastDrop.ageTicks + ' / 上限 ' + stats.lastDrop.limit + '）' : ''}
+            {speed > 1
+              ? '。当前 ' + speed + '× 加速会让世界在模型思考期间跑得很远——降到 1× 可减少丢弃。'
+              : '。世界在模型思考期间前进得比它的答案能追赶的更多。'}
+          </p>
+        )}
         {!error && roster.length === 0 && <p className="muted">尚未读取</p>}
         {roster.map((agent) => (
           <div key={agent.id} className={'agent-row' + (agent.id === target ? ' is-selected' : '')}>

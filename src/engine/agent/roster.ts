@@ -51,6 +51,31 @@ export interface RosterAgent {
   memories: RosterMemory[];
 }
 
+/**
+ * What the Agent loop has been doing this session (`KNOWN_ISSUES.md` `C-36`).
+ *
+ * `dropped` is the number this type exists for. A decision dropped for staleness writes one `info` line
+ * into the world log, and **nothing renders that log** — so the Agent layer could stop using the model
+ * entirely while the game looked completely normal. That is the same failure shape as `C-33`, and the
+ * fix in both cases is the same: make the invisible thing countable.
+ */
+export interface AgentLoopStats {
+  /** Decisions drained this session, from either provider. */
+  decisions: number;
+  /** Decisions dropped as stale instead of applied. */
+  dropped: number;
+  /** Ticks the most recent drop was late by, and the window it missed. */
+  lastDrop: { ageTicks: number; limit: number } | null;
+}
+
+/** Everything the Agent channel shows. Composed by the host, which is the only side that knows both halves. */
+export interface AgentChannelView {
+  agents: RosterAgent[];
+  stats: AgentLoopStats;
+  /** So the panel can explain *why* drops happen: the window is one interval of real time (C-36). */
+  speed: number;
+}
+
 /** Memories worth showing, most important first — the same ordering a decision sees. */
 function memoryView(memories: readonly AgentMemory[]): RosterMemory[] {
   return recentMemories(memories, ROSTER_MEMORY_LIMIT).map((memory) => ({

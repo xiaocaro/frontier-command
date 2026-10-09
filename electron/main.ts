@@ -143,7 +143,13 @@ app.whenReady().then(async () => {
    */
   ipcMain.handle('agents:get', (event) => {
     trusted(event);
-    return agentRosterView(engine.state);
+    return {
+      agents: agentRosterView(engine.state),
+      // `C-36`: whether the model is actually being used this session, and if not, why. Both halves are
+      // needed — the roster says what the Agents are, the stats say whether anything is reaching them.
+      stats: agentHost?.stats() ?? { decisions: 0, dropped: 0, lastDrop: null },
+      speed: engine.state.speed,
+    };
   });
   ipcMain.handle('world:command', (event, command: unknown) => {
     trusted(event);

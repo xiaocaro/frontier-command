@@ -194,6 +194,30 @@ describe('assembly puts the right provider behind the runtime', () => {
     }
   });
 
+  it('counts what the loop did, and reports it as a snapshot (C-36)', async () => {
+    // `dropped` is the number this exists for: it used to be a log line nothing renders. The scheduler
+    // test pins that a drop is counted; this pins that the host forwards it and does not hand out a
+    // live handle the renderer could mutate.
+    const engine = quietEngine();
+    const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });
+    const agent = engine.state.agents[0];
+    agent.nextDecisionAt = 0; // bring the beat due
+    engine.state.paused = false;
+
+    expect(host.stats()).toEqual({ decisions: 0, dropped: 0, lastDrop: null });
+
+    host.frame([]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    host.frame([]);
+
+    expect(host.stats().decisions).toBe(1);
+    expect(host.stats().dropped).toBe(0);
+
+    const taken = host.stats();
+    taken.decisions = 999;
+    expect(host.stats().decisions).toBe(1);
+  });
+
   it('runs deterministically with no key, but still decides', async () => {
     const engine = quietEngine();
     const host = new AgentHost(engine, { root: REPO_ROOT, env: {} });

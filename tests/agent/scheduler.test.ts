@@ -22,7 +22,7 @@ import {
 import { MockModelClient } from '../../electron/agent/mock-client';
 import type { ModelClient, ModelResult } from '../../electron/agent/model-client';
 import { loadDecisionSchema, loadPromptTemplates } from '../../electron/agent/prompt';
-import { AGENT_PROMPT_VERSION, evaluate } from '../../src/engine/agent/decision';
+import { AGENT_PROMPT_VERSION, STALE_TICK_LIMIT, evaluate } from '../../src/engine/agent/decision';
 import type { DecisionBand } from '../../src/engine/agent/score';
 import { RULES } from '../../src/engine/definitions/rules';
 import type { AgentCareer, AgentObservation, AgentTrigger } from '../../src/engine/types';
@@ -96,6 +96,8 @@ class FakeWorld implements SchedulerWorld {
   clock = 0;
   paused = false;
   active = true;
+  /** Simulation speed multiplier — `C-36` scales the staleness window by it. */
+  simSpeed = 1;
   seats: Seat[] = [];
   /** Every `writeBeat` call, in order — `S-9` asserts on these. */
   beats: { agentId: string; at: number }[] = [];
@@ -105,6 +107,9 @@ class FakeWorld implements SchedulerWorld {
 
   time(): number {
     return this.clock;
+  }
+  speed(): number {
+    return this.simSpeed;
   }
   isPaused(): boolean {
     return this.paused;
@@ -671,5 +676,53 @@ describe('SC-4 a drained decision is applied, and a stale one is not', () => {
     expect(recorder.submitted).toEqual([]);
     expect(applied).toEqual([]);
     expect(world.logs.join(' ')).toContain('已过期');
+  });
+
+  it('scales the window with the simulation speed, so 16× stops disabling the model (C-36)', async () => {
+    // The window is one decision interval of **real** time, so the game minutes it covers grow with the
+    // speed. 100 game minutes is 1000 ticks — past a flat 150 — but at 16× that is only ~6s of real
+    // time, which is inside what a model actually takes. Before this, every answer at 16× was dropped
+    // and the LLM was silently off.
+    const { world } = worldFor();
+    const recorder = recordingSubmitter({ ok: true, reason: '' });
+    const dropped: unknown[] = [];
+    const scheduler = new AgentScheduler({
+      world,
+      runtime: agentRuntime(actingClient(), undefined, recorder),
+      callsPerMinute: 5,
+      onDiscarded: (agentId, ageTicks, limit) => dropped.push({ agentId, ageTicks, limit }),
+    });
+
+    scheduler.notify([trigger('admiral-message')]);
+    scheduler.pump();
+    await settle();
+    world.clock = 100;
+    world.simSpeed = 16;
+    scheduler.pump();
+
+    expect(recorder.submitted).toHaveLength(1);
+    expect(dropped).toEqual([]);
+    expect(world.logs.join(' ')).not.toContain('已过期');
+  });
+
+  it('reports a dropped decision instead of only writing it to a log nobody renders (C-36)', async () => {
+    const { world, explorer } = worldFor();
+    const recorder = recordingSubmitter({ ok: true, reason: '' });
+    const dropped: { agentId: string; ageTicks: number; limit: number }[] = [];
+    const scheduler = new AgentScheduler({
+      world,
+      runtime: agentRuntime(actingClient(), undefined, recorder),
+      callsPerMinute: 5,
+      onDiscarded: (agentId, ageTicks, limit) => dropped.push({ agentId, ageTicks, limit }),
+    });
+
+    scheduler.notify([trigger('admiral-message')]);
+    scheduler.pump();
+    await settle();
+    world.clock = 100; // 1×: 1000 ticks, past the 150-tick window
+    scheduler.pump();
+
+    expect(recorder.submitted).toEqual([]);
+    expect(dropped).toEqual([{ agentId: explorer.id, ageTicks: 1000, limit: STALE_TICK_LIMIT }]);
   });
 });

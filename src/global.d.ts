@@ -6,7 +6,7 @@ import type {
   PublicSimulationEvent,
 } from './engine/types';
 import type { TimelineStatus } from './engine/timeline';
-import type { RosterAgent } from './engine/agent/roster';
+import type { AgentChannelView } from './engine/agent/roster';
 declare global {
   interface Window {
     frontier: {
@@ -16,8 +16,13 @@ declare global {
         saveBlocked: boolean;
         timeline: TimelineStatus;
       }>;
-      /** Read-only Agent roster. The only channel that carries Agent state to the renderer. */
-      agents(): Promise<RosterAgent[]>;
+      /**
+       * Read-only Agent roster plus this session's loop counters.
+       *
+       * The only channel that carries Agent state to the renderer — and, since `C-36`, the only place a
+       * player can see that the model is being dropped rather than used.
+       */
+      agents(): Promise<AgentChannelView>;
       command(command: Command | SessionCommand): Promise<CommandResult>;
       save(): Promise<CommandResult>;
       timeline(): Promise<TimelineStatus>;
