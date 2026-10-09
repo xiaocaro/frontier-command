@@ -139,10 +139,9 @@ DEEPSEEK_API_KEY=<key> npm start
 
 前提：应用已启动；载入的世界**默认暂停**，先点「继续」。
 
-> **关于速度**（`KNOWN_ISSUES.md` `C-36`）：过期窗口现已**随速度缩放**，所以 16× 不再必然丢弃
-> 模型的回答（原先 16× 只有 0.94s 余量，而实测延迟 2–8s，等于静默关掉了模型）。
-> **但 16× 的端到端尚未实测**——缩放由单元测试钉住，没有 live 证据；**演示仍建议 1×**。
-> 面板上的「本局模型决策 N 次 · 过期丢弃 M 次」会直接告诉你有没有在被丢，不必猜。
+> **关于速度**（`KNOWN_ISSUES.md` `C-36`）：过期窗口现已**随速度缩放**，16× 不再丢弃模型的回答。
+> 已实测（`npm run demo:live -- --speed=16`，真实端点）：**开着缩放 0 次丢弃；临时关掉缩放 63/84 = 75% 被丢**。
+> 面板上的「本局模型决策 N 次 · 过期丢弃 M 次」会直接告诉你实际有没有在被丢，不必猜。
 
 面板：控制台 PRIORITY COMMUNICATIONS 下方 → 展开 **AGENT CHANNEL · 舰桥通讯**。
 
@@ -173,11 +172,17 @@ Agent 自己说的话——那是它自己写的，不是从世界状态推出�
 人手点一遍适合给人看；要**可复现的记录**就用这条：
 
 ```powershell
-$env:DEEPSEEK_API_KEY='sk-...'; npm run demo:live      # PowerShell
+$env:DEEPSEEK_API_KEY='sk-...'; npm run demo:live                 # PowerShell
+$env:DEEPSEEK_API_KEY='sk-...'; npm run demo:live -- --speed=16   # 16×，检验 C-36
 ```
 ```bash
-DEEPSEEK_API_KEY=sk-... npm run demo:live              # Git Bash（= 后不要有空格）
+DEEPSEEK_API_KEY=sk-... npm run demo:live                         # Git Bash（= 后不要有空格）
+DEEPSEEK_API_KEY=sk-... npm run demo:live -- --speed=16
 ```
+
+`--speed=1|4|16`（默认 1）由 `scripts/demo-live.mjs` 读出后经环境变量交给测试——vitest 会拒绝未知
+命令行选项，所以不能在测试文件里直接读它。**16× 会走和游戏一样的推进速率**（`advanceFrame` 每帧跑
+`speed` 步、按 `HOST_FRAME_MS` 定速），末尾印出 C-36 的结论。
 
 它跑 `tests/live/vertical-slice.live.ts`（经 `vitest.live.config.ts`），把八步逐步打印出来，
 **包括每一条决策的 intent / choiceId / reason、Agent 说的话、以及无模型时确定性回退会怎么答**。

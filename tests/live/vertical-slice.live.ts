@@ -22,6 +22,7 @@
 import { test, expect } from 'vitest';
 import { SimulationEngine } from '../../src/engine/engine';
 import { createWorld } from '../../src/engine/data';
+import { HOST_FRAME_MS } from '../../src/engine/clock';
 import { AgentHost } from '../../electron/agent-host';
 import { deepSeekConfigFromEnv, describeDeepSeekConfig } from '../../electron/agent/openai-compatible';
 import { fallbackDecision } from '../../src/engine/agent/decision';
@@ -35,6 +36,16 @@ import {
   observationFor,
   requestTeamUp,
 } from '../agent/support';
+
+/**
+ * The simulation speed this run emulates (`--speed=16`, via `scripts/demo-live.mjs`).
+ *
+ * It is the whole point of the switch (`KNOWN_ISSUES.md` `C-36`): the staleness window is one decision
+ * interval of **real** time, so at 1× it is 15s, and at 16× the world covers 16× as many game minutes in
+ * the same wall clock. Before the window was scaled, 16× gave the model 0.94s and every answer was
+ * thrown away. Running the demo at 16× is the end-to-end check that it no longer is.
+ */
+const SPEED = Number(process.env.DEMO_SPEED ?? '1');
 
 const say = (line = '') => process.stdout.write(line + '\n');
 const head = (title: string) => say('\n── ' + title + ' ' + '─'.repeat(Math.max(0, 52 - title.length)));
@@ -71,6 +82,8 @@ function vignette(seed = 236807): Vignette {
     ship.queue = [];
     ship.suspended = [];
   }
+  // Through the player's own command, so the demo runs the path the game does.
+  engine.dispatchCommand({ type: 'speed', speed: SPEED as 1 | 4 | 16 });
   const traces: DecisionTrace[] = [];
   const host = new AgentHost(engine, { root: REPO_ROOT, onTrace: (trace) => traces.push(trace) });
   return {
@@ -83,20 +96,23 @@ function vignette(seed = 236807): Vignette {
 }
 
 
-const PACE_MS = 50;
+const PACE_MS = HOST_FRAME_MS;
 
 async function beat(v: Vignette, done: () => boolean, frames = 240) {
   for (let i = 0; i < frames; i++) {
     v.engine.dispatchCommand({ type: 'pause', paused: false });
-    v.host.frame(v.engine.step());
-    // **Paced, not as-fast-as-possible**, and this is load-bearing rather than tidiness.
+    // `advanceFrame`, not `step`: it runs `state.speed` steps per call, which is exactly what the real
+    // host does every `HOST_FRAME_MS`. Advancing one step per frame would not be 16× whatever the
+    // speed said, and the C-36 question is precisely about the real rate.
+    v.host.frame(v.engine.advanceFrame());
+    // **Paced at the real host rate**, and this is load-bearing rather than tidiness.
     //
     // A decision is discarded when more than `STALE_TICK_LIMIT` (= 15 game minutes = 150 ticks) pass
     // between the observation and the drain. An unpaced loop burns hundreds of game minutes during a
     // model call that takes a few seconds of wall clock — so every answer came back stale and was
     // thrown away, which read in the transcript as "the model said accept but nothing happened".
-    // One step is 0.1 game minute, so 50ms per step keeps the world at roughly 1× — the same rate the
-    // real host frame uses when the game is not sped up.
+    // Pacing at `HOST_FRAME_MS` is what makes the speed setting mean anything: the world then advances
+    // at `speed` game minutes per second, exactly as it does in the game.
     await new Promise((resolve) => setTimeout(resolve, PACE_MS));
     if (done()) return true;
   }
@@ -197,6 +213,7 @@ test('the MVP runbook, driven by the real model', async () => {
 
   say('\n════════ MVP 演示 · 真实模型 ════════');
   say('模型配置：' + JSON.stringify(describeDeepSeekConfig(config)));
+  say('仿真速度：' + SPEED + '×');
   say('（密钥只以布尔出现；下面任何一行都不会包含它。）');
   say(
     '世界：' +
@@ -344,13 +361,25 @@ test('the MVP runbook, driven by the real model', async () => {
   for (const { traces } of [v, t0, a, b]) all.push(...traces);
   const fromProvider = all.filter((t) => t.outcome === 'provider').length;
   head('汇总');
-  say(
-    '模型调用 ' + all.length + ' 次：成功 ' + fromProvider + '，回退 ' +
-      all.filter((t) => t.outcome === 'fallback').length + '，丢弃 ' +
-      all.filter((t) => t.outcome === 'discarded').length,
-  );
+  // The drop count comes from the host, not from the traces. A decision dropped as stale is dropped by
+  // the **scheduler**, which writes a log line and no trace — the runtime-level `discarded` outcome is
+  // unreachable in production (`C-37`), so counting traces here would always print zero.
+  const hostStats = [v, t0, a, b].map((side) => side.host.stats());
+  const decisions = hostStats.reduce((sum, stat) => sum + stat.decisions, 0);
+  const dropped = hostStats.reduce((sum, stat) => sum + stat.dropped, 0);
+  const fellBack = all.filter((t) => t.outcome === 'fallback').length;
+  say('模型调用 ' + all.length + ' 次：成功 ' + fromProvider + '，回退 ' + fellBack);
+  say('宿主计数：决策 ' + decisions + ' 次，因过期丢弃 ' + dropped + ' 次');
   say('耗时 ' + ((Date.now() - started) / 1000).toFixed(1) + 's');
   say('');
+  if (SPEED > 1) {
+    say('C-36 检验（' + SPEED + '×）：' + (dropped === 0
+      ? '模型作答仍然落地 ✅ —— 窗口缩放生效。'
+      : '仍有 ' + dropped + ' 次被丢 ❌ —— 本次作答迟于窗口。'));
+    say('  窗口是"一个决策间隔的**真实**时间"，与速度无关，约 15 秒。未缩放前 ' + SPEED + '× 只给模型 ' +
+      (15 / SPEED).toFixed(2) + 's，几乎必然被丢。');
+    say('  注：这一条是**实测**，不是断言——真模型延迟会波动，偶尔的丢弃并不等于缩放失效。');
+  }
   say('回退次数不为 0 是正常的：引擎遇回退就走确定性分档，世界照常前进。');
   say('这正是 C-33 那类"静默"要防的东西，所以这里把它显式打出来。');
 }, 20 * 60_000);
